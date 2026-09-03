@@ -7,6 +7,8 @@ const SCREENS = [
     "customerLoginScreen",
     "workerLoginScreen",
     "adminLoginScreen",
+    "customerOnboardingScreen",
+    "workerOnboardingScreen",
     "customerDashboardScreen",
     "workerDashboardScreen",
     "adminDashboardScreen"

@@ -137,6 +137,251 @@
     </div>
 
 
+    <!-- ===================== CUSTOMER ONBOARDING SCREEN ===================== -->
+    <div id="customerOnboardingScreen" class="screen hidden">
+        <div class="onboarding-container">
+            <div class="onboarding-card">
+                <div class="onboarding-header">
+                    <h2>Setup Your Customer Profile</h2>
+                    <p>Help our cooperative workers reach and serve you accurately.</p>
+                </div>
+
+                <div class="step-indicator">
+                    <div id="custInd1" class="step-dot active"><span>1</span> Name</div>
+                    <div class="step-line"></div>
+                    <div id="custInd2" class="step-dot"><span>2</span> Address</div>
+                    <div class="step-line"></div>
+                    <div id="custInd3" class="step-dot"><span>3</span> Location</div>
+                </div>
+
+                <!-- Step 1: Name -->
+                <div id="customerStep1">
+                    <div class="form-group">
+                        <label>What is your Full Name?</label>
+                        <input type="text" id="custOnboardName" placeholder="e.g. Ramesh Sharma" autofocus>
+                        <small class="hint">This name will be displayed on service requests and invoices.</small>
+                    </div>
+                    <div id="custStepError1"></div>
+                    <div class="onboarding-actions">
+                        <button class="primary" onclick="nextCustomerStep()">Continue →</button>
+                    </div>
+                </div>
+
+                <!-- Step 2: Address -->
+                <div id="customerStep2" class="hidden">
+                    <div class="form-group">
+                        <label>Street Address / Flat / House No.</label>
+                        <input type="text" id="custOnboardAddress" placeholder="e.g. House No. 42, Green Avenue">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Village / Town / Locality</label>
+                            <input type="text" id="custOnboardTown" placeholder="e.g. Alpha 1">
+                        </div>
+                        <div class="form-group">
+                            <label>City</label>
+                            <input type="text" id="custOnboardCity" placeholder="e.g. Greater Noida">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>State</label>
+                            <input type="text" id="custOnboardState" placeholder="e.g. Uttar Pradesh">
+                        </div>
+                        <div class="form-group">
+                            <label>PIN Code</label>
+                            <input type="text" id="custOnboardPin" placeholder="6-digit PIN" maxlength="6" pattern="[0-9]{6}">
+                        </div>
+                    </div>
+                    <div id="custStepError2"></div>
+                    <div class="onboarding-actions between">
+                        <button class="secondary" onclick="prevCustomerStep()">← Back</button>
+                        <button class="primary" onclick="nextCustomerStep()">Next: Location →</button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Location -->
+                <div id="customerStep3" class="hidden">
+                    <div class="location-prompt">
+                        <span class="loc-icon">📍</span>
+                        <h3>Pinpoint Your Service Location</h3>
+                        <p>Allowing location helps match the closest cooperative workers in your neighborhood for faster response and lower dispatch times.</p>
+                        <button type="button" id="custGeoBtn" class="cta-gold loc-btn" onclick="captureCustomerLocation()">📍 Use My Current Location</button>
+                        <div id="custGeoStatus"></div>
+                        <small class="hint" style="margin-top:10px;">Optional: If permission is denied or unavailable, your manual address will be used.</small>
+                    </div>
+                    <div id="custStepError3"></div>
+                    <div class="onboarding-actions between" style="margin-top: 24px;">
+                        <button class="secondary" onclick="prevCustomerStep()">← Back</button>
+                        <button class="primary" onclick="finishCustomerOnboarding()">Complete Setup & Go to Dashboard 🚀</button>
+                    </div>
+                </div>
+            </div>
+            <button class="link-btn" onclick="changeRole()">← Cancel & Back to Role Selection</button>
+        </div>
+    </div>
+
+
+    <!-- ===================== WORKER ONBOARDING SCREEN ===================== -->
+    <div id="workerOnboardingScreen" class="screen hidden">
+        <div class="onboarding-container">
+            <div class="onboarding-card">
+                <div class="onboarding-header">
+                    <h2>Worker Cooperative Registration</h2>
+                    <p>Join verified labour cooperatives, access regular household jobs, and build your certified work profile.</p>
+                </div>
+
+                <div class="step-indicator">
+                    <div id="wrkInd1" class="step-dot active"><span>1</span> Identity</div>
+                    <div class="step-line"></div>
+                    <div id="wrkInd2" class="step-dot"><span>2</span> Skills</div>
+                    <div class="step-line"></div>
+                    <div id="wrkInd3" class="step-dot"><span>3</span> Area</div>
+                    <div class="step-line"></div>
+                    <div id="wrkInd4" class="step-dot"><span>4</span> Availability</div>
+                    <div class="step-line"></div>
+                    <div id="wrkInd5" class="step-dot"><span>5</span> Status</div>
+                </div>
+
+                <!-- Step 1: Identity -->
+                <div id="workerStep1">
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" id="wrkOnboardName" placeholder="Enter your full name">
+                    </div>
+                    <div class="form-group">
+                        <label>Verified Mobile Number</label>
+                        <input type="tel" id="workerOnboardPhoneDisplay" readonly class="locked-input">
+                        <small class="hint">Mobile number authenticated via OTP.</small>
+                    </div>
+                    <div id="wrkStepError1"></div>
+                    <div class="onboarding-actions">
+                        <button class="primary" onclick="nextWorkerStep()">Continue to Professional Profile →</button>
+                    </div>
+                </div>
+
+                <!-- Step 2: Professional Profile -->
+                <div id="workerStep2" class="hidden">
+                    <div class="form-group">
+                        <label>Primary Skill / Trade</label>
+                        <select id="wrkOnboardSkill">
+                            <option value="">Select your main trade</option>
+                            <option>Electrician</option>
+                            <option>Plumber</option>
+                            <option>Carpenter</option>
+                            <option>Painter</option>
+                            <option>Cleaner</option>
+                            <option>Driver</option>
+                            <option>Caregiver</option>
+                            <option>Technician</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Years of Experience</label>
+                        <input type="text" id="wrkOnboardExp" placeholder="e.g. 5">
+                    </div>
+                    <div class="form-group">
+                        <label>Certification / Training Background</label>
+                        <select id="wrkOnboardCert">
+                            <option value="Cooperative Certified">Cooperative / NCCT Certified</option>
+                            <option value="ITI / Polytechnic">ITI / Polytechnic Diploma</option>
+                            <option value="NSDC / PMKVY">NSDC / Skill India PMKVY</option>
+                            <option value="Self-Trained / Apprenticeship">Self-Trained / Apprenticeship</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Additional Skills (Optional)</label>
+                        <input type="text" id="wrkOnboardAdditional" placeholder="e.g. Solar inverter wiring, RO servicing">
+                    </div>
+                    <div id="wrkStepError2"></div>
+                    <div class="onboarding-actions between">
+                        <button class="secondary" onclick="prevWorkerStep()">← Back</button>
+                        <button class="primary" onclick="nextWorkerStep()">Next: Service Area →</button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Location -->
+                <div id="workerStep3" class="hidden">
+                    <div class="form-group">
+                        <label>Base / Workshop Address</label>
+                        <input type="text" id="wrkOnboardAddress" placeholder="e.g. Shop 12, Main Market">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Village / Town / Sector</label>
+                            <input type="text" id="wrkOnboardTown" placeholder="e.g. Beta 2">
+                        </div>
+                        <div class="form-group">
+                            <label>City</label>
+                            <input type="text" id="wrkOnboardCity" placeholder="e.g. Greater Noida">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>State</label>
+                            <input type="text" id="wrkOnboardState" placeholder="e.g. Uttar Pradesh">
+                        </div>
+                        <div class="form-group">
+                            <label>PIN Code</label>
+                            <input type="text" id="wrkOnboardPin" placeholder="6-digit PIN" maxlength="6">
+                        </div>
+                    </div>
+                    <div class="location-prompt inline-loc">
+                        <p>Set working area GPS coordinates for customer matching:</p>
+                        <button type="button" id="wrkGeoBtn" class="secondary loc-btn" onclick="captureWorkerLocation()">📍 Capture Service Area GPS</button>
+                        <div id="wrkGeoStatus"></div>
+                    </div>
+                    <div id="wrkStepError3"></div>
+                    <div class="onboarding-actions between">
+                        <button class="secondary" onclick="prevWorkerStep()">← Back</button>
+                        <button class="primary" onclick="nextWorkerStep()">Next: Availability →</button>
+                    </div>
+                </div>
+
+                <!-- Step 4: Availability Slots -->
+                <div id="workerStep4" class="hidden">
+                    <label style="margin-bottom: 10px;">Select your preferred working availability:</label>
+                    <div class="slot-pills-container">
+                        <button type="button" class="slot-pill" data-slot="Morning (8 AM - 12 PM)" onclick="toggleWorkerAvailability('Morning (8 AM - 12 PM)')">🌅 Morning (8 AM - 12 PM)</button>
+                        <button type="button" class="slot-pill" data-slot="Afternoon (12 PM - 4 PM)" onclick="toggleWorkerAvailability('Afternoon (12 PM - 4 PM)')">☀️ Afternoon (12 PM - 4 PM)</button>
+                        <button type="button" class="slot-pill" data-slot="Evening (4 PM - 8 PM)" onclick="toggleWorkerAvailability('Evening (4 PM - 8 PM)')">🌆 Evening (4 PM - 8 PM)</button>
+                        <button type="button" class="slot-pill" data-slot="Full Day (8 AM - 8 PM)" onclick="toggleWorkerAvailability('Full Day (8 AM - 8 PM)')">⏱️ Full Day</button>
+                    </div>
+                    <small class="hint" style="margin-top: 12px; display:block;">You can select multiple windows. Our AI matching engine matches customer bookings according to these time slots.</small>
+                    <div id="wrkStepError4"></div>
+                    <div class="onboarding-actions between" style="margin-top: 24px;">
+                        <button class="secondary" onclick="prevWorkerStep()">← Back</button>
+                        <button class="primary" onclick="nextWorkerStep()">Submit Application ✅</button>
+                    </div>
+                </div>
+
+                <!-- Step 5: Completed & Pending Review -->
+                <div id="workerStep5" class="hidden">
+                    <div class="verification-pending-card">
+                        <div class="status-icon">⏳</div>
+                        <h3>Profile Created Successfully!</h3>
+                        <div class="badge unverified" style="margin: 8px 0 16px;">🟡 Verification Status: PENDING REVIEW</div>
+                        <p>Your profile has been submitted to the <strong>National Council for Cooperative Training (NCCT) Federation</strong>. You can now view your dashboard and browse pending jobs in your area while federation administrators review your trade certification.</p>
+
+                        <div class="profile-summary-box">
+                            <div><strong>Name:</strong> <span id="reviewWrkName"></span></div>
+                            <div><strong>Trade Skill:</strong> <span id="reviewWrkSkill"></span></div>
+                            <div><strong>Experience:</strong> <span id="reviewWrkExp"></span></div>
+                            <div><strong>Certification:</strong> <span id="reviewWrkCert"></span></div>
+                            <div><strong>Location:</strong> <span id="reviewWrkLoc"></span></div>
+                            <div><strong>Availability:</strong> <span id="reviewWrkAvail"></span></div>
+                        </div>
+
+                        <button class="primary cta-large" onclick="finishWorkerOnboarding()">Open Worker Dashboard 🛠️</button>
+                    </div>
+                </div>
+            </div>
+            <button class="link-btn" onclick="changeRole()">← Cancel & Back to Role Selection</button>
+        </div>
+    </div>
+
+
     <!-- ===================== 5. CUSTOMER DASHBOARD SCREEN ===================== -->
     <div id="customerDashboardScreen" class="screen hidden">
 
@@ -411,6 +656,7 @@
 
     <script src="/js/translations.js"></script>
     <script src="/js/voice.js"></script>
+    <script src="/js/onboarding.js"></script>
     <script src="/js/auth.js"></script>
     <script src="/js/adminAuth.js"></script>
     <script src="/js/role.js"></script>

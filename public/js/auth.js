@@ -78,7 +78,9 @@ async function customerVerifyOtp() {
             localStorage.setItem("sahkaar_customer_name", data.customer.name);
         }
 
-        if (typeof showCustomerDashboard === "function") {
+        if (data.isNew && typeof startCustomerOnboarding === "function") {
+            startCustomerOnboarding(phone);
+        } else if (typeof showCustomerDashboard === "function") {
             showCustomerDashboard();
         } else {
             showScreen("customerDashboardScreen");
@@ -172,8 +174,10 @@ async function workerVerifyOtp() {
             localStorage.setItem("sahkaar_worker_name", data.worker.name);
         }
 
-        if (data.isNew) {
-            // New worker -> show registration with phone pre-filled
+        if (data.isNew && typeof startWorkerOnboarding === "function") {
+            startWorkerOnboarding(phone);
+        } else if (data.isNew) {
+            // Fallback: show registration with phone pre-filled
             showWorkerForm();
             const phoneEl = document.getElementById("workerPhone");
             if (phoneEl) phoneEl.value = phone;
