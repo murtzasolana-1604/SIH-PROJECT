@@ -4,18 +4,25 @@
 
 const SEAL_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>`;
 
-function hideAllSections() {
-    document.getElementById("servicesSection").classList.add("hidden");
-    document.getElementById("bookingSection").classList.add("hidden");
-    document.getElementById("workerSection").classList.add("hidden");
-    document.getElementById("myBookingsSection").classList.add("hidden");
-    document.getElementById("workerDashboardSection").classList.add("hidden");
-    document.getElementById("adminSection").classList.add("hidden");
+function hideCustomerSubsections() {
+    const s = document.getElementById("servicesSection");
+    const b = document.getElementById("bookingSection");
+    const m = document.getElementById("myBookingsSection");
+    if (s) s.classList.add("hidden");
+    if (b) b.classList.add("hidden");
+    if (m) m.classList.add("hidden");
+}
+
+function showCustomerDashboard() {
+    showScreen("customerDashboardScreen");
+    showServices();
 }
 
 async function showServices() {
-    hideAllSections();
-    document.getElementById("servicesSection").classList.remove("hidden");
+    showScreen("customerDashboardScreen");
+    hideCustomerSubsections();
+    const s = document.getElementById("servicesSection");
+    if (s) s.classList.remove("hidden");
     await loadServices();
 }
 
@@ -61,34 +68,69 @@ function captureLocation() {
 }
 
 function openBooking(serviceName) {
-    hideAllSections();
-    document.getElementById("bookingSection").classList.remove("hidden");
-    document.getElementById("selectedService").value = serviceName;
+    showScreen("customerDashboardScreen");
+    hideCustomerSubsections();
+    const b = document.getElementById("bookingSection");
+    if (b) b.classList.remove("hidden");
+    const selectedInput = document.getElementById("selectedService");
+    if (selectedInput) selectedInput.value = serviceName;
     captureLocation();
 }
 
-function showWorkerForm() {
-    hideAllSections();
-    document.getElementById("workerSection").classList.remove("hidden");
-}
-
 function showMyBookings() {
-    hideAllSections();
-    document.getElementById("myBookingsSection").classList.remove("hidden");
+    showScreen("customerDashboardScreen");
+    hideCustomerSubsections();
+    const m = document.getElementById("myBookingsSection");
+    if (m) m.classList.remove("hidden");
+
+    const savedPhone = localStorage.getItem("sahkaar_customer_phone");
+    const lookupInput = document.getElementById("lookupPhone");
+    if (savedPhone && lookupInput) {
+        lookupInput.value = savedPhone;
+        fetchMyBookings();
+    }
 }
 
 function showWorkerDashboard() {
-    hideAllSections();
-    document.getElementById("workerDashboardSection").classList.remove("hidden");
+    showScreen("workerDashboardScreen");
+    const dashSec = document.getElementById("workerDashboardSection");
+    const formSec = document.getElementById("workerSection");
+    if (dashSec) dashSec.classList.remove("hidden");
+    if (formSec) formSec.classList.add("hidden");
+
+    const savedPhone = localStorage.getItem("sahkaar_worker_phone");
+    const lookupInput = document.getElementById("workerLookupPhone");
+    if (savedPhone && lookupInput && !lookupInput.value) {
+        lookupInput.value = savedPhone;
+    }
 }
 
-function showAdmin() {
-    hideAllSections();
-    document.getElementById("adminSection").classList.remove("hidden");
+function showWorkerForm() {
+    showScreen("workerDashboardScreen");
+    const dashSec = document.getElementById("workerDashboardSection");
+    const formSec = document.getElementById("workerSection");
+    if (dashSec) dashSec.classList.add("hidden");
+    if (formSec) formSec.classList.remove("hidden");
+
+    const savedPhone = localStorage.getItem("sahkaar_worker_phone");
+    const phoneInput = document.getElementById("workerPhone");
+    if (savedPhone && phoneInput) {
+        phoneInput.value = savedPhone;
+    }
+}
+
+function showAdminDashboard() {
+    showScreen("adminDashboardScreen");
+    const adminSec = document.getElementById("adminSection");
+    if (adminSec) adminSec.classList.remove("hidden");
     loadAdminStats();
     loadAdminWorkers();
     loadAdminBookings();
     loadForecast();
+}
+
+function showAdmin() {
+    showAdminDashboard();
 }
 
 

@@ -11,7 +11,7 @@
 <body>
 
     <!-- ===================== ROLE SELECTION ===================== -->
-    <div id="roleScreen">
+    <div id="roleScreen" class="screen">
         <div class="role-brand">
             <h1>🤝 SAHKAAR CONNECT</h1>
             <p>One cooperative network. Trusted services. Better opportunities.</p>
@@ -50,7 +50,7 @@
 
 
     <!-- ===================== CUSTOMER LOGIN ===================== -->
-    <div id="customerLoginScreen" class="hidden">
+    <div id="customerLoginScreen" class="screen hidden">
 
         <div class="login-card">
             <h2>Welcome to Sahkaar Connect</h2>
@@ -80,7 +80,7 @@
 
 
     <!-- ===================== WORKER LOGIN ===================== -->
-    <div id="workerLoginScreen" class="hidden">
+    <div id="workerLoginScreen" class="screen hidden">
 
         <div class="login-card">
             <h2>Worker Login</h2>
@@ -110,7 +110,7 @@
 
 
     <!-- ===================== ADMIN LOGIN (Step 4 — new) ===================== -->
-    <div id="adminLoginScreen" class="hidden">
+    <div id="adminLoginScreen" class="screen hidden">
 
         <div class="login-card">
             <h2>🏢 Federation Admin Login</h2>
@@ -137,35 +137,24 @@
     </div>
 
 
-    <!-- ===================== EXISTING APP (unchanged) ===================== -->
-    <div id="appRoot" class="hidden">
+    <!-- ===================== 5. CUSTOMER DASHBOARD SCREEN ===================== -->
+    <div id="customerDashboardScreen" class="screen hidden">
 
         <header>
-            <button id="langToggle" class="lang-toggle" onclick="toggleLanguage()" aria-label="Switch language">हिंदी</button>
+            <button class="lang-toggle" onclick="toggleLanguage()" aria-label="Switch language">हिंदी</button>
             <h1 data-i18n="appTitle">🤝 Sahkaar Connect</h1>
             <p data-i18n="appSubtitle">Cooperative Gig Services Platform</p>
+            <div class="role-badge customer">🏠 Customer Portal</div>
 
-            <nav class="nav-groups" aria-label="Main navigation">
+            <nav class="nav-groups" aria-label="Customer navigation">
                 <div class="nav-group">
-                    <span class="nav-group-label">Customers</span>
                     <button class="nav-btn" onclick="showServices()" data-i18n="btnFindService">🔎 Find a Service</button>
                     <button class="nav-btn" onclick="showMyBookings()" data-i18n="btnMyBookings">📖 My Bookings</button>
                     <button class="nav-btn mic" id="voiceBookBtn" onclick="startVoiceBooking()" aria-label="Speak a service name to start a booking">🎤</button>
                 </div>
                 <div class="nav-divider"></div>
                 <div class="nav-group">
-                    <span class="nav-group-label">Workers</span>
-                    <button class="nav-btn" onclick="showWorkerForm()" data-i18n="btnJoinWorker">👷 Join as a Worker</button>
-                    <button class="nav-btn" onclick="showWorkerDashboard()" data-i18n="btnWorkerDashboard">🛠️ Worker Dashboard</button>
-                </div>
-                <div class="nav-divider"></div>
-                <div class="nav-group">
-                    <span class="nav-group-label">Federation</span>
-                    <button class="nav-btn" onclick="showAdmin()" data-i18n="btnAdmin">🏛️ Admin</button>
-                </div>
-                <div class="nav-divider"></div>
-                <div class="nav-group">
-                    <button class="nav-btn" onclick="changeRole()">🔄 Switch Role</button>
+                    <button class="nav-btn" onclick="logout()">🚪 Logout</button>
                 </div>
             </nav>
         </header>
@@ -181,10 +170,9 @@
                 </p>
                 <div class="buttons">
                     <button class="cta-gold" onclick="showServices()">🔎 Find a Service</button>
-                    <button class="secondary" onclick="showWorkerForm()">👷 Join as a Worker</button>
+                    <button class="secondary" onclick="showMyBookings()">📖 My Bookings</button>
                 </div>
             </section>
-
 
             <!-- Services -->
             <section id="servicesSection" class="section hidden">
@@ -197,7 +185,6 @@
                     </div>
                 </div>
             </section>
-
 
             <!-- Booking -->
             <section id="bookingSection" class="section hidden">
@@ -245,12 +232,72 @@
                     <input type="hidden" id="customerLng">
 
                     <button class="primary" type="submit">🚀 Book Service</button>
+                    <button type="button" class="secondary" style="margin-left: 8px;" onclick="showServices()">Cancel</button>
 
                 </form>
 
                 <div id="bookingResult"></div>
             </section>
 
+            <!-- My Bookings -->
+            <section id="myBookingsSection" class="section hidden">
+                <h2 data-i18n="myBookingsTitle">📖 My Bookings</h2>
+
+                <div class="form-group">
+                    <label>Enter the phone number you booked with</label>
+                    <input type="tel" id="lookupPhone" placeholder="10-digit mobile number" pattern="[0-9]{10}" maxlength="10">
+                </div>
+
+                <button class="primary" onclick="fetchMyBookings()">🔍 View My Bookings</button>
+
+                <div id="myBookingsResult"></div>
+            </section>
+
+        </main>
+
+        <footer>
+            <p data-i18n="footer">SIH26089 • Smart Automation • HacNova</p>
+        </footer>
+
+    </div>
+
+
+    <!-- ===================== 6. WORKER DASHBOARD SCREEN ===================== -->
+    <div id="workerDashboardScreen" class="screen hidden">
+
+        <header>
+            <button class="lang-toggle" onclick="toggleLanguage()" aria-label="Switch language">हिंदी</button>
+            <h1 data-i18n="appTitle">🤝 Sahkaar Connect</h1>
+            <p>Labour Cooperative Workforce Portal</p>
+            <div class="role-badge worker">👷 Worker Portal</div>
+
+            <nav class="nav-groups" aria-label="Worker navigation">
+                <div class="nav-group">
+                    <button class="nav-btn" onclick="showWorkerDashboard()" data-i18n="btnWorkerDashboard">🛠️ Worker Dashboard</button>
+                    <button class="nav-btn" onclick="showWorkerForm()" data-i18n="btnJoinWorker">📝 Register Profile</button>
+                </div>
+                <div class="nav-divider"></div>
+                <div class="nav-group">
+                    <button class="nav-btn" onclick="logout()">🚪 Logout</button>
+                </div>
+            </nav>
+        </header>
+
+        <main class="container">
+
+            <!-- Worker Dashboard -->
+            <section id="workerDashboardSection" class="section hidden">
+                <h2 data-i18n="workerDashboardTitle">🛠️ Worker Dashboard</h2>
+
+                <div class="form-group">
+                    <label>Enter your registered phone number</label>
+                    <input type="tel" id="workerLookupPhone" placeholder="10-digit mobile number" pattern="[0-9]{10}" maxlength="10">
+                </div>
+
+                <button class="primary" onclick="fetchWorkerDashboard()">🔍 View My Dashboard</button>
+
+                <div id="workerDashboardResult"></div>
+            </section>
 
             <!-- Worker Registration -->
             <section id="workerSection" class="section hidden">
@@ -299,45 +346,46 @@
                     </div>
 
                     <button class="primary" type="submit">✅ Register Worker</button>
+                    <button type="button" class="secondary" style="margin-left: 8px;" onclick="showWorkerDashboard()">Back to Dashboard</button>
 
                 </form>
 
                 <div id="workerResult"></div>
             </section>
 
+        </main>
 
-            <!-- My Bookings -->
-            <section id="myBookingsSection" class="section hidden">
-                <h2 data-i18n="myBookingsTitle">📖 My Bookings</h2>
+        <footer>
+            <p data-i18n="footer">SIH26089 • Smart Automation • HacNova</p>
+        </footer>
 
-                <div class="form-group">
-                    <label>Enter the phone number you booked with</label>
-                    <input type="tel" id="lookupPhone" placeholder="10-digit mobile number" pattern="[0-9]{10}" maxlength="10">
+    </div>
+
+
+    <!-- ===================== 7. ADMIN DASHBOARD SCREEN ===================== -->
+    <div id="adminDashboardScreen" class="screen hidden">
+
+        <header>
+            <button class="lang-toggle" onclick="toggleLanguage()" aria-label="Switch language">हिंदी</button>
+            <h1 data-i18n="appTitle">🤝 Sahkaar Connect</h1>
+            <p>National Council for Cooperative Training (NCCT) Federation Administration</p>
+            <div class="role-badge admin">🏢 Federation Admin</div>
+
+            <nav class="nav-groups" aria-label="Admin navigation">
+                <div class="nav-group">
+                    <button class="nav-btn" onclick="showAdmin()" data-i18n="btnAdmin">🏛️ Overview & Operations</button>
                 </div>
-
-                <button class="primary" onclick="fetchMyBookings()">🔍 View My Bookings</button>
-
-                <div id="myBookingsResult"></div>
-            </section>
-
-
-            <!-- Worker Dashboard -->
-            <section id="workerDashboardSection" class="section hidden">
-                <h2 data-i18n="workerDashboardTitle">🛠️ Worker Dashboard</h2>
-
-                <div class="form-group">
-                    <label>Enter your registered phone number</label>
-                    <input type="tel" id="workerLookupPhone" placeholder="10-digit mobile number" pattern="[0-9]{10}" maxlength="10">
+                <div class="nav-divider"></div>
+                <div class="nav-group">
+                    <button class="nav-btn" onclick="adminLogout()">🚪 Logout</button>
                 </div>
+            </nav>
+        </header>
 
-                <button class="primary" onclick="fetchWorkerDashboard()">🔍 View My Dashboard</button>
-
-                <div id="workerDashboardResult"></div>
-            </section>
-
+        <main class="container">
 
             <!-- Federation Admin -->
-            <section id="adminSection" class="section hidden">
+            <section id="adminSection" class="section">
                 <h2 data-i18n="adminTitle">🏛️ Federation Admin Dashboard</h2>
 
                 <div id="adminStats" class="stat-grid"></div>

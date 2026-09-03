@@ -1,12 +1,33 @@
 // =====================================
-// ROLE SELECTION
+// CENTRAL SCREEN NAVIGATION ROUTER
 // =====================================
-// Customer and Worker: demo OTP login.
-// Admin: demo credential login (phone + password), protected by
-// a real backend token check — see routes/adminAuth.js.
+
+const SCREENS = [
+    "roleScreen",
+    "customerLoginScreen",
+    "workerLoginScreen",
+    "adminLoginScreen",
+    "customerDashboardScreen",
+    "workerDashboardScreen",
+    "adminDashboardScreen"
+];
+
+function showScreen(screenId) {
+    SCREENS.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add("hidden");
+    });
+
+    const target = document.getElementById(screenId);
+    if (target) {
+        target.classList.remove("hidden");
+    }
+
+    // Reset scroll position to top instantly per UX requirement
+    window.scrollTo({ top: 0, behavior: "instant" });
+}
 
 function selectRole(role) {
-
     localStorage.setItem("sahkaar_role", role);
 
     if (role === "customer") { showCustomerLoginFlow(); return; }
@@ -15,36 +36,40 @@ function selectRole(role) {
 }
 
 function showCustomerLoginFlow() {
-    hideAllEntryScreens();
-    document.getElementById("customerLoginScreen").classList.remove("hidden");
-    document.getElementById("customerOtpStep").classList.add("hidden");
-    document.getElementById("customerPhoneStep").classList.remove("hidden");
+    showScreen("customerLoginScreen");
+    const otpStep = document.getElementById("customerOtpStep");
+    const phoneStep = document.getElementById("customerPhoneStep");
+    if (otpStep) otpStep.classList.add("hidden");
+    if (phoneStep) phoneStep.classList.remove("hidden");
+    const phoneErr = document.getElementById("customerPhoneError");
+    const otpErr = document.getElementById("customerOtpError");
+    if (phoneErr) phoneErr.innerHTML = "";
+    if (otpErr) otpErr.innerHTML = "";
 }
 
 function showWorkerLoginFlow() {
-    hideAllEntryScreens();
-    document.getElementById("workerLoginScreen").classList.remove("hidden");
-    document.getElementById("workerOtpStep").classList.add("hidden");
-    document.getElementById("workerPhoneStep").classList.remove("hidden");
+    showScreen("workerLoginScreen");
+    const otpStep = document.getElementById("workerOtpStep");
+    const phoneStep = document.getElementById("workerPhoneStep");
+    if (otpStep) otpStep.classList.add("hidden");
+    if (phoneStep) phoneStep.classList.remove("hidden");
+    const phoneErr = document.getElementById("workerPhoneError");
+    const otpErr = document.getElementById("workerOtpError");
+    if (phoneErr) phoneErr.innerHTML = "";
+    if (otpErr) otpErr.innerHTML = "";
 }
 
 function showAdminLoginFlow() {
-    hideAllEntryScreens();
-    document.getElementById("adminLoginScreen").classList.remove("hidden");
-    document.getElementById("adminLoginPhone").value = "";
-    document.getElementById("adminLoginPassword").value = "";
-    document.getElementById("adminLoginError").innerHTML = "";
+    showScreen("adminLoginScreen");
+    const phoneInput = document.getElementById("adminLoginPhone");
+    const passInput = document.getElementById("adminLoginPassword");
+    const errEl = document.getElementById("adminLoginError");
+    if (phoneInput) phoneInput.value = "";
+    if (passInput) passInput.value = "";
+    if (errEl) errEl.innerHTML = "";
 }
 
-function hideAllEntryScreens() {
-    document.getElementById("roleScreen").classList.add("hidden");
-    document.getElementById("customerLoginScreen").classList.add("hidden");
-    document.getElementById("workerLoginScreen").classList.add("hidden");
-    document.getElementById("adminLoginScreen").classList.add("hidden");
-    document.getElementById("appRoot").classList.add("hidden");
-}
-
-function changeRole() {
+function logout() {
     localStorage.removeItem("sahkaar_role");
     localStorage.removeItem("sahkaar_customer_authed");
     localStorage.removeItem("sahkaar_customer_phone");
@@ -56,24 +81,28 @@ function changeRole() {
     localStorage.removeItem("sahkaar_admin_authed");
     localStorage.removeItem("sahkaar_admin_name");
 
-    hideAllEntryScreens();
-    document.getElementById("roleScreen").classList.remove("hidden");
+    showScreen("roleScreen");
+}
+
+function changeRole() {
+    logout();
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-
     const savedRole = localStorage.getItem("sahkaar_role");
 
     if (!savedRole) {
-        hideAllEntryScreens();
-        document.getElementById("roleScreen").classList.remove("hidden");
+        showScreen("roleScreen");
         return;
     }
 
     if (savedRole === "customer") {
         if (localStorage.getItem("sahkaar_customer_authed") === "true") {
-            hideAllEntryScreens();
-            document.getElementById("appRoot").classList.remove("hidden");
+            if (typeof showCustomerDashboard === "function") {
+                showCustomerDashboard();
+            } else {
+                showScreen("customerDashboardScreen");
+            }
         } else {
             showCustomerLoginFlow();
         }
@@ -83,11 +112,18 @@ document.addEventListener("DOMContentLoaded", () => {
     if (savedRole === "worker") {
         if (localStorage.getItem("sahkaar_worker_authed") === "true") {
             const phone = localStorage.getItem("sahkaar_worker_phone");
-            hideAllEntryScreens();
-            document.getElementById("appRoot").classList.remove("hidden");
-            showWorkerDashboard();
-            document.getElementById("workerLookupPhone").value = phone;
-            fetchWorkerDashboard();
+            if (typeof showWorkerDashboard === "function") {
+                showWorkerDashboard();
+            } else {
+                showScreen("workerDashboardScreen");
+            }
+            if (phone) {
+                const lookupEl = document.getElementById("workerLookupPhone");
+                if (lookupEl) lookupEl.value = phone;
+                if (typeof fetchWorkerDashboard === "function") {
+                    fetchWorkerDashboard();
+                }
+            }
         } else {
             showWorkerLoginFlow();
         }
@@ -96,12 +132,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (savedRole === "admin") {
         if (localStorage.getItem("sahkaar_admin_authed") === "true") {
-            hideAllEntryScreens();
-            document.getElementById("appRoot").classList.remove("hidden");
-            showAdmin();
+            if (typeof showAdminDashboard === "function") {
+                showAdminDashboard();
+            } else if (typeof showAdmin === "function") {
+                showAdmin();
+            } else {
+                showScreen("adminDashboardScreen");
+            }
         } else {
             showAdminLoginFlow();
         }
         return;
     }
+
+    showScreen("roleScreen");
 });

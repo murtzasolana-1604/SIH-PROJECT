@@ -28,9 +28,13 @@ function adminLogin() {
         localStorage.setItem("sahkaar_admin_authed", "true");
         localStorage.setItem("sahkaar_admin_name", data.admin.name);
 
-        document.getElementById("adminLoginScreen").classList.add("hidden");
-        document.getElementById("appRoot").classList.remove("hidden");
-        showAdmin();
+        if (typeof showAdminDashboard === "function") {
+            showAdminDashboard();
+        } else if (typeof showAdmin === "function") {
+            showAdmin();
+        } else {
+            showScreen("adminDashboardScreen");
+        }
     })
     .catch(error => {
         console.error(error);
@@ -65,6 +69,5 @@ function adminLogout() {
     localStorage.removeItem("sahkaar_admin_authed");
     localStorage.removeItem("sahkaar_admin_name");
 
-    document.getElementById("appRoot").classList.add("hidden");
-    document.getElementById("adminLoginScreen").classList.remove("hidden");
+    showScreen("roleScreen");
 }

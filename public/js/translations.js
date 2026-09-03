@@ -46,8 +46,9 @@ function applyLanguage(lang) {
         if (dict[key]) el.textContent = dict[key];
     });
 
-    const toggleBtn = document.getElementById("langToggle");
-    if (toggleBtn) toggleBtn.textContent = lang === "en" ? "हिंदी" : "English";
+    document.querySelectorAll(".lang-toggle, #langToggle").forEach(btn => {
+        btn.textContent = lang === "en" ? "हिंदी" : "English";
+    });
 }
 
 function toggleLanguage() {

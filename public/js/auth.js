@@ -47,8 +47,11 @@ function customerVerifyOtp() {
     localStorage.setItem("sahkaar_customer_phone", phone);
     localStorage.setItem("sahkaar_customer_authed", "true");
 
-    document.getElementById("customerLoginScreen").classList.add("hidden");
-    document.getElementById("appRoot").classList.remove("hidden");
+    if (typeof showCustomerDashboard === "function") {
+        showCustomerDashboard();
+    } else {
+        showScreen("customerDashboardScreen");
+    }
 }
 
 function customerBackToPhone() {
@@ -114,8 +117,7 @@ function workerBackToPhone() {
 // to decide: known worker -> dashboard, unknown -> registration form.
 async function routeWorkerAfterLogin(phone) {
 
-    document.getElementById("workerLoginScreen").classList.add("hidden");
-    document.getElementById("appRoot").classList.remove("hidden");
+    showScreen("workerDashboardScreen");
 
     try {
         const res = await fetch(`/api/workers?phone=${encodeURIComponent(phone)}`);
