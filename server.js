@@ -11,6 +11,7 @@ const ratingsRoute = require("./routes/ratings");
 const invoicesRoute = require("./routes/invoices");
 const paymentsRoute = require("./routes/payments");
 const forecastRoute = require("./routes/forecast");
+const auth = require("./routes/auth");
 
 const app = express();
 const PORT = 3000;
@@ -36,7 +37,12 @@ app.post("/api/workers", workersRoute);
 app.get("/api/bookings", bookings.bookingsRoute);
 app.post("/api/bookings", bookings.bookingsRoute);
 app.post("/api/bookings/:id/accept", bookings.acceptBooking);
-app.post("/api/bookings/:id/complete", bookings.completeBooking);
+// Authentication (Customer, Worker, Logout)
+app.post("/api/auth/customer/send-otp", auth.customerSendOtp);
+app.post("/api/auth/customer/verify-otp", auth.customerVerifyOtp);
+app.post("/api/auth/worker/send-otp", auth.workerSendOtp);
+app.post("/api/auth/worker/verify-otp", auth.workerVerifyOtp);
+app.post("/api/auth/logout", auth.logout);
 
 // Admin login (public — this is how you GET a token)
 app.post("/api/admin/login", adminAuth.adminLogin);

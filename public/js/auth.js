@@ -1,15 +1,11 @@
 // =====================================
-// LOGIN — Demo OTP only, for both Customer and Worker.
-// No real SMS provider. OTP is always 123456.
-// This is clearly a prototype auth flow, not real security.
+// AUTHENTICATION — Backend Token-Based
+// Customer and Worker OTP verification connected to /api/auth/*
 // =====================================
-
-const DEMO_OTP = "123456";
 
 // ---------- CUSTOMER ----------
 
-function customerSendOtp() {
-
+async function customerSendOtp() {
     const phoneInput = document.getElementById("customerLoginPhone");
     const phone = phoneInput.value.trim();
     const errorEl = document.getElementById("customerPhoneError");
@@ -21,36 +17,75 @@ function customerSendOtp() {
         return;
     }
 
-    localStorage.setItem("sahkaar_customer_pending_phone", phone);
-    document.getElementById("customerOtpPhoneDisplay").textContent = phone;
+    try {
+        const res = await fetch("/api/auth/customer/send-otp", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ phone })
+        });
+        const data = await res.json();
 
-    document.getElementById("customerPhoneStep").classList.add("hidden");
-    document.getElementById("customerOtpStep").classList.remove("hidden");
-    document.getElementById("customerOtpInput").value = "";
-    document.getElementById("customerOtpInput").focus();
+        if (!data.success) {
+            errorEl.innerHTML = `<div class="error">${data.message}</div>`;
+            return;
+        }
+
+        localStorage.setItem("sahkaar_customer_pending_phone", phone);
+        document.getElementById("customerOtpPhoneDisplay").textContent = phone;
+
+        document.getElementById("customerPhoneStep").classList.add("hidden");
+        document.getElementById("customerOtpStep").classList.remove("hidden");
+        document.getElementById("customerOtpInput").value = "";
+        document.getElementById("customerOtpInput").focus();
+    } catch (error) {
+        console.error(error);
+        errorEl.innerHTML = `<div class="error">Server connection failed.</div>`;
+    }
 }
 
-function customerVerifyOtp() {
-
+async function customerVerifyOtp() {
     const otp = document.getElementById("customerOtpInput").value.trim();
     const errorEl = document.getElementById("customerOtpError");
+    const phone = localStorage.getItem("sahkaar_customer_pending_phone");
 
     errorEl.innerHTML = "";
 
-    if (otp !== DEMO_OTP) {
-        errorEl.innerHTML = `<div class="error">Incorrect OTP. This prototype uses a fixed demo OTP: ${DEMO_OTP}.</div>`;
+    if (!otp) {
+        errorEl.innerHTML = `<div class="error">Please enter the 6-digit OTP.</div>`;
         return;
     }
 
-    const phone = localStorage.getItem("sahkaar_customer_pending_phone");
+    try {
+        const res = await fetch("/api/auth/customer/verify-otp", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ phone, otp })
+        });
+        const data = await res.json();
 
-    localStorage.setItem("sahkaar_customer_phone", phone);
-    localStorage.setItem("sahkaar_customer_authed", "true");
+        if (!data.success) {
+            errorEl.innerHTML = `<div class="error">${data.message}</div>`;
+            return;
+        }
 
-    if (typeof showCustomerDashboard === "function") {
-        showCustomerDashboard();
-    } else {
-        showScreen("customerDashboardScreen");
+        // Store session token and credentials
+        localStorage.setItem("sahkaar_customer_token", data.token);
+        localStorage.setItem("sahkaar_customer_phone", phone);
+        localStorage.setItem("sahkaar_customer_authed", "true");
+        localStorage.setItem("sahkaar_customer_is_new", data.isNew ? "true" : "false");
+
+        if (data.customer && data.customer.name) {
+            localStorage.setItem("sahkaar_customer_name", data.customer.name);
+        }
+
+        if (typeof showCustomerDashboard === "function") {
+            showCustomerDashboard();
+        } else {
+            showScreen("customerDashboardScreen");
+        }
+    } catch (error) {
+        console.error(error);
+        errorEl.innerHTML = `<div class="error">Server connection failed.</div>`;
     }
 }
 
@@ -64,8 +99,7 @@ function customerBackToPhone() {
 
 // ---------- WORKER ----------
 
-function workerSendOtp() {
-
+async function workerSendOtp() {
     const phoneInput = document.getElementById("workerLoginPhone");
     const phone = phoneInput.value.trim();
     const errorEl = document.getElementById("workerPhoneError");
@@ -77,33 +111,83 @@ function workerSendOtp() {
         return;
     }
 
-    localStorage.setItem("sahkaar_worker_pending_phone", phone);
-    document.getElementById("workerOtpPhoneDisplay").textContent = phone;
+    try {
+        const res = await fetch("/api/auth/worker/send-otp", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ phone })
+        });
+        const data = await res.json();
 
-    document.getElementById("workerPhoneStep").classList.add("hidden");
-    document.getElementById("workerOtpStep").classList.remove("hidden");
-    document.getElementById("workerOtpInput").value = "";
-    document.getElementById("workerOtpInput").focus();
+        if (!data.success) {
+            errorEl.innerHTML = `<div class="error">${data.message}</div>`;
+            return;
+        }
+
+        localStorage.setItem("sahkaar_worker_pending_phone", phone);
+        document.getElementById("workerOtpPhoneDisplay").textContent = phone;
+
+        document.getElementById("workerPhoneStep").classList.add("hidden");
+        document.getElementById("workerOtpStep").classList.remove("hidden");
+        document.getElementById("workerOtpInput").value = "";
+        document.getElementById("workerOtpInput").focus();
+    } catch (error) {
+        console.error(error);
+        errorEl.innerHTML = `<div class="error">Server connection failed.</div>`;
+    }
 }
 
 async function workerVerifyOtp() {
-
     const otp = document.getElementById("workerOtpInput").value.trim();
     const errorEl = document.getElementById("workerOtpError");
+    const phone = localStorage.getItem("sahkaar_worker_pending_phone");
 
     errorEl.innerHTML = "";
 
-    if (otp !== DEMO_OTP) {
-        errorEl.innerHTML = `<div class="error">Incorrect OTP. This prototype uses a fixed demo OTP: ${DEMO_OTP}.</div>`;
+    if (!otp) {
+        errorEl.innerHTML = `<div class="error">Please enter the 6-digit OTP.</div>`;
         return;
     }
 
-    const phone = localStorage.getItem("sahkaar_worker_pending_phone");
+    try {
+        const res = await fetch("/api/auth/worker/verify-otp", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ phone, otp })
+        });
+        const data = await res.json();
 
-    localStorage.setItem("sahkaar_worker_phone", phone);
-    localStorage.setItem("sahkaar_worker_authed", "true");
+        if (!data.success) {
+            errorEl.innerHTML = `<div class="error">${data.message}</div>`;
+            return;
+        }
 
-    await routeWorkerAfterLogin(phone);
+        // Store session token and credentials
+        localStorage.setItem("sahkaar_worker_token", data.token);
+        localStorage.setItem("sahkaar_worker_phone", phone);
+        localStorage.setItem("sahkaar_worker_authed", "true");
+        localStorage.setItem("sahkaar_worker_is_new", data.isNew ? "true" : "false");
+
+        if (data.worker && data.worker.name) {
+            localStorage.setItem("sahkaar_worker_name", data.worker.name);
+        }
+
+        if (data.isNew) {
+            // New worker -> show registration with phone pre-filled
+            showWorkerForm();
+            const phoneEl = document.getElementById("workerPhone");
+            if (phoneEl) phoneEl.value = phone;
+        } else {
+            // Existing worker -> show dashboard and load data
+            showWorkerDashboard();
+            const lookupEl = document.getElementById("workerLookupPhone");
+            if (lookupEl) lookupEl.value = phone;
+            fetchWorkerDashboard();
+        }
+    } catch (error) {
+        console.error(error);
+        errorEl.innerHTML = `<div class="error">Server connection failed.</div>`;
+    }
 }
 
 function workerBackToPhone() {
@@ -113,31 +197,11 @@ function workerBackToPhone() {
     document.getElementById("workerOtpError").innerHTML = "";
 }
 
-// Checks the EXISTING /api/workers?phone= endpoint (built in Step 21)
-// to decide: known worker -> dashboard, unknown -> registration form.
-async function routeWorkerAfterLogin(phone) {
+// Session Token Helpers
+function customerAuthHeaders() {
+    return { "Authorization": "Bearer " + (localStorage.getItem("sahkaar_customer_token") || "") };
+}
 
-    showScreen("workerDashboardScreen");
-
-    try {
-        const res = await fetch(`/api/workers?phone=${encodeURIComponent(phone)}`);
-        const data = await res.json();
-
-        if (data.success && data.worker) {
-            // Known worker -> straight to dashboard, auto-loaded.
-            showWorkerDashboard();
-            document.getElementById("workerLookupPhone").value = phone;
-            fetchWorkerDashboard();
-        } else {
-            // Not registered yet -> existing registration form, phone pre-filled.
-            // (Full multi-screen onboarding comes in a later step.)
-            showWorkerForm();
-            document.getElementById("workerPhone").value = phone;
-        }
-    } catch (error) {
-        console.error(error);
-        // If the check fails, don't strand the user — send them to registration.
-        showWorkerForm();
-        document.getElementById("workerPhone").value = phone;
-    }
+function workerAuthHeaders() {
+    return { "Authorization": "Bearer " + (localStorage.getItem("sahkaar_worker_token") || "") };
 }

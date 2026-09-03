@@ -2,6 +2,23 @@ const Database = require("better-sqlite3");
 
 const db = new Database("sahkaar.db");
 
+// CUSTOMERS TABLE
+db.exec(`
+    CREATE TABLE IF NOT EXISTS customers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        phone TEXT UNIQUE NOT NULL,
+        name TEXT,
+        address TEXT,
+        village_town TEXT,
+        city TEXT,
+        state TEXT,
+        pincode TEXT,
+        latitude REAL,
+        longitude REAL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+`);
+
 // WORKERS TABLE
 db.exec(`
     CREATE TABLE IF NOT EXISTS workers (

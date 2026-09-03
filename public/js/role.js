@@ -70,13 +70,30 @@ function showAdminLoginFlow() {
 }
 
 function logout() {
+    const custToken = localStorage.getItem("sahkaar_customer_token");
+    const wrkToken = localStorage.getItem("sahkaar_worker_token");
+    const tokenToInvalidate = custToken || wrkToken;
+
+    if (tokenToInvalidate) {
+        fetch("/api/auth/logout", {
+            method: "POST",
+            headers: { "Authorization": "Bearer " + tokenToInvalidate }
+        }).catch(() => {});
+    }
+
     localStorage.removeItem("sahkaar_role");
     localStorage.removeItem("sahkaar_customer_authed");
     localStorage.removeItem("sahkaar_customer_phone");
     localStorage.removeItem("sahkaar_customer_pending_phone");
+    localStorage.removeItem("sahkaar_customer_token");
+    localStorage.removeItem("sahkaar_customer_name");
+    localStorage.removeItem("sahkaar_customer_is_new");
     localStorage.removeItem("sahkaar_worker_authed");
     localStorage.removeItem("sahkaar_worker_phone");
     localStorage.removeItem("sahkaar_worker_pending_phone");
+    localStorage.removeItem("sahkaar_worker_token");
+    localStorage.removeItem("sahkaar_worker_name");
+    localStorage.removeItem("sahkaar_worker_is_new");
     localStorage.removeItem("sahkaar_admin_token");
     localStorage.removeItem("sahkaar_admin_authed");
     localStorage.removeItem("sahkaar_admin_name");
