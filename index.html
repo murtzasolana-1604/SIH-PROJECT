@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sahkaar Connect</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+
+    <!-- ===================== ROLE SELECTION ===================== -->
+    <div id="roleScreen">
+        <div class="role-brand">
+            <h1>🤝 SAHKAAR CONNECT</h1>
+            <p>One cooperative network. Trusted services. Better opportunities.</p>
+        </div>
+
+        <div class="role-question">Who are you?</div>
+
+        <div class="role-cards">
+            <button class="role-card" onclick="selectRole('customer')">
+                <span class="role-icon">🏠</span>
+                <span class="role-text">
+                    <h3>Customer</h3>
+                    <p>Find & book trusted local services</p>
+                </span>
+            </button>
+
+            <button class="role-card" onclick="selectRole('worker')">
+                <span class="role-icon">👷</span>
+                <span class="role-text">
+                    <h3>Worker</h3>
+                    <p>Provide services & earn through the cooperative</p>
+                </span>
+            </button>
+
+            <button class="role-card admin" onclick="selectRole('admin')">
+                <span class="role-icon">🏢</span>
+                <span class="role-text">
+                    <h3>Admin</h3>
+                    <p>Manage cooperative workers, bookings and operations</p>
+                </span>
+            </button>
+        </div>
+
+        <p class="role-note">Worker and Admin login screens are coming in a later step — for now they open directly.</p>
+    </div>
+
+
+    <!-- ===================== CUSTOMER LOGIN (Step 2 — new) ===================== -->
+    <div id="customerLoginScreen" class="hidden">
+
+        <div class="login-card">
+            <h2>Welcome to Sahkaar Connect</h2>
+
+            <div id="customerPhoneStep">
+                <label>Mobile Number</label>
+                <div class="phone-input-row">
+                    <span class="phone-prefix">+91</span>
+                    <input type="tel" id="customerLoginPhone" placeholder="10-digit mobile number" maxlength="10">
+                </div>
+                <button class="primary" onclick="customerSendOtp()">Continue</button>
+                <div id="customerPhoneError"></div>
+            </div>
+
+            <div id="customerOtpStep" class="hidden">
+                <p class="otp-subtext">Enter the 6-digit OTP sent to +91 <span id="customerOtpPhoneDisplay"></span></p>
+                <input type="text" id="customerOtpInput" maxlength="6" inputmode="numeric" placeholder="------" class="otp-input">
+                <button class="primary" onclick="customerVerifyOtp()">Verify</button>
+                <p class="demo-note">Demo OTP: 123456 — no real SMS is sent yet.</p>
+                <div id="customerOtpError"></div>
+                <button class="link-btn" onclick="customerBackToPhone()">← Change number</button>
+            </div>
+        </div>
+
+        <button class="link-btn" onclick="changeRole()">← Back to role selection</button>
+    </div>
+
+
+    <!-- ===================== EXISTING APP (unchanged) ===================== -->
+    <div id="appRoot" class="hidden">
+
+        <header>
+            <button id="langToggle" class="lang-toggle" onclick="toggleLanguage()" aria-label="Switch language">हिंदी</button>
+            <h1 data-i18n="appTitle">🤝 Sahkaar Connect</h1>
+            <p data-i18n="appSubtitle">Cooperative Gig Services Platform</p>
+
+            <nav class="nav-groups" aria-label="Main navigation">
+                <div class="nav-group">
+                    <span class="nav-group-label">Customers</span>
+                    <button class="nav-btn" onclick="showServices()" data-i18n="btnFindService">🔎 Find a Service</button>
+                    <button class="nav-btn" onclick="showMyBookings()" data-i18n="btnMyBookings">📖 My Bookings</button>
+                    <button class="nav-btn mic" id="voiceBookBtn" onclick="startVoiceBooking()" aria-label="Speak a service name to start a booking">🎤</button>
+                </div>
+                <div class="nav-divider"></div>
+                <div class="nav-group">
+                    <span class="nav-group-label">Workers</span>
+                    <button class="nav-btn" onclick="showWorkerForm()" data-i18n="btnJoinWorker">👷 Join as a Worker</button>
+                    <button class="nav-btn" onclick="showWorkerDashboard()" data-i18n="btnWorkerDashboard">🛠️ Worker Dashboard</button>
+                </div>
+                <div class="nav-divider"></div>
+                <div class="nav-group">
+                    <span class="nav-group-label">Federation</span>
+                    <button class="nav-btn" onclick="showAdmin()" data-i18n="btnAdmin">🏛️ Admin</button>
+                </div>
+                <div class="nav-divider"></div>
+                <div class="nav-group">
+                    <button class="nav-btn" onclick="changeRole()">🔄 Switch Role</button>
+                </div>
+            </nav>
+        </header>
+
+        <main class="container">
+
+            <!-- Welcome -->
+            <section class="welcome">
+                <h2 data-i18n="welcomeTitle">Trusted Local Services</h2>
+                <p data-i18n="welcomeText">
+                    Connect with verified cooperative workers
+                    for household and community services.
+                </p>
+                <div class="buttons">
+                    <button class="cta-gold" onclick="showServices()">🔎 Find a Service</button>
+                    <button class="secondary" onclick="showWorkerForm()">👷 Join as a Worker</button>
+                </div>
+            </section>
+
+
+            <!-- Services -->
+            <section id="servicesSection" class="section hidden">
+                <h2 data-i18n="chooseService">Choose a Service</h2>
+                <div id="servicesList" class="services">
+                    <div class="skeleton-row">
+                        <div class="skeleton"></div>
+                        <div class="skeleton"></div>
+                        <div class="skeleton"></div>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- Booking -->
+            <section id="bookingSection" class="section hidden">
+                <h2 data-i18n="bookService">📅 Book Service</h2>
+
+                <form id="bookingForm">
+
+                    <div class="form-group">
+                        <label>Selected Service</label>
+                        <input type="text" id="selectedService" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Customer Name</label>
+                        <input type="text" id="customerName" placeholder="Enter your name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <input type="tel" id="customerPhone" placeholder="10-digit mobile number" pattern="[0-9]{10}" maxlength="10" required>
+                        <small class="hint">We use this only to confirm and contact you about this booking.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Address</label>
+                        <input type="text" id="customerAddress" placeholder="Enter service address" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Preferred Date</label>
+                        <input type="date" id="bookingDate" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Preferred Time</label>
+                        <input type="time" id="bookingTime" required>
+                    </div>
+
+                    <div class="checkbox-row">
+                        <input type="checkbox" id="isEmergency">
+                        <label style="margin:0;">🚨 This is an emergency (same-day, urgent)</label>
+                    </div>
+
+                    <input type="hidden" id="customerLat">
+                    <input type="hidden" id="customerLng">
+
+                    <button class="primary" type="submit">🚀 Book Service</button>
+
+                </form>
+
+                <div id="bookingResult"></div>
+            </section>
+
+
+            <!-- Worker Registration -->
+            <section id="workerSection" class="section hidden">
+                <h2 data-i18n="registerWorker">👷 Register as a Worker</h2>
+
+                <form id="workerForm">
+
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" id="workerName" placeholder="Enter your name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <input type="tel" id="workerPhone" placeholder="10-digit mobile number" pattern="[0-9]{10}" maxlength="10" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Skill</label>
+                        <select id="workerSkill" required>
+                            <option value="">Select your skill</option>
+                            <option>Electrician</option>
+                            <option>Plumber</option>
+                            <option>Carpenter</option>
+                            <option>Painter</option>
+                            <option>Cleaner</option>
+                            <option>Driver</option>
+                            <option>Caregiver</option>
+                            <option>Technician</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Experience</label>
+                        <input type="text" id="workerExperience" placeholder="Example: 5 years">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Location</label>
+                        <input type="text" id="workerLocation" placeholder="Enter your location" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Availability</label>
+                        <input type="text" id="workerAvailability" placeholder="Example: 9 AM - 6 PM">
+                    </div>
+
+                    <button class="primary" type="submit">✅ Register Worker</button>
+
+                </form>
+
+                <div id="workerResult"></div>
+            </section>
+
+
+            <!-- My Bookings -->
+            <section id="myBookingsSection" class="section hidden">
+                <h2 data-i18n="myBookingsTitle">📖 My Bookings</h2>
+
+                <div class="form-group">
+                    <label>Enter the phone number you booked with</label>
+                    <input type="tel" id="lookupPhone" placeholder="10-digit mobile number" pattern="[0-9]{10}" maxlength="10">
+                </div>
+
+                <button class="primary" onclick="fetchMyBookings()">🔍 View My Bookings</button>
+
+                <div id="myBookingsResult"></div>
+            </section>
+
+
+            <!-- Worker Dashboard -->
+            <section id="workerDashboardSection" class="section hidden">
+                <h2 data-i18n="workerDashboardTitle">🛠️ Worker Dashboard</h2>
+
+                <div class="form-group">
+                    <label>Enter your registered phone number</label>
+                    <input type="tel" id="workerLookupPhone" placeholder="10-digit mobile number" pattern="[0-9]{10}" maxlength="10">
+                </div>
+
+                <button class="primary" onclick="fetchWorkerDashboard()">🔍 View My Dashboard</button>
+
+                <div id="workerDashboardResult"></div>
+            </section>
+
+
+            <!-- Federation Admin -->
+            <section id="adminSection" class="section hidden">
+                <h2 data-i18n="adminTitle">🏛️ Federation Admin Dashboard</h2>
+
+                <div id="adminStats" class="stat-grid"></div>
+
+                <h3 style="margin-bottom:12px;">Worker Verification</h3>
+                <div id="adminWorkers"></div>
+
+                <h3 style="margin:20px 0 12px;">Pending Bookings — Assign a Worker</h3>
+                <div id="adminBookings"></div>
+
+                <h3 style="margin:20px 0 12px;">📈 Demand Forecast (rule-based)</h3>
+                <div id="adminForecast"></div>
+            </section>
+
+        </main>
+
+        <footer>
+            <p data-i18n="footer">SIH26089 • Smart Automation • HacNova</p>
+        </footer>
+
+    </div>
+
+
+    <script src="/js/translations.js"></script>
+    <script src="/js/voice.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/role.js"></script>
+    <script src="/js/app.js"></script>
+
+</body>
+
+</html>
