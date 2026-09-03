@@ -17,7 +17,7 @@ db.exec(`
     )
 `);
 
-// BOOKINGS TABLE (original shape — kept exactly as it was)
+// BOOKINGS TABLE
 db.exec(`
     CREATE TABLE IF NOT EXISTS bookings (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -32,9 +32,6 @@ db.exec(`
     )
 `);
 
-// New columns added on top of your existing bookings table.
-// Wrapped in try/catch so restarting the server never crashes
-// just because the column already exists from last time.
 function addColumnIfMissing(table, columnDef) {
     try {
         db.exec(`ALTER TABLE ${table} ADD COLUMN ${columnDef}`);
@@ -73,7 +70,7 @@ db.exec(`
     )
 `);
 
-// PAYMENTS TABLE — mock only, no real gateway
+// PAYMENTS TABLE — mock only
 db.exec(`
     CREATE TABLE IF NOT EXISTS payments (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -84,6 +81,25 @@ db.exec(`
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
 `);
+
+// ADMINS TABLE — demo authentication only, not production security
+db.exec(`
+    CREATE TABLE IF NOT EXISTS admins (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        phone TEXT UNIQUE NOT NULL,
+        name TEXT NOT NULL,
+        demo_password TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+`);
+
+const existingAdmin = db.prepare("SELECT * FROM admins WHERE phone = ?").get("9999999999");
+
+if (!existingAdmin) {
+    db.prepare("INSERT INTO admins (phone, name, demo_password) VALUES (?, ?, ?)")
+        .run("9999999999", "Federation Admin", "admin123");
+    console.log("Seeded DEMO admin — phone: 9999999999, password: admin123 (not real security, prototype only)");
+}
 
 console.log("Database connected successfully!");
 

@@ -466,14 +466,14 @@ async function markComplete(bookingId) {
 
 
 // =====================================
-// FEDERATION ADMIN DASHBOARD
+// FEDERATION ADMIN DASHBOARD — now token-protected
 // =====================================
 
 async function loadAdminStats() {
     const el = document.getElementById("adminStats");
     el.innerHTML = `<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>`;
     try {
-        const res = await fetch("/api/admin/stats");
+        const res = await adminFetch("/api/admin/stats");
         const data = await res.json();
         const s = data.stats;
 
@@ -495,7 +495,7 @@ async function loadAdminWorkers() {
     const el = document.getElementById("adminWorkers");
     el.innerHTML = `<div class="skeleton" style="height:60px;"></div>`;
     try {
-        const res = await fetch("/api/admin/workers");
+        const res = await adminFetch("/api/admin/workers");
         const data = await res.json();
 
         if (data.workers.length === 0) {
@@ -533,7 +533,7 @@ async function loadAdminWorkers() {
 
 async function verifyWorker(workerId, action) {
     try {
-        const res = await fetch("/api/admin/verify", {
+        const res = await adminFetch("/api/admin/verify", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ workerId, action })
@@ -544,7 +544,6 @@ async function verifyWorker(workerId, action) {
         loadAdminStats();
     } catch (error) {
         console.error(error);
-        alert("Server connection failed.");
     }
 }
 
@@ -587,7 +586,7 @@ async function suggestWorkers(bookingId) {
     el.innerHTML = `<div class="skeleton" style="height:36px;margin-top:8px;"></div>`;
 
     try {
-        const res = await fetch(`/api/admin/match/${bookingId}`);
+        const res = await adminFetch(`/api/admin/match/${bookingId}`);
         const data = await res.json();
 
         if (!data.matches || data.matches.length === 0) {
@@ -614,7 +613,7 @@ async function suggestWorkers(bookingId) {
 
 async function assignWorker(bookingId, workerId) {
     try {
-        const res = await fetch("/api/admin/assign", {
+        const res = await adminFetch("/api/admin/assign", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ bookingId, workerId })
@@ -624,7 +623,6 @@ async function assignWorker(bookingId, workerId) {
         loadAdminBookings();
     } catch (error) {
         console.error(error);
-        alert("Server connection failed.");
     }
 }
 

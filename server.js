@@ -6,6 +6,7 @@ const workersRoute = require("./routes/workers");
 const servicesRoute = require("./routes/services");
 const bookings = require("./routes/bookings");
 const admin = require("./routes/admin");
+const adminAuth = require("./routes/adminAuth");
 const ratingsRoute = require("./routes/ratings");
 const invoicesRoute = require("./routes/invoices");
 const paymentsRoute = require("./routes/payments");
@@ -37,12 +38,15 @@ app.post("/api/bookings", bookings.bookingsRoute);
 app.post("/api/bookings/:id/accept", bookings.acceptBooking);
 app.post("/api/bookings/:id/complete", bookings.completeBooking);
 
-// Admin (Federation dashboard)
-app.get("/api/admin/stats", admin.getStats);
-app.get("/api/admin/workers", admin.getAllWorkers);
-app.post("/api/admin/verify", admin.verifyWorker);
-app.post("/api/admin/assign", admin.assignWorker);
-app.get("/api/admin/match/:bookingId", admin.matchWorkers);
+// Admin login (public — this is how you GET a token)
+app.post("/api/admin/login", adminAuth.adminLogin);
+
+// Admin (Federation dashboard) — all protected by requireAdminAuth below
+app.get("/api/admin/stats", adminAuth.requireAdminAuth, admin.getStats);
+app.get("/api/admin/workers", adminAuth.requireAdminAuth, admin.getAllWorkers);
+app.post("/api/admin/verify", adminAuth.requireAdminAuth, admin.verifyWorker);
+app.post("/api/admin/assign", adminAuth.requireAdminAuth, admin.assignWorker);
+app.get("/api/admin/match/:bookingId", adminAuth.requireAdminAuth, admin.matchWorkers);
 
 // Ratings
 app.get("/api/ratings", ratingsRoute.getRatings);
