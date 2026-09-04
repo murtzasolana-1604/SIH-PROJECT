@@ -515,19 +515,67 @@ async function fetchMyBookings() {
                             <strong>Total: ₹${invData.invoice.total_amount}</strong>
                         </div>
                         <button class="cta-gold" onclick="payMock(${booking.id}, this)">💳 Pay Now (Mock)</button>
-                        <div class="rate-box">
-                            <label style="margin:0;">Rate Worker:</label>
-                            <select id="stars-${booking.id}">
-                                <option value="5">⭐⭐⭐⭐⭐ Outstanding</option>
-                                <option value="4">⭐⭐⭐⭐ Good</option>
-                                <option value="3">⭐⭐⭐ Satisfactory</option>
-                                <option value="2">⭐⭐ Needs Improvement</option>
-                                <option value="1">⭐ Unsatisfactory</option>
-                            </select>
-                            <input type="text" id="comment-${booking.id}" placeholder="Optional feedback">
-                            <button class="secondary" onclick="submitRating(${booking.id})">Submit</button>
+                    `;
+                }
+
+                // Check rating status
+                const rateRes = await fetch(`/api/ratings?bookingId=${booking.id}`);
+                const rateData = await rateRes.json();
+
+                if (rateData.success && rateData.rated) {
+                    const r = rateData.rating;
+                    const starsDisplay = "★".repeat(r.stars) + "☆".repeat(5 - r.stars);
+                    const tagsHtml = (r.tags && r.tags.length > 0)
+                        ? `<div class="review-tags-display">${r.tags.map(t => `<span class="review-tag-badge">${t}</span>`).join(" ")}</div>`
+                        : "";
+
+                    html += `
+                        <div class="submitted-review-box">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                                <span class="verified-review-pill">✅ Verified Cooperative Review</span>
+                                <small style="color:var(--muted); font-family:var(--font-mono); font-size:11px;">${r.created_at || "Recorded"}</small>
+                            </div>
+                            <div class="stars-gold" style="font-size:15px; margin-bottom:2px;">
+                                ${starsDisplay} <strong style="color:var(--ink); font-size:13px;">(${r.stars}/5)</strong>
+                            </div>
+                            ${tagsHtml}
+                            <p style="margin:4px 0 0; font-size:13px; color:var(--ink); font-style:${r.comment ? 'normal' : 'italic'};">
+                                ${r.comment ? `"${r.comment}"` : "Satisfactory cooperative service completed."}
+                            </p>
                         </div>
-                        <div id="ratingMsg-${booking.id}"></div>
+                    `;
+                } else {
+                    html += `
+                        <div class="rate-box" id="rateBox-${booking.id}">
+                            <div class="rate-header">
+                                <label style="font-weight:700; color:var(--teal-deep); font-size:13.5px;">⭐ Rate Your Cooperative Service</label>
+                                <span class="rating-label-hint" id="starHint-${booking.id}">5★ Outstanding</span>
+                            </div>
+
+                            <div class="star-rating-input" id="starsContainer-${booking.id}">
+                                <button type="button" class="star-btn active" data-val="1" onclick="selectStarRating(${booking.id}, 1)">★</button>
+                                <button type="button" class="star-btn active" data-val="2" onclick="selectStarRating(${booking.id}, 2)">★</button>
+                                <button type="button" class="star-btn active" data-val="3" onclick="selectStarRating(${booking.id}, 3)">★</button>
+                                <button type="button" class="star-btn active" data-val="4" onclick="selectStarRating(${booking.id}, 4)">★</button>
+                                <button type="button" class="star-btn active" data-val="5" onclick="selectStarRating(${booking.id}, 5)">★</button>
+                            </div>
+                            <input type="hidden" id="selectedStars-${booking.id}" value="5">
+
+                            <div class="feedback-tags-row" id="tagsContainer-${booking.id}">
+                                <button type="button" class="feedback-tag-chip" onclick="toggleRatingTag(this)">⏱️ Punctual</button>
+                                <button type="button" class="feedback-tag-chip" onclick="toggleRatingTag(this)">🛠️ Skilled</button>
+                                <button type="button" class="feedback-tag-chip" onclick="toggleRatingTag(this)">🤝 Cooperative</button>
+                                <button type="button" class="feedback-tag-chip" onclick="toggleRatingTag(this)">🧹 Clean Work</button>
+                                <button type="button" class="feedback-tag-chip" onclick="toggleRatingTag(this)">💡 Honest Pricing</button>
+                            </div>
+
+                            <input type="text" id="comment-${booking.id}" placeholder="Write a note about the service (optional)..." style="margin:8px 0;">
+
+                            <button class="primary" style="font-size:12.5px; padding:8px 16px;" onclick="submitRating(${booking.id}, ${booking.assigned_worker_id || 'null'})">
+                                🤝 Submit Verified Review
+                            </button>
+                            <div id="ratingMsg-${booking.id}" style="margin-top:6px;"></div>
+                        </div>
                     `;
                 }
             }
@@ -558,24 +606,91 @@ async function cancelCustomerBooking(bookingId) {
     }
 }
 
-async function submitRating(bookingId) {
-    const stars = document.getElementById(`stars-${bookingId}`).value;
-    const comment = document.getElementById(`comment-${bookingId}`).value;
+const RATING_HINTS = {
+    1: "1★ Unsatisfactory",
+    2: "2★ Needs Improvement",
+    3: "3★ Satisfactory",
+    4: "4★ Good Service",
+    5: "5★ Outstanding Cooperative Service"
+};
+
+function selectStarRating(bookingId, val) {
+    const input = document.getElementById(`selectedStars-${bookingId}`);
+    const hint = document.getElementById(`starHint-${bookingId}`);
+    const container = document.getElementById(`starsContainer-${bookingId}`);
+    if (!input || !container) return;
+
+    input.value = val;
+    if (hint) hint.textContent = RATING_HINTS[val] || `${val} Stars`;
+
+    const btns = container.querySelectorAll(".star-btn");
+    btns.forEach((btn, idx) => {
+        btn.classList.toggle("active", (idx + 1) <= val);
+    });
+}
+
+function toggleRatingTag(btn) {
+    btn.classList.toggle("selected");
+}
+
+async function submitRating(bookingId, workerId) {
+    const starsEl = document.getElementById(`selectedStars-${bookingId}`);
+    const commentEl = document.getElementById(`comment-${bookingId}`);
+    const tagsContainer = document.getElementById(`tagsContainer-${bookingId}`);
     const msg = document.getElementById(`ratingMsg-${bookingId}`);
+    const rateBox = document.getElementById(`rateBox-${bookingId}`);
+
+    const stars = starsEl ? Number(starsEl.value) : 5;
+    const comment = commentEl ? commentEl.value.trim() : "";
+
+    const selectedTags = [];
+    if (tagsContainer) {
+        tagsContainer.querySelectorAll(".feedback-tag-chip.selected").forEach(c => {
+            selectedTags.push(c.textContent.trim());
+        });
+    }
 
     try {
         const res = await fetch("/api/ratings", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ bookingId, stars: Number(stars), comment })
+            body: JSON.stringify({
+                bookingId,
+                workerId,
+                stars,
+                comment,
+                tags: selectedTags
+            })
         });
         const data = await res.json();
-        msg.innerHTML = data.success
-            ? `<div class="success"><div>${data.message}</div></div>`
-            : `<div class="error">${data.message}</div>`;
+        if (data.success) {
+            const r = data.rating;
+            const starsDisplay = "★".repeat(r.stars) + "☆".repeat(5 - r.stars);
+            const tagsHtml = (r.tags && r.tags.length > 0)
+                ? `<div class="review-tags-display">${r.tags.map(t => `<span class="review-tag-badge">${t}</span>`).join(" ")}</div>`
+                : "";
+
+            rateBox.outerHTML = `
+                <div class="submitted-review-box">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                        <span class="verified-review-pill">✅ Verified Cooperative Review</span>
+                        <small style="color:var(--muted); font-family:var(--font-mono); font-size:11px;">Just now</small>
+                    </div>
+                    <div class="stars-gold" style="font-size:15px; margin-bottom:2px;">
+                        ${starsDisplay} <strong style="color:var(--ink); font-size:13px;">(${r.stars}/5)</strong>
+                    </div>
+                    ${tagsHtml}
+                    <p style="margin:4px 0 0; font-size:13px; color:var(--ink); font-style:${r.comment ? 'normal' : 'italic'};">
+                        ${r.comment ? `"${r.comment}"` : "Satisfactory cooperative service completed."}
+                    </p>
+                </div>
+            `;
+        } else {
+            if (msg) msg.innerHTML = `<div class="error">${data.message}</div>`;
+        }
     } catch (error) {
         console.error(error);
-        msg.innerHTML = `<div class="error">Server connection failed.</div>`;
+        if (msg) msg.innerHTML = `<div class="error">Server connection failed.</div>`;
     }
 }
 
@@ -793,20 +908,65 @@ async function fetchWorkerDashboard() {
         }
 
         // Ratings & Reviews
-        html += `<h3 style="margin:24px 0 12px;">⭐ Member Ratings & Feedback</h3>`;
+        html += `<h3 style="margin:26px 0 14px;">⭐ Member Ratings & Feedback</h3>`;
         const reviews = ratingData.ratings || [];
+        const breakdown = ratingData.breakdown || { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+        const totalRatings = ratingData.count || 0;
+
+        if (totalRatings > 0) {
+            html += `
+                <div class="rating-breakdown-card">
+                    <div class="score-summary-col">
+                        <div class="big-score">${ratingData.average ? ratingData.average.toFixed(1) : "5.0"}</div>
+                        <div class="stars-gold" style="font-size:16px;">
+                            ${ratingData.average ? "★".repeat(Math.round(ratingData.average)) + "☆".repeat(5 - Math.round(ratingData.average)) : "★★★★★"}
+                        </div>
+                        <small style="color:var(--muted); font-size:12px; margin-top:3px;">${totalRatings} verified review${totalRatings === 1 ? '' : 's'}</small>
+                    </div>
+                    <div class="bars-col">
+                        ${[5, 4, 3, 2, 1].map(stars => {
+                            const count = breakdown[stars] || 0;
+                            const pct = totalRatings > 0 ? Math.round((count / totalRatings) * 100) : 0;
+                            return `
+                                <div class="rating-bar-row">
+                                    <span class="bar-star-label">${stars}★</span>
+                                    <div class="bar-track">
+                                        <div class="bar-fill" style="width:${pct}%;"></div>
+                                    </div>
+                                    <span class="bar-count-label">${count}</span>
+                                </div>
+                            `;
+                        }).join("")}
+                    </div>
+                </div>
+            `;
+        }
+
         if (reviews.length === 0) {
             html += `<div class="empty-state"><span class="icon">⭐</span>No customer ratings yet. Complete jobs to build your cooperative service reputation!</div>`;
         } else {
             reviews.forEach(r => {
-                const starsDisplay = "⭐".repeat(Math.min(5, Math.max(1, r.stars)));
+                const starsDisplay = "★".repeat(Math.min(5, Math.max(1, r.stars))) + "☆".repeat(5 - Math.min(5, Math.max(1, r.stars)));
+                const tagsHtml = (r.tags && r.tags.length > 0)
+                    ? `<div class="review-tags-display" style="margin:4px 0 6px;">${r.tags.map(t => `<span class="review-tag-badge">${t}</span>`).join(" ")}</div>`
+                    : "";
+
                 html += `
                     <div class="review-item">
-                        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-                            <strong>${starsDisplay} (${r.stars}/5)</strong>
-                            <small style="color:var(--muted); font-family:var(--font-mono);">${r.created_at || "Verified"}</small>
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:4px;">
+                            <div>
+                                <strong style="font-size:14px;">${r.customer_name || "Verified Customer"}</strong>
+                                <span style="color:var(--muted); font-size:12px; margin-left:4px;">for ${r.service || worker.skill}</span>
+                            </div>
+                            <small style="color:var(--muted); font-family:var(--font-mono); font-size:11.5px;">${r.created_at || "Verified"}</small>
                         </div>
-                        <p style="margin:0; font-size:13px; color:var(--ink);">${r.comment ? `"${r.comment}"` : "<em>Verified satisfactory service completion</em>"}</p>
+                        <div class="stars-gold" style="font-size:13.5px; margin-bottom:4px;">
+                            ${starsDisplay} <span style="color:var(--ink); font-weight:700; font-size:12.5px; margin-left:4px;">(${r.stars}/5)</span>
+                        </div>
+                        ${tagsHtml}
+                        <p style="margin:0; font-size:13px; color:var(--ink); font-style:${r.comment ? 'normal' : 'italic'};">
+                            ${r.comment ? `"${r.comment}"` : "Satisfactory cooperative service completion."}
+                        </p>
                     </div>
                 `;
             });

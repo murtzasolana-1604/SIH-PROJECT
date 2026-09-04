@@ -86,6 +86,7 @@ db.exec(`
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
 `);
+addColumnIfMissing("ratings", "tags TEXT");
 
 // INVOICES TABLE
 db.exec(`
