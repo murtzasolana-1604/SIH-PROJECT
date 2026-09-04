@@ -506,16 +506,148 @@ async function fetchMyBookings() {
                 const invData = await invRes.json();
 
                 if (invData.success) {
-                    html += `
-                        <div class="invoice-box">
-                            <strong>Official Cooperative Invoice</strong><br>
-                            Service charge: ₹${invData.invoice.service_charge}<br>
-                            Cooperative welfare share: ₹${invData.invoice.cooperative_share}<br>
-                            Worker direct earning: ₹${invData.invoice.worker_earning}<br>
-                            <strong>Total: ₹${invData.invoice.total_amount}</strong>
-                        </div>
-                        <button class="cta-gold" onclick="payMock(${booking.id}, this)">💳 Pay Now (Mock)</button>
-                    `;
+                    const inv = invData.invoice;
+                    const isPaid = inv.payment_status === "paid";
+
+                    if (isPaid) {
+                        html += `
+                            <div class="coop-invoice-card paid">
+                                <div class="invoice-card-header">
+                                    <div>
+                                        <span class="invoice-badge-label">OFFICIAL COOPERATIVE SETTLEMENT</span>
+                                        <div class="invoice-number">${inv.invoice_number}</div>
+                                    </div>
+                                    <div class="paid-settlement-seal">
+                                        ${SEAL_ICON}
+                                        <span>SETTLED & VERIFIED</span>
+                                    </div>
+                                </div>
+
+                                <div class="invoice-breakdown-table">
+                                    <div class="inv-row">
+                                        <span>Base Service Delivery:</span>
+                                        <span>₹${inv.base_charge}</span>
+                                    </div>
+                                    ${inv.is_emergency ? `
+                                    <div class="inv-row emergency-row">
+                                        <span>🚨 Emergency Priority Dispatch Surcharge:</span>
+                                        <span>+₹${inv.emergency_fee}</span>
+                                    </div>` : ""}
+                                    <div class="inv-row divider"></div>
+                                    <div class="inv-row highlight">
+                                        <span>👷 Worker Direct Earning (85%):</span>
+                                        <span class="worker-earning-text">₹${inv.worker_earning}</span>
+                                    </div>
+                                    <div class="inv-row coop-share">
+                                        <span>🏛️ Cooperative Welfare & Training Fund (15%):</span>
+                                        <span class="coop-share-text">₹${inv.cooperative_share}</span>
+                                    </div>
+                                    <div class="inv-row total-row">
+                                        <strong>Total Settled:</strong>
+                                        <strong class="total-amount">₹${inv.total_amount}</strong>
+                                    </div>
+                                </div>
+
+                                <div class="payment-settled-meta">
+                                    <div class="meta-line"><strong>Payment Method:</strong> ${inv.payment_method || 'UPI / Digital'}</div>
+                                    <div class="meta-line"><strong>Transaction Reference:</strong> <code class="txn-code">${inv.transaction_id || 'TXN-SAHKAAR-SETTLED'}</code></div>
+                                    <div class="meta-line"><strong>Settled At:</strong> ${inv.paid_at ? new Date(inv.paid_at).toLocaleString() : 'Recorded in Cooperative Ledger'}</div>
+                                </div>
+
+                                <div class="invoice-actions-row">
+                                    <button class="btn-receipt" onclick="openPrintableReceipt(${booking.id})">🖨️ View & Print Official Receipt</button>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        html += `
+                            <div class="coop-invoice-card unpaid" id="invoiceCard-${booking.id}">
+                                <div class="invoice-card-header">
+                                    <div>
+                                        <span class="invoice-badge-label">OFFICIAL COOPERATIVE INVOICE</span>
+                                        <div class="invoice-number">${inv.invoice_number}</div>
+                                    </div>
+                                    <span class="badge" style="background:#FFF4E5; color:#8C5300; border:1px solid #FFE0B2;">⏳ Payment Pending</span>
+                                </div>
+
+                                <div class="invoice-breakdown-table">
+                                    <div class="inv-row">
+                                        <span>Base Service Delivery:</span>
+                                        <span>₹${inv.base_charge}</span>
+                                    </div>
+                                    ${inv.is_emergency ? `
+                                    <div class="inv-row emergency-row">
+                                        <span>🚨 Emergency Priority Dispatch Surcharge:</span>
+                                        <span>+₹${inv.emergency_fee}</span>
+                                    </div>` : ""}
+                                    <div class="inv-row divider"></div>
+                                    <div class="inv-row highlight">
+                                        <span>👷 Worker Direct Earning (85%):</span>
+                                        <span class="worker-earning-text">₹${inv.worker_earning}</span>
+                                    </div>
+                                    <div class="inv-row coop-share">
+                                        <span>🏛️ Cooperative Welfare & Training Fund (15%):</span>
+                                        <span class="coop-share-text">₹${inv.cooperative_share}</span>
+                                    </div>
+                                    <div class="inv-row total-row">
+                                        <strong>Total Amount Due:</strong>
+                                        <strong class="total-amount">₹${inv.total_amount}</strong>
+                                    </div>
+                                </div>
+
+                                <div class="payment-selection-box">
+                                    <label class="pay-select-label">Select Payment Settlement Method:</label>
+                                    <div class="pay-method-chips" id="payMethods-${booking.id}">
+                                        <button type="button" class="pay-chip active" data-method="UPI" onclick="selectPaymentMethod(${booking.id}, 'UPI', ${inv.total_amount})">
+                                            📱 UPI / QR Code
+                                        </button>
+                                        <button type="button" class="pay-chip" data-method="Cash" onclick="selectPaymentMethod(${booking.id}, 'Cash', ${inv.total_amount})">
+                                            💵 Cash on Completion
+                                        </button>
+                                        <button type="button" class="pay-chip" data-method="Cooperative Account" onclick="selectPaymentMethod(${booking.id}, 'Cooperative Account', ${inv.total_amount})">
+                                            🏛️ Cooperative Credit
+                                        </button>
+                                    </div>
+                                    <input type="hidden" id="chosenMethod-${booking.id}" value="UPI">
+
+                                    <div class="pay-detail-container" id="payDetail-${booking.id}">
+                                        <div class="mock-qr-wrap" id="qrWrap-${booking.id}">
+                                            <div class="mock-qr-box">
+                                                <div class="mock-qr-code">
+                                                    <div class="qr-pattern">
+                                                        <div class="qr-corner tl"></div>
+                                                        <div class="qr-corner tr"></div>
+                                                        <div class="qr-corner bl"></div>
+                                                        <div class="qr-center-symbol">🤝</div>
+                                                    </div>
+                                                </div>
+                                                <div class="qr-info">
+                                                    <strong>Scan & Pay via any UPI App</strong>
+                                                    <small>GPay • PhonePe • Paytm • BHIM</small>
+                                                    <code class="upi-id">sahkaar.coop@upi</code>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="cash-note-wrap hidden" id="cashNote-${booking.id}">
+                                            <div class="pay-method-note">
+                                                💵 <strong>Cash on Completion:</strong> Please pay the exact amount of <strong>₹${inv.total_amount}</strong> directly to your cooperative partner (${inv.worker.name || 'Worker'}) after inspecting the completed service.
+                                            </div>
+                                        </div>
+                                        <div class="credit-note-wrap hidden" id="creditNote-${booking.id}">
+                                            <div class="pay-method-note">
+                                                🏛️ <strong>Cooperative Society Credit:</strong> Settle directly against your verified Sahkaar member cooperative account balance (Account: COOP-MEM-${booking.customer_phone ? booking.customer_phone.slice(-4) : 'DEMO'}).
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <button class="cta-gold pay-execute-btn" id="payBtn-${booking.id}" onclick="executePayment(${booking.id}, ${inv.total_amount})">
+                                        💳 Settle Payment (₹${inv.total_amount})
+                                    </button>
+                                    <div id="payStatus-${booking.id}" class="pay-status-msg"></div>
+                                </div>
+                            </div>
+                        `;
+                    }
                 }
 
                 // Check rating status
@@ -694,29 +826,236 @@ async function submitRating(bookingId, workerId) {
     }
 }
 
-async function payMock(bookingId, btn) {
-    btn.disabled = true;
-    btn.textContent = "Processing...";
+// =====================================
+// PAYMENT SETTLEMENT & INVOICING HELPERS (PHASE 10)
+// =====================================
+
+function selectPaymentMethod(bookingId, method, totalAmount) {
+    const hiddenInput = document.getElementById(`chosenMethod-${bookingId}`);
+    const chips = document.querySelectorAll(`#payMethods-${bookingId} .pay-chip`);
+    const qrWrap = document.getElementById(`qrWrap-${bookingId}`);
+    const cashNote = document.getElementById(`cashNote-${bookingId}`);
+    const creditNote = document.getElementById(`creditNote-${bookingId}`);
+    const payBtn = document.getElementById(`payBtn-${bookingId}`);
+
+    if (hiddenInput) hiddenInput.value = method;
+
+    chips.forEach(chip => {
+        chip.classList.toggle("active", chip.getAttribute("data-method") === method);
+    });
+
+    if (qrWrap) qrWrap.classList.toggle("hidden", method !== "UPI");
+    if (cashNote) cashNote.classList.toggle("hidden", method !== "Cash");
+    if (creditNote) creditNote.classList.toggle("hidden", method !== "Cooperative Account");
+
+    if (payBtn) {
+        if (method === "UPI") {
+            payBtn.innerHTML = `💳 Settle UPI Payment (₹${totalAmount})`;
+        } else if (method === "Cash") {
+            payBtn.innerHTML = `💵 Confirm Cash Handover (₹${totalAmount})`;
+        } else if (method === "Cooperative Account") {
+            payBtn.innerHTML = `🏛️ Settle via Cooperative Credit (₹${totalAmount})`;
+        }
+    }
+}
+
+async function executePayment(bookingId, totalAmount) {
+    const hiddenInput = document.getElementById(`chosenMethod-${bookingId}`);
+    const method = hiddenInput ? hiddenInput.value : "UPI";
+    const payBtn = document.getElementById(`payBtn-${bookingId}`);
+    const statusMsg = document.getElementById(`payStatus-${bookingId}`);
+
+    if (payBtn) {
+        payBtn.disabled = true;
+        payBtn.textContent = "⏳ Processing Cooperative Settlement...";
+    }
+    if (statusMsg) statusMsg.innerHTML = "";
 
     try {
         const res = await fetch("/api/payments/mock", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ bookingId })
+            body: JSON.stringify({ bookingId, method })
         });
         const data = await res.json();
 
         if (data.success) {
-            btn.textContent = "✅ Paid (Mock)";
+            if (typeof speak === "function") {
+                speak(`Payment of ${totalAmount} rupees settled successfully via ${method}. Thank you for supporting our cooperative society.`);
+            }
+            if (statusMsg) {
+                statusMsg.innerHTML = `<div class="success" style="padding:10px; margin-top:8px;">✅ Payment settled! Transaction Ref: <code>${data.payment ? data.payment.transaction_id : ''}</code></div>`;
+            }
+            // Auto refresh to render paid receipt card
+            setTimeout(() => {
+                fetchMyBookings();
+            }, 800);
         } else {
-            btn.textContent = "💳 Pay Now (Mock)";
-            btn.disabled = false;
-            alert(data.message);
+            if (payBtn) {
+                payBtn.disabled = false;
+                payBtn.innerHTML = `💳 Settle Payment (₹${totalAmount})`;
+            }
+            if (statusMsg) {
+                statusMsg.innerHTML = `<div class="error" style="padding:10px; margin-top:8px;">${data.message}</div>`;
+            }
         }
-    } catch (error) {
-        console.error(error);
-        btn.textContent = "💳 Pay Now (Mock)";
-        btn.disabled = false;
+    } catch (err) {
+        console.error("Payment settlement failed:", err);
+        if (payBtn) {
+            payBtn.disabled = false;
+            payBtn.innerHTML = `💳 Settle Payment (₹${totalAmount})`;
+        }
+        if (statusMsg) {
+            statusMsg.innerHTML = `<div class="error" style="padding:10px; margin-top:8px;">Server connection failed.</div>`;
+        }
+    }
+}
+
+// Backward compatibility alias
+async function payMock(bookingId, btn) {
+    executePayment(bookingId, 0);
+}
+
+async function openPrintableReceipt(bookingId) {
+    try {
+        const res = await fetch(`/api/invoices?bookingId=${bookingId}`);
+        const data = await res.json();
+        if (!data.success || !data.invoice) {
+            alert("Invoice not found.");
+            return;
+        }
+        const inv = data.invoice;
+        const printWin = window.open("", "_blank", "width=720,height=850");
+        if (!printWin) {
+            alert("Popup blocked! Please allow popups to view and print the cooperative receipt.");
+            return;
+        }
+        const printDoc = printWin.document;
+        printDoc.open();
+        printDoc.write(`<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Cooperative Receipt - ${inv.invoice_number}</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 24px; color: #16261F; background: #fff; line-height: 1.5; }
+        .receipt-container { max-width: 650px; margin: 0 auto; border: 1.5px solid #1F5C4E; border-radius: 12px; padding: 28px; box-shadow: 0 4px 14px rgba(0,0,0,0.06); }
+        .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #1F5C4E; padding-bottom: 14px; margin-bottom: 20px; }
+        .logo-title { font-size: 22px; font-weight: 800; color: #123B31; letter-spacing: -0.5px; }
+        .coop-tag { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #C1592B; font-weight: 700; }
+        .meta-col { text-align: right; font-size: 12px; color: #5B6B62; }
+        .meta-col strong { color: #16261F; font-size: 14px; }
+        .section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #1F5C4E; margin: 16px 0 8px; border-bottom: 1px dashed #DCE3DA; padding-bottom: 4px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: 13px; margin-bottom: 16px; }
+        .info-card { background: #F5F7F1; border-radius: 8px; padding: 12px 14px; }
+        .info-card strong { display: block; color: #123B31; margin-bottom: 4px; }
+        table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
+        th { background: #1F5C4E; color: white; text-align: left; padding: 8px 12px; }
+        th:last-child, td:last-child { text-align: right; }
+        td { padding: 9px 12px; border-bottom: 1px solid #E5E7EB; }
+        tr.highlight td { background: #E4EEE9; font-weight: 700; color: #123B31; }
+        tr.total td { font-size: 16px; font-weight: 800; color: #123B31; border-top: 2px solid #1F5C4E; }
+        .seal-box { margin-top: 24px; padding: 14px; background: #E4EEE9; border: 1.5px solid #1F5C4E; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; }
+        .seal-text { font-size: 12px; color: #123B31; }
+        .seal-badge { background: #1F5C4E; color: white; padding: 6px 12px; border-radius: 20px; font-weight: 800; font-size: 11px; letter-spacing: 1px; }
+        .footer { margin-top: 20px; text-align: center; font-size: 11px; color: #5B6B62; }
+        .print-btn { background: #1F5C4E; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; margin-bottom: 18px; }
+        @media print { .print-btn { display: none; } body { padding: 0; } }
+    </style>
+</head>
+<body>
+    <div style="text-align: center;">
+        <button class="print-btn" onclick="window.print()">🖨️ Print / Save as PDF</button>
+    </div>
+    <div class="receipt-container">
+        <div class="header">
+            <div>
+                <div class="coop-tag">Smart India Hackathon 2026 • Ministry of Cooperation / NCCT</div>
+                <div class="logo-title">SAHKAAR CONNECT</div>
+                <small style="color:#5B6B62;">Cooperative Gig Services Platform • Problem ID: SIH26089</small>
+            </div>
+            <div class="meta-col">
+                <strong>RECEIPT / TAX INVOICE</strong><br>
+                <span>${inv.invoice_number}</span><br>
+                <span>Booking ID: #${inv.booking_id}</span><br>
+                <span>Date: ${inv.paid_at ? new Date(inv.paid_at).toLocaleDateString() : new Date().toLocaleDateString()}</span>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div class="info-card">
+                <span class="coop-tag">Customer Details</span>
+                <strong>${inv.customer.name || 'Customer'}</strong>
+                <div>📞 ${inv.customer.phone || 'N/A'}</div>
+                <div>📍 ${inv.customer.address || 'Verified Service Location'}</div>
+            </div>
+            <div class="info-card">
+                <span class="coop-tag">Assigned Worker (Cooperative Member)</span>
+                <strong>${inv.worker.name || 'Assigned Worker'}</strong>
+                <div>🛠️ ${inv.worker.skill || inv.service}</div>
+                <div>📞 ${inv.worker.phone || 'N/A'}</div>
+                <div>🛡️ Member ID: COOP-${inv.worker.id ? String(inv.worker.id).padStart(4, '0') : '0001'}</div>
+            </div>
+        </div>
+
+        <div class="section-title">Transparent Cooperative Pricing Breakdown</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Item Description</th>
+                    <th>Share %</th>
+                    <th>Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Service Delivery: ${inv.service}</td>
+                    <td>-</td>
+                    <td>₹${inv.base_charge}</td>
+                </tr>
+                ${inv.is_emergency ? `
+                <tr>
+                    <td>🚨 Emergency Rapid Dispatch Surcharge</td>
+                    <td>-</td>
+                    <td>+₹${inv.emergency_fee}</td>
+                </tr>` : ''}
+                <tr class="highlight">
+                    <td>Worker Direct Earning (Zero Middleman Cut)</td>
+                    <td>85%</td>
+                    <td>₹${inv.worker_earning}</td>
+                </tr>
+                <tr>
+                    <td>Cooperative Society Welfare & Training Fund (NCCT)</td>
+                    <td>15%</td>
+                    <td>₹${inv.cooperative_share}</td>
+                </tr>
+                <tr class="total">
+                    <td>TOTAL SETTLED AMOUNT</td>
+                    <td>100%</td>
+                    <td>₹${inv.total_amount}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="seal-box">
+            <div class="seal-text">
+                <strong>Settlement Mode:</strong> ${inv.payment_method || 'UPI / Digital Settlement'}<br>
+                <strong>Transaction ID:</strong> <code>${inv.transaction_id || 'TXN-SAHKAAR-MOCK'}</code><br>
+                <strong>Payment Timestamp:</strong> ${inv.paid_at ? new Date(inv.paid_at).toLocaleString() : 'Recorded in Ledger'}
+            </div>
+            <div class="seal-badge">✓ OFFICIALLY SETTLED</div>
+        </div>
+
+        <div class="footer">
+            <p>Thank you for choosing democratic, community-owned cooperative labor. All earnings directly empower local gig workers under NCCT guidelines.</p>
+        </div>
+    </div>
+</body>
+</html>`);
+        printDoc.close();
+    } catch (err) {
+        console.error("Receipt generation error:", err);
+        alert("Failed to load invoice receipt.");
     }
 }
 
@@ -870,6 +1209,48 @@ async function fetchWorkerDashboard() {
                     </div>
                 `;
             });
+        }
+
+        // Completed Jobs & Cooperative Settlement Status (Phase 10)
+        try {
+            const workerInvRes = await fetch(`/api/invoices?workerId=${worker.id}`);
+            const workerInvData = await workerInvRes.json();
+            const workerInvoices = (workerInvData.success && workerInvData.invoices) ? workerInvData.invoices.slice(0, 5) : [];
+
+            if (workerInvoices.length > 0) {
+                html += `<h3 style="margin:24px 0 12px;">Completed Jobs & Settlement Status (${workerInvoices.length})</h3>`;
+                html += `<div class="worker-settlements-list">`;
+                workerInvoices.forEach(inv => {
+                    const isPaid = inv.payment_status === "paid";
+                    const statusBadge = isPaid
+                        ? `<span class="badge verified">${SEAL_ICON} Paid (${inv.payment_method || 'Digital'})</span>`
+                        : `<span class="badge" style="background:#FFF4E5; color:#8C5300; border:1px solid #FFE0B2;">⏳ Awaiting Payment</span>`;
+
+                    html += `
+                        <div class="worker-settlement-card">
+                            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;">
+                                <div>
+                                    <strong style="font-size:14.5px;">${inv.service}</strong>
+                                    <div style="font-size:12px; color:var(--muted); font-family:var(--font-mono);">Booking #${inv.booking_id} • ${inv.invoice_number}</div>
+                                </div>
+                                ${statusBadge}
+                            </div>
+                            <div style="font-size:13px; line-height:1.6; margin-bottom:6px;">
+                                <strong>Customer:</strong> ${inv.customer.name || 'Verified Customer'} (📞 ${inv.customer.phone || 'N/A'})<br>
+                                <strong>Address:</strong> ${inv.customer.address || 'Customer Location'}
+                            </div>
+                            <div class="settlement-earning-split">
+                                <div>Your Net Take-Home (85%): <strong class="earning-amt">₹${inv.worker_earning}</strong></div>
+                                <div style="font-size:12px; color:var(--muted);">Cooperative Welfare (15%): ₹${inv.cooperative_share} | Total: ₹${inv.total_amount}</div>
+                            </div>
+                            ${isPaid ? `<div style="font-size:11.5px; color:var(--teal); margin-top:5px; font-family:var(--font-mono);">Settlement Ref: <code>${inv.transaction_id || 'SETTLED'}</code></div>` : ''}
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+            }
+        } catch (invErr) {
+            console.error("Failed to load worker invoices:", invErr);
         }
 
         // Available Jobs

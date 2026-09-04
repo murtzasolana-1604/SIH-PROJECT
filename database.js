@@ -100,6 +100,9 @@ db.exec(`
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
 `);
+addColumnIfMissing("invoices", "payment_status TEXT DEFAULT 'unpaid'");
+addColumnIfMissing("invoices", "payment_method TEXT");
+addColumnIfMissing("invoices", "paid_at DATETIME");
 
 // PAYMENTS TABLE — mock only
 db.exec(`
@@ -112,6 +115,8 @@ db.exec(`
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
 `);
+addColumnIfMissing("payments", "transaction_id TEXT");
+addColumnIfMissing("payments", "notes TEXT");
 
 // ADMINS TABLE — demo authentication only, not production security
 db.exec(`
