@@ -308,6 +308,7 @@ function showAdminDashboard() {
     loadAdminStats();
     loadAdminWorkers();
     loadAdminBookings();
+    loadAdminEmergencyQueue();
     loadForecast();
 }
 
@@ -1264,23 +1265,48 @@ async function fetchWorkerDashboard() {
             html += `<div class="busy-alert-banner">⏸️ You are currently marked as <strong>BUSY / ON LEAVE</strong>. Switch your status above to <strong>AVAILABLE</strong> to accept new jobs.</div>`;
         }
 
+        // Emergency voice prompt for incoming emergency dispatch
+        const hasEmergency = unpassedJobs.some(b => b.is_emergency);
+        if (hasEmergency && typeof speak === "function" && !window.hasAlertedEmergencyWorker) {
+            speak(`Urgent emergency call in your area for ${worker.skill}. Please review and accept immediately.`);
+            window.hasAlertedEmergencyWorker = true;
+        }
+
         if (unpassedJobs.length === 0) {
             html += `<div class="empty-state"><span class="icon">📭</span>No pending jobs right now for ${worker.skill}.</div>`;
         } else {
             unpassedJobs.forEach(booking => {
-                const emergencyTag = booking.is_emergency ? `<span class="badge emergency">🚨 EMERGENCY PRIORITY DISPATCH</span><br>` : "";
+                const isEmerg = booking.is_emergency;
+                const cardClass = isEmerg ? "booking-item emergency-job-card" : "booking-item";
+
                 html += `
-                    <div class="booking-item" id="avail-job-${booking.id}">
+                    <div class="${cardClass}" id="avail-job-${booking.id}">
+                        ${isEmerg ? `
+                            <div class="emergency-worker-alert-strip">
+                                🚨 URGENT EMERGENCY DISPATCH (SLA: ${booking.target_response_mins || 30} mins)
+                            </div>
+                        ` : ''}
                         <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;">
-                            <div>${emergencyTag}<strong style="font-size:15px;">${booking.service}</strong></div>
+                            <div>
+                                ${isEmerg ? `<span class="badge emergency">🚨 EMERGENCY</span> ` : ''}
+                                <strong style="font-size:15px;">${booking.service}</strong>
+                                ${isEmerg ? `<div class="emergency-nature-text">⚠️ ${booking.emergency_type || 'Rapid Assistance Required'}</div>` : ''}
+                            </div>
                             <span class="badge" style="background:#FFF4E5; color:#8C5300; border:1px solid #FFE0B2;">Open Dispatch</span>
                         </div>
                         <strong>Booking ID:</strong> #${booking.id}<br>
                         <strong>Customer:</strong> ${booking.customer_name}<br>
                         <strong>Address:</strong> ${booking.address}<br>
                         <strong>Date & Time:</strong> ${booking.booking_date} ${booking.booking_time}<br>
+                        ${isEmerg ? `
+                            <div class="emergency-incentive-chip">
+                                ⚡ Includes +₹50 Rapid Mobilization Bonus (85% to you)
+                            </div>
+                        ` : ''}
                         <div class="job-actions-row" style="margin-top:12px; display:flex; gap:10px;">
-                            <button class="primary" ${!isAvail ? "disabled style='opacity:0.5; cursor:not-allowed;'" : ""} onclick="acceptJob(${booking.id}, ${worker.id})">Accept Job</button>
+                            <button class="${isEmerg ? 'cta-gold emergency-accept-btn' : 'primary'}" ${!isAvail ? "disabled style='opacity:0.5; cursor:not-allowed;'" : ""} onclick="acceptJob(${booking.id}, ${worker.id})">
+                                ${isEmerg ? '🚨 Accept Emergency Call' : 'Accept Job'}
+                            </button>
                             <button class="btn-pass" onclick="passAvailableJob(${booking.id})">Pass / Decline</button>
                         </div>
                     </div>
@@ -1450,13 +1476,16 @@ async function markComplete(bookingId) {
 
 // Tab switching
 function switchAdminTab(tabName) {
-    const tabs = ["overview", "workers", "bookings", "forecast"];
+    const tabs = ["overview", "workers", "bookings", "emergency", "forecast"];
     tabs.forEach(t => {
         const btn = document.getElementById(`adminTabBtn${t.charAt(0).toUpperCase() + t.slice(1)}`);
         const content = document.getElementById(`adminTab${t.charAt(0).toUpperCase() + t.slice(1)}`);
         if (btn) btn.classList.toggle("active", t === tabName);
         if (content) content.classList.toggle("hidden", t !== tabName);
     });
+    if (tabName === "emergency") {
+        loadAdminEmergencyQueue();
+    }
 }
 
 // 1. Overview & Metrics
@@ -1848,5 +1877,324 @@ async function loadForecast() {
     } catch (error) {
         console.error(error);
         el.innerHTML = `<div class="error">Could not load demand forecast.</div>`;
+    }
+}
+
+
+// =====================================
+// PHASE 11: EMERGENCY SOS & RAPID DISPATCH
+// =====================================
+
+function openEmergencySOSModal() {
+    const modal = document.getElementById("sosEmergencyModal");
+    if (!modal) return;
+    modal.classList.remove("hidden");
+
+    // Auto-fill from localStorage customer profile
+    const savedPhone = localStorage.getItem("sahkaar_customer_phone");
+    const savedAddr = localStorage.getItem("sahkaar_customer_address");
+    const savedLat = localStorage.getItem("sahkaar_customer_lat");
+    const savedLng = localStorage.getItem("sahkaar_customer_lng");
+
+    const phoneInput = document.getElementById("sosPhone");
+    const addrInput = document.getElementById("sosAddress");
+    const latInput = document.getElementById("sosLat");
+    const lngInput = document.getElementById("sosLng");
+    const locStatus = document.getElementById("sosLocStatus");
+    const resultBox = document.getElementById("sosResult");
+
+    if (phoneInput && savedPhone && !phoneInput.value) phoneInput.value = savedPhone;
+    if (addrInput && savedAddr && !addrInput.value) addrInput.value = savedAddr;
+    if (latInput && savedLat) latInput.value = savedLat;
+    if (lngInput && savedLng) lngInput.value = savedLng;
+
+    if (savedLat && savedLng && locStatus) {
+        locStatus.innerHTML = `<small style="color:var(--teal); font-weight:700;">✓ GPS Locked: ${Number(savedLat).toFixed(4)}, ${Number(savedLng).toFixed(4)}</small>`;
+    } else if (locStatus) {
+        locStatus.innerHTML = "";
+    }
+
+    if (resultBox) resultBox.innerHTML = "";
+}
+
+function closeEmergencySOSModal() {
+    const modal = document.getElementById("sosEmergencyModal");
+    if (modal) modal.classList.add("hidden");
+}
+
+function selectSOSScenario(btn) {
+    const grid = btn.parentElement;
+    if (grid) {
+        grid.querySelectorAll(".sos-scenario-card").forEach(c => c.classList.remove("active"));
+    }
+    btn.classList.add("active");
+
+    const service = btn.getAttribute("data-service");
+    const eType = btn.getAttribute("data-type");
+    const basePrice = Number(btn.getAttribute("data-price")) || 249;
+
+    const servInput = document.getElementById("sosService");
+    const typeInput = document.getElementById("sosEmergencyType");
+    const baseEl = document.getElementById("sosBasePrice");
+    const totalEl = document.getElementById("sosTotalPrice");
+
+    if (servInput) servInput.value = service;
+    if (typeInput) typeInput.value = eType;
+    if (baseEl) baseEl.textContent = `₹${basePrice}`;
+    if (totalEl) totalEl.textContent = `₹${basePrice + 50}`;
+}
+
+function syncSOSLocation() {
+    const statusEl = document.getElementById("sosLocStatus");
+    if (!navigator.geolocation) {
+        if (statusEl) statusEl.innerHTML = `<small style="color:var(--terracotta);">Geolocation not supported.</small>`;
+        return;
+    }
+    if (statusEl) statusEl.innerHTML = `<small style="color:var(--gold-deep);">📍 Acquiring high-accuracy GPS coordinates...</small>`;
+
+    navigator.geolocation.getCurrentPosition(
+        position => {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            const latInput = document.getElementById("sosLat");
+            const lngInput = document.getElementById("sosLng");
+            if (latInput) latInput.value = lat;
+            if (lngInput) lngInput.value = lng;
+            localStorage.setItem("sahkaar_customer_lat", lat);
+            localStorage.setItem("sahkaar_customer_lng", lng);
+            if (statusEl) {
+                statusEl.innerHTML = `<small style="color:var(--teal); font-weight:700;">✓ High-Accuracy GPS Locked: ${lat.toFixed(4)}, ${lng.toFixed(4)}</small>`;
+            }
+        },
+        err => {
+            if (statusEl) {
+                statusEl.innerHTML = `<small style="color:var(--terracotta);">GPS access denied. Manual address will be used.</small>`;
+            }
+        },
+        { timeout: 8000, enableHighAccuracy: true }
+    );
+}
+
+async function submitRapidEmergencyBooking() {
+    const service = document.getElementById("sosService").value;
+    const emergencyType = document.getElementById("sosEmergencyType").value;
+    const phone = document.getElementById("sosPhone").value.trim();
+    const address = document.getElementById("sosAddress").value.trim();
+    const lat = document.getElementById("sosLat").value || null;
+    const lng = document.getElementById("sosLng").value || null;
+    const name = localStorage.getItem("sahkaar_customer_name") || "Emergency Citizen";
+    const btn = document.getElementById("sosSubmitBtn");
+    const result = document.getElementById("sosResult");
+
+    if (!phone || !address) {
+        if (result) result.innerHTML = `<div class="error">Phone number and service address are required for rapid dispatch.</div>`;
+        return;
+    }
+
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = "🚨 Mobilizing Nearest Cooperative Worker...";
+    }
+    if (result) result.innerHTML = `<div class="skeleton" style="height:60px;"></div>`;
+
+    try {
+        const res = await fetch("/api/emergency/sos", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                service,
+                emergencyType,
+                customerName: name,
+                customerPhone: phone,
+                address,
+                customerLat: lat,
+                customerLng: lng,
+                targetResponseMins: 30
+            })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            const b = data.booking;
+            const w = data.nearest_worker;
+            const workerInfo = w ? `
+                <div class="emergency-worker-preview">
+                    <strong>📍 Nearest Available Member:</strong> ${w.name} (${w.skill})<br>
+                    <span>Proximity: ~${w.distance_km != null ? w.distance_km + ' km' : 'Local Ward'} • Estimated Arrival: ${w.estimated_eta_mins} mins</span>
+                </div>
+            ` : `<div style="margin-top:6px; font-size:12px; color:var(--muted);">Priority broadcast transmitted to ${data.candidate_count || 'all'} local cooperative tradespeople.</div>`;
+
+            if (result) {
+                result.innerHTML = `
+                    <div class="success" style="padding:14px; text-align:left;">
+                        <strong>🚨 Emergency Call Confirmed! (Booking #${b.id})</strong><br>
+                        <span style="font-size:13px;">Crisis: ${b.emergency_type}</span><br>
+                        ${workerInfo}
+                        <div style="margin-top:8px; font-size:12px; color:var(--teal-deep); font-weight:700;">
+                            💰 Total Fee: ₹${data.pricing ? data.pricing.total_amount : '299'} (Fair Wage + ₹50 Rapid Surcharge, Zero Surge Pricing)
+                        </div>
+                        <div style="margin-top:10px;">
+                            <button class="primary" style="font-size:12px; padding:6px 14px;" onclick="closeEmergencySOSModal(); showMyBookings();">
+                                📋 Track in My Bookings →
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (typeof speak === "function") {
+                speak(`Emergency dispatch activated for ${service}. Priority broadcast sent to local cooperative partners.`);
+            }
+
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = "✓ Emergency Dispatched";
+            }
+        } else {
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = "🚨 ACTIVATE EMERGENCY DISPATCH NOW";
+            }
+            if (result) result.innerHTML = `<div class="error">${data.message}</div>`;
+        }
+    } catch (err) {
+        console.error("Emergency booking failed:", err);
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = "🚨 ACTIVATE EMERGENCY DISPATCH NOW";
+        }
+        if (result) result.innerHTML = `<div class="error">Server connection failed.</div>`;
+    }
+}
+
+// 5. Admin Emergency SLA Monitor
+async function loadAdminEmergencyQueue() {
+    const el = document.getElementById("adminEmergencyQueue");
+    if (!el) return;
+    el.innerHTML = `<div class="skeleton" style="height:70px;"></div><div class="skeleton" style="height:70px;"></div>`;
+
+    try {
+        const res = await fetch("/api/emergency/queue");
+        const data = await res.json();
+
+        if (!data.success || data.queue.length === 0) {
+            el.innerHTML = `
+                <div class="empty-state" style="background:#E4EEE9; border:1px solid var(--teal); color:var(--teal-deep);">
+                    <span class="icon">🛡️</span>
+                    All clear! No active household emergency calls pending dispatch right now.
+                </div>
+            `;
+            return;
+        }
+
+        // Get list of verified workers for emergency override selector
+        let verifiedWorkers = [];
+        try {
+            const wRes = await adminFetch("/api/admin/workers");
+            const wData = await wRes.json();
+            if (wData.success) verifiedWorkers = wData.workers || [];
+        } catch (e) {}
+
+        let html = `
+            <div class="emergency-admin-summary-strip">
+                <div class="stat-pill ${data.critical_count > 0 ? 'critical' : ''}">
+                    🚨 Active Emergency Calls: <strong>${data.count}</strong>
+                </div>
+                <div class="stat-pill ${data.critical_count > 0 ? 'critical' : ''}">
+                    ⚠️ Critical SLA Breaches: <strong>${data.critical_count}</strong>
+                </div>
+            </div>
+            <div class="emergency-admin-list">
+        `;
+
+        data.queue.forEach(item => {
+            const isBreached = item.sla_breached;
+            const slaTag = isBreached
+                ? `<span class="badge emergency" style="font-weight:800;">🚨 SLA BREACHED (${item.elapsed_minutes}m elapsed)</span>`
+                : `<span class="badge" style="background:#FFF3E0; color:#E65100; border:1px solid #FFE0B2; font-weight:700;">⏱️ ${item.elapsed_minutes}m elapsed / ${item.target_response_mins || 30}m SLA</span>`;
+
+            const statusTag = item.status === "Pending"
+                ? `<span class="badge" style="background:#FFF4E5; color:#8C5300; border:1px solid #FFE0B2;">⏳ Unassigned Standby</span>`
+                : item.status === "Assigned"
+                ? `<span class="badge" style="background:#E3F2FD; color:#0D47A1; border:1px solid #BBDEFB;">👷 Assigned (${item.worker_name})</span>`
+                : `<span class="badge" style="background:#EDE7F6; color:#4A148C; border:1px solid #D1C4E9;">⚡ In Progress</span>`;
+
+            // Candidate workers matching trade
+            const matchingWorkers = verifiedWorkers.filter(w => w.skill === item.service);
+            const assignOptions = matchingWorkers.map(w =>
+                `<option value="${w.id}">${w.name} (📞 ${w.phone} • ${w.is_available ? 'Available' : 'Busy'})</option>`
+            ).join("");
+
+            html += `
+                <div class="emergency-queue-card ${isBreached ? 'sla-breach' : ''}">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+                        <div>
+                            <strong style="font-size:16px; color:var(--terracotta);">🚨 ${item.service} — #${item.id}</strong>
+                            <div style="font-size:13px; font-weight:700; color:var(--ink);">${item.emergency_type || 'Urgent Crisis'}</div>
+                        </div>
+                        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                            ${slaTag}
+                            ${statusTag}
+                        </div>
+                    </div>
+
+                    <div style="font-size:13px; line-height:1.6; margin-bottom:10px;">
+                        <strong>Customer:</strong> ${item.customer_name} (📞 <a href="tel:${item.customer_phone}">${item.customer_phone}</a>)<br>
+                        <strong>Address:</strong> ${item.address}
+                        ${item.customer_lat ? `<br><small style="color:var(--muted);">GPS: ${item.customer_lat.toFixed(4)}, ${item.customer_lng.toFixed(4)}</small>` : ''}
+                    </div>
+
+                    ${item.worker_name ? `
+                        <div style="background:#F5F7F1; padding:8px 12px; border-radius:6px; font-size:12.5px; margin-bottom:8px;">
+                            👷 <strong>Assigned Partner:</strong> ${item.worker_name} (📞 ${item.worker_phone} • ${item.worker_skill})
+                        </div>
+                    ` : `
+                        <div class="standby-assign-row">
+                            <label style="font-size:12px; font-weight:700; margin-right:6px;">Force Standby Reassignment:</label>
+                            <select id="emergencyWorkerSelect-${item.id}" style="font-size:12px; padding:4px 8px; border-radius:6px; border:1px solid var(--line);">
+                                <option value="">Select Verified ${item.service}...</option>
+                                ${assignOptions}
+                            </select>
+                            <button class="primary" style="font-size:11.5px; padding:6px 12px;" onclick="reassignEmergencyJob(${item.id})">
+                                ⚡ Assign Standby
+                            </button>
+                        </div>
+                    `}
+                </div>
+            `;
+        });
+
+        html += `</div>`;
+        el.innerHTML = html;
+    } catch (err) {
+        console.error("Failed to load emergency queue:", err);
+        el.innerHTML = `<div class="error">Failed to load emergency queue.</div>`;
+    }
+}
+
+async function reassignEmergencyJob(bookingId) {
+    const select = document.getElementById(`emergencyWorkerSelect-${bookingId}`);
+    if (!select || !select.value) {
+        alert("Please select a verified worker to assign.");
+        return;
+    }
+
+    const workerId = Number(select.value);
+    try {
+        const res = await adminFetch(`/api/emergency/${bookingId}/reassign`, {
+            method: "POST",
+            body: JSON.stringify({ workerId })
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert(data.message);
+            loadAdminEmergencyQueue();
+            loadAdminBookings();
+        } else {
+            alert(data.message);
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Server connection failed.");
     }
 }

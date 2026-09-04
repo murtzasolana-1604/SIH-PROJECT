@@ -61,6 +61,9 @@ addColumnIfMissing("bookings", "assigned_worker_id INTEGER");
 addColumnIfMissing("bookings", "is_emergency INTEGER DEFAULT 0");
 addColumnIfMissing("bookings", "customer_lat REAL");
 addColumnIfMissing("bookings", "customer_lng REAL");
+addColumnIfMissing("bookings", "emergency_type TEXT");
+addColumnIfMissing("bookings", "dispatched_at DATETIME");
+addColumnIfMissing("bookings", "target_response_mins INTEGER DEFAULT 30");
 
 addColumnIfMissing("workers", "address TEXT");
 addColumnIfMissing("workers", "village_town TEXT");

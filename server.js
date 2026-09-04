@@ -13,6 +13,7 @@ const paymentsRoute = require("./routes/payments");
 const forecastRoute = require("./routes/forecast");
 const auth = require("./routes/auth");
 const customerRoute = require("./routes/customer");
+const emergencyRoute = require("./routes/emergency");
 
 const app = express();
 const PORT = 3000;
@@ -48,6 +49,11 @@ app.post("/api/bookings/:id/accept", bookings.acceptBooking);
 app.post("/api/bookings/:id/start", bookings.startBooking);
 app.post("/api/bookings/:id/complete", bookings.completeBooking);
 app.post("/api/bookings/:id/cancel", bookings.cancelBooking);
+
+// Emergency Rapid Dispatch (Phase 11)
+app.post("/api/emergency/sos", emergencyRoute.triggerEmergencySOS);
+app.get("/api/emergency/queue", emergencyRoute.getEmergencyQueue);
+app.post("/api/emergency/:id/reassign", adminAuth.requireAdminAuth, emergencyRoute.reassignEmergency);
 
 // Authentication (Customer, Worker, Logout)
 app.post("/api/auth/customer/send-otp", auth.customerSendOtp);

@@ -51,7 +51,7 @@ function bookingsRoute(req, res) {
 
         const {
             service, customerName, customerPhone, address,
-            bookingDate, bookingTime, isEmergency, customerLat, customerLng
+            bookingDate, bookingTime, isEmergency, customerLat, customerLng, emergencyType
         } = req.body;
 
         if (!service || !customerName || !customerPhone || !address || !bookingDate || !bookingTime) {
@@ -60,13 +60,14 @@ function bookingsRoute(req, res) {
 
         const result = db.prepare(`
             INSERT INTO bookings
-            (service, customer_name, customer_phone, address, booking_date, booking_time, is_emergency, customer_lat, customer_lng)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (service, customer_name, customer_phone, address, booking_date, booking_time, is_emergency, customer_lat, customer_lng, emergency_type)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).run(
             service, customerName, customerPhone, address, bookingDate, bookingTime,
             isEmergency ? 1 : 0,
             customerLat || null,
-            customerLng || null
+            customerLng || null,
+            emergencyType || null
         );
 
         const booking = db.prepare("SELECT * FROM bookings WHERE id = ?").get(result.lastInsertRowid);
@@ -99,7 +100,7 @@ function acceptBooking(req, res) {
         return res.status(400).json({ success: false, message: `Booking is already ${booking.status}.` });
     }
 
-    db.prepare("UPDATE bookings SET assigned_worker_id = ?, status = 'Assigned' WHERE id = ?")
+    db.prepare("UPDATE bookings SET assigned_worker_id = ?, status = 'Assigned', dispatched_at = CURRENT_TIMESTAMP WHERE id = ?")
         .run(workerId, bookingId);
 
     const updated = db.prepare(`
@@ -187,7 +188,9 @@ function completeBooking(req, res) {
     let invoice = db.prepare("SELECT * FROM invoices WHERE booking_id = ?").get(bookingId);
 
     if (!invoice) {
-        const serviceCharge = SERVICE_PRICES[booking.service] || DEFAULT_PRICE;
+        const basePrice = SERVICE_PRICES[booking.service] || DEFAULT_PRICE;
+        const emergencySurcharge = (booking.is_emergency == 1) ? 50 : 0;
+        const serviceCharge = basePrice + emergencySurcharge;
         const cooperativeShare = Math.round(serviceCharge * 0.15 * 100) / 100;
         const workerEarning = Math.round((serviceCharge - cooperativeShare) * 100) / 100;
 

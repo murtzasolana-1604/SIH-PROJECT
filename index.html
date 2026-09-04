@@ -437,10 +437,99 @@
                         <p class="emergency-sub">Prioritizes immediate dispatch for urgent household crises (pipe bursts, power outages, leaks).</p>
                     </div>
                 </div>
-                <label class="emergency-switch" title="Toggle emergency priority dispatch">
-                    <input type="checkbox" id="globalEmergencyToggle" onchange="toggleEmergencyMode(this.checked)">
-                    <span class="slider round"></span>
-                </label>
+                <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                    <button type="button" class="btn-sos-trigger" onclick="openEmergencySOSModal()">🚨 1-Click SOS Call</button>
+                    <label class="emergency-switch" title="Toggle emergency priority dispatch">
+                        <input type="checkbox" id="globalEmergencyToggle" onchange="toggleEmergencyMode(this.checked)">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 1-Click SOS Emergency Modal (Phase 11) -->
+            <div id="sosEmergencyModal" class="modal-overlay hidden" onclick="if(event.target===this) closeEmergencySOSModal()">
+                <div class="sos-modal-card">
+                    <div class="sos-modal-header">
+                        <div>
+                            <span class="sos-badge-tag">SIH26089 • NCCT RAPID DISPATCH</span>
+                            <h3 class="sos-modal-title">🚨 1-Click Emergency SOS Call</h3>
+                        </div>
+                        <button type="button" class="sos-close-btn" onclick="closeEmergencySOSModal()" aria-label="Close modal">×</button>
+                    </div>
+
+                    <p class="sos-subtitle">Instant priority broadcast to verified, available cooperative tradespeople near your location with target 15-30m response.</p>
+
+                    <!-- Step 1: Scenario selection -->
+                    <label class="sos-label">Select Urgent Crisis Type:</label>
+                    <div class="sos-scenarios-grid">
+                        <button type="button" class="sos-scenario-card active" data-service="Electrician" data-type="Total Power Outage / Sparking" data-price="249" onclick="selectSOSScenario(this)">
+                            <span class="scenario-icon">⚡</span>
+                            <strong>Power Outage / Sparks</strong>
+                            <small>Electrician • Urgent</small>
+                        </button>
+                        <button type="button" class="sos-scenario-card" data-service="Plumber" data-type="Water Pipe Burst / Flooding" data-price="279" onclick="selectSOSScenario(this)">
+                            <span class="scenario-icon">🚰</span>
+                            <strong>Pipe Burst / Flooding</strong>
+                            <small>Plumber • Urgent</small>
+                        </button>
+                        <button type="button" class="sos-scenario-card" data-service="Carpenter" data-type="Door Jam / Lockout Crisis" data-price="349" onclick="selectSOSScenario(this)">
+                            <span class="scenario-icon">🚪</span>
+                            <strong>Door Jam / Lockout</strong>
+                            <small>Carpenter • Urgent</small>
+                        </button>
+                        <button type="button" class="sos-scenario-card" data-service="Technician" data-type="Appliance Short-Circuit / Burning Smell" data-price="299" onclick="selectSOSScenario(this)">
+                            <span class="scenario-icon">🔥</span>
+                            <strong>Appliance Hazard</strong>
+                            <small>Technician • Urgent</small>
+                        </button>
+                    </div>
+
+                    <input type="hidden" id="sosService" value="Electrician">
+                    <input type="hidden" id="sosEmergencyType" value="Total Power Outage / Sparking">
+
+                    <!-- Step 2: Location and Contact -->
+                    <div class="form-group" style="margin-top:14px;">
+                        <label>Contact Phone Number</label>
+                        <input type="tel" id="sosPhone" placeholder="10-digit mobile number" maxlength="10" required>
+                    </div>
+
+                    <div class="form-group">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                            <label style="margin:0;">Emergency Service Location</label>
+                            <button type="button" class="btn-text-sm" onclick="syncSOSLocation()">📍 Auto-Lock GPS</button>
+                        </div>
+                        <input type="text" id="sosAddress" placeholder="Street / House / Landmark address" required>
+                        <div id="sosLocStatus" class="loc-status-text"></div>
+                        <input type="hidden" id="sosLat">
+                        <input type="hidden" id="sosLng">
+                    </div>
+
+                    <!-- Step 3: Transparent Pricing Guarantee -->
+                    <div class="sos-pricing-banner">
+                        <div class="sos-pricing-row">
+                            <span>Base Cooperative Fair Wage:</span>
+                            <strong id="sosBasePrice">₹249</strong>
+                        </div>
+                        <div class="sos-pricing-row">
+                            <span>Rapid Mobilization Surcharge:</span>
+                            <strong style="color:var(--terracotta);">+₹50</strong>
+                        </div>
+                        <div class="sos-pricing-divider"></div>
+                        <div class="sos-pricing-row total">
+                            <span>Total Emergency Bill:</span>
+                            <strong id="sosTotalPrice" class="sos-total-val">₹299</strong>
+                        </div>
+                        <small class="hint" style="color:var(--teal-deep); font-weight:600; margin-top:4px;">
+                            🛡️ Fixed ₹50 rapid mobilization fee • Zero surge multiplier • Target response SLA: 15–30 mins.
+                        </small>
+                    </div>
+
+                    <button type="button" class="cta-gold sos-dispatch-btn" id="sosSubmitBtn" onclick="submitRapidEmergencyBooking()">
+                        🚨 ACTIVATE EMERGENCY DISPATCH NOW
+                    </button>
+
+                    <div id="sosResult" style="margin-top:12px;"></div>
+                </div>
             </div>
 
             <!-- Services -->
@@ -685,6 +774,7 @@
                     <button class="admin-tab-btn active" id="adminTabBtnOverview" onclick="switchAdminTab('overview')">📊 Federation Overview</button>
                     <button class="admin-tab-btn" id="adminTabBtnWorkers" onclick="switchAdminTab('workers')">👷 Worker Verification & Roster</button>
                     <button class="admin-tab-btn" id="adminTabBtnBookings" onclick="switchAdminTab('bookings')">📋 Booking Allocations & Dispatch</button>
+                    <button class="admin-tab-btn" id="adminTabBtnEmergency" onclick="switchAdminTab('emergency')">🚨 Emergency SLA Queue</button>
                     <button class="admin-tab-btn" id="adminTabBtnForecast" onclick="switchAdminTab('forecast')">📈 NCCT Demand Forecast</button>
                 </div>
 
@@ -749,6 +839,19 @@
                     </div>
 
                     <div id="adminForecast"></div>
+                </div>
+
+                <!-- TAB 5: EMERGENCY SLA QUEUE (PHASE 11) -->
+                <div id="adminTabEmergency" class="admin-tab-content hidden">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
+                        <div>
+                            <h3 style="margin:0;">🚨 Emergency Rapid Dispatch & Response SLA Monitor</h3>
+                            <p style="margin:2px 0 0; font-size:12.5px; color:var(--muted);">Track active emergency household calls, response elapsed time, and federation standby overrides.</p>
+                        </div>
+                        <button class="primary" style="font-size:12px; padding:6px 14px;" onclick="loadAdminEmergencyQueue()">🔄 Refresh Queue</button>
+                    </div>
+
+                    <div id="adminEmergencyQueue"></div>
                 </div>
 
             </section>
