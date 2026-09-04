@@ -18,6 +18,7 @@ const chatbotRoute = require("./routes/chatbot");
 const societiesRoute = require("./routes/societies");
 const analyticsRoute = require("./routes/analytics");
 const welfareRoute = require("./routes/welfare");
+const simulatorRoute = require("./routes/simulator");
 
 const app = express();
 const PORT = 3000;
@@ -129,6 +130,9 @@ app.get("/api/admin/welfare/claims", adminAuth.requireAdminAuth, admin.getAdminC
 app.post("/api/admin/welfare/claims/:id/process", adminAuth.requireAdminAuth, admin.processAdminClaim);
 app.post("/api/admin/welfare/batch-renew-pmsby", adminAuth.requireAdminAuth, admin.batchRenewPmsby);
 app.get("/api/admin/welfare/ledger", adminAuth.requireAdminAuth, admin.getWelfareLedger);
+
+// Hackathon Pitch Deck & Cooperative Lifecycle Simulator (Phase 20)
+app.use("/api/simulator", simulatorRoute);
 
 // 404
 app.use((req, res) => {

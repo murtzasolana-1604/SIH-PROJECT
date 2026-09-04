@@ -96,6 +96,19 @@
         </div>
 
         <p class="role-note" data-i18n="demoOtpHint">Customer & Worker use demo OTP · Admin requires a real credential check.</p>
+
+        <!-- HACKATHON JURY & EVALUATOR CONTROLS (PHASE 20) -->
+        <div class="jury-controls-strip" role="region" aria-label="Hackathon Evaluation Controls">
+            <button class="jury-btn pitch-btn" onclick="openJudgePitchModal()" aria-label="Open Smart India Hackathon Presentation Pitch Deck">
+                <span class="jury-btn-icon">🏆</span>
+                <span><strong>SIH 2026 Pitch Deck</strong> · Judge Guide</span>
+            </button>
+            <button class="jury-btn sim-btn" onclick="openSimulatorModal()" aria-label="Open 1-Click Interactive Cooperative Lifecycle Simulator">
+                <span class="jury-btn-icon">⚡</span>
+                <span><strong>Live Simulation Mode</strong> · 1-Click Demo</span>
+            </button>
+        </div>
+
     </div>
 
 
@@ -705,6 +718,113 @@
 
         </main>
 
+        
+        <!-- ===================== HACKATHON PITCH DECK MODAL (PHASE 20) ===================== -->
+        <div id="judgePitchModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="pitchDeckModalTitle" onclick="if(event.target===this) closeJudgePitchModal()">
+            <div class="modal-card pitch-modal-card">
+                <div class="pitch-modal-header">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span style="font-size:26px;">🏆</span>
+                        <div>
+                            <h3 id="pitchDeckModalTitle" style="margin:0; font-size:17px; color:white;" data-i18n="pitchModalHeading">Smart India Hackathon 2026 · Problem Statement SIH26089</h3>
+                            <small style="color:#FFE082;">Cooperative Gig Services Platform · Ministry of Cooperation / NCCT · Team HacNova</small>
+                        </div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <span id="pitchSlideNumberBadge" class="pitch-counter-badge">Slide 1 of 6</span>
+                        <button type="button" class="sos-close-btn" style="color:white;" onclick="closeJudgePitchModal()" aria-label="Close modal">×</button>
+                    </div>
+                </div>
+
+                <div id="pitchDeckSlideContainer" class="pitch-slide-viewport">
+                    <!-- Slides injected dynamically by simulator.js -->
+                </div>
+
+                <div class="pitch-modal-footer">
+                    <div id="pitchDeckIndicator" class="pitch-dots-indicator"></div>
+                    <div class="pitch-nav-buttons">
+                        <button id="pitchPrevBtn" type="button" class="secondary btn-sm" onclick="prevPitchSlide()" disabled data-i18n="btnPitchPrev">◀ Previous</button>
+                        <button id="pitchNextBtn" type="button" class="primary cta-gold btn-sm" onclick="nextPitchSlide()" data-i18n="btnPitchNext">Next Slide ▶</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===================== COOPERATIVE LIFECYCLE SIMULATOR MODAL (PHASE 20) ===================== -->
+        <div id="simulatorModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="simulatorModalTitle" onclick="if(event.target===this) closeSimulatorModal()">
+            <div class="modal-card sim-modal-card">
+                <div class="sim-modal-header">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span style="font-size:24px;">⚡</span>
+                        <div>
+                            <h3 id="simulatorModalTitle" style="margin:0; font-size:17px; color:white;" data-i18n="simModalHeading">End-to-End Cooperative Lifecycle Live Simulator</h3>
+                            <small style="color:#C8E6C9;">Real-time automated walkthrough of 5 MSCS statutory cooperative stages</small>
+                        </div>
+                    </div>
+                    <button type="button" class="sos-close-btn" style="color:white;" onclick="closeSimulatorModal()" aria-label="Close modal">×</button>
+                </div>
+
+                <!-- 5-Step Stepper Ribbon -->
+                <div class="sim-stepper-ribbon" role="region" aria-label="Simulation Stepper">
+                    <div class="sim-step-item">
+                        <div id="simStepNode1" class="sim-step-node pending">1</div>
+                        <strong class="sim-step-label" data-i18n="simStep1Title">Booking</strong>
+                        <small id="simStepStatus1" class="sim-step-status">Waiting...</small>
+                    </div>
+                    <div class="sim-step-connector"></div>
+                    <div class="sim-step-item">
+                        <div id="simStepNode2" class="sim-step-node pending">2</div>
+                        <strong class="sim-step-label" data-i18n="simStep2Title">Dispatch</strong>
+                        <small id="simStepStatus2" class="sim-step-status">Waiting...</small>
+                    </div>
+                    <div class="sim-step-connector"></div>
+                    <div class="sim-step-item">
+                        <div id="simStepNode3" class="sim-step-node pending">3</div>
+                        <strong class="sim-step-label" data-i18n="simStep3Title">Accept & SLA</strong>
+                        <small id="simStepStatus3" class="sim-step-status">Waiting...</small>
+                    </div>
+                    <div class="sim-step-connector"></div>
+                    <div class="sim-step-item">
+                        <div id="simStepNode4" class="sim-step-node pending">4</div>
+                        <strong class="sim-step-label" data-i18n="simStep4Title">85/15 Split</strong>
+                        <small id="simStepStatus4" class="sim-step-status">Waiting...</small>
+                    </div>
+                    <div class="sim-step-connector"></div>
+                    <div class="sim-step-item">
+                        <div id="simStepNode5" class="sim-step-node pending">5</div>
+                        <strong class="sim-step-label" data-i18n="simStep5Title">PMSBY Shield</strong>
+                        <small id="simStepStatus5" class="sim-step-status">Waiting...</small>
+                    </div>
+                </div>
+
+                <!-- Main Simulation Display -->
+                <div class="sim-modal-body">
+                    <!-- Real-Time Dividend & Protection Card -->
+                    <div id="simLiveDividendCard" class="sim-card-section"></div>
+
+                    <!-- Live Telemetry Console Output -->
+                    <div class="sim-console-section">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                            <strong style="font-size:12px; color:var(--teal-deep); text-transform:uppercase; letter-spacing:0.5px;">📡 Live Telemetry & Database Transaction Stream:</strong>
+                            <button type="button" class="text-btn" style="font-size:11px; cursor:pointer; background:none; border:none; color:var(--muted); text-decoration:underline;" onclick="document.getElementById('simConsoleOutput').innerHTML=''">Clear Stream</button>
+                        </div>
+                        <div id="simConsoleOutput" class="sim-console-terminal"></div>
+                    </div>
+                </div>
+
+                <!-- Simulation Action Controls -->
+                <div class="sim-modal-footer">
+                    <div style="display:flex; gap:8px;">
+                        <button id="simResetBtn" type="button" class="secondary btn-sm" onclick="resetSimulationData()" data-i18n="btnSimReset">🧹 Reset Data</button>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <button id="simStepBtn" type="button" class="secondary btn-sm" onclick="stepNextSimulation()" data-i18n="btnSimStep">Step Next ⏭</button>
+                        <button id="simRunAutoBtn" type="button" class="primary cta-gold btn-sm" onclick="runAutoSimulation()" data-i18n="btnSimAuto">⚡ Auto-Run Complete Lifecycle</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <footer>
             <p data-i18n="footer">SIH26089 • Smart Automation • HacNova</p>
         </footer>
@@ -1305,6 +1425,7 @@
     <script src="/js/chatbot.js"></script>
     <script src="/js/pwa.js"></script>
     <script src="/js/a11y.js"></script>
+    <script src="/js/simulator.js"></script>
 
 </body>
 

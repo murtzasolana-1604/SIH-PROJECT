@@ -4362,4 +4362,445 @@ body.theme-high-contrast *:focus-visible {
         scroll-behavior: auto !important;
     }
 }
-
+
+
+/* ============================================================
+   PHASE 20: HACKATHON PITCH DECK & LIFECYCLE SIMULATOR STYLES
+   ============================================================ */
+
+/* Jury Controls Strip on Role Screen */
+.jury-controls-strip {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    max-width: 480px;
+    margin: 16px auto 8px;
+}
+
+.jury-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 13px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s ease;
+    border: 1.5px solid transparent;
+}
+
+.jury-btn.pitch-btn {
+    background: #FFF8E1;
+    color: #5D4037;
+    border-color: #FFE082;
+}
+
+.jury-btn.pitch-btn:hover {
+    background: #FFECB3;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 179, 0, 0.2);
+}
+
+.jury-btn.sim-btn {
+    background: #E8F5E9;
+    color: #1B5E20;
+    border-color: #A5D6A7;
+}
+
+.jury-btn.sim-btn:hover {
+    background: #C8E6C9;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(46, 125, 50, 0.2);
+}
+
+.jury-btn-icon {
+    font-size: 20px;
+}
+
+/* Pitch Deck Modal */
+.pitch-modal-card {
+    max-width: 820px;
+    width: 95%;
+    background: white;
+    border-radius: 20px;
+    padding: 0;
+    overflow: hidden;
+    border: 2px solid var(--teal-deep);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh;
+}
+
+.pitch-modal-header {
+    padding: 16px 22px;
+    background: linear-gradient(135deg, #004D40 0%, #1B5E20 100%);
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.pitch-counter-badge {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+
+.pitch-slide-viewport {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 380px;
+}
+
+.pitch-slide-card {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.pitch-tag {
+    display: inline-block;
+    background: #E0F2F1;
+    color: #004D40;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 3px 10px;
+    border-radius: 12px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.pitch-title {
+    margin: 6px 0 2px;
+    font-size: 22px;
+    color: var(--teal-deep);
+    line-height: 1.3;
+}
+
+.pitch-sub {
+    margin: 0;
+    font-size: 14.5px;
+    color: var(--muted);
+}
+
+.pitch-stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin: 8px 0;
+}
+
+.pitch-stat-box {
+    background: #F8FAF9;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px 14px;
+    text-align: center;
+}
+
+.pitch-stat-val {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--teal-deep);
+}
+
+.pitch-stat-label {
+    font-size: 13px;
+    font-weight: 700;
+    margin: 2px 0;
+}
+
+.pitch-stat-note {
+    font-size: 11px;
+    color: var(--muted);
+}
+
+.pitch-bullets {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.pitch-bullet-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 14px;
+    line-height: 1.45;
+    background: #FAFAFA;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border-left: 3px solid var(--teal-deep);
+}
+
+.pitch-bullet-icon {
+    color: #F59E0B;
+    font-weight: bold;
+}
+
+.pitch-modal-footer {
+    padding: 14px 22px;
+    background: var(--paper);
+    border-top: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.pitch-dots-indicator {
+    display: flex;
+    gap: 8px;
+}
+
+.pitch-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: none;
+    background: #CFD8DC;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+.pitch-dot.active {
+    background: var(--teal-deep);
+    transform: scale(1.3);
+}
+
+.pitch-nav-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+/* Lifecycle Simulator Modal */
+.sim-modal-card {
+    max-width: 760px;
+    width: 95%;
+    background: white;
+    border-radius: 20px;
+    padding: 0;
+    overflow: hidden;
+    border: 2px solid #1B5E20;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+    display: flex;
+    flex-direction: column;
+    max-height: 92vh;
+}
+
+.sim-modal-header {
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #1B5E20 0%, #004D40 100%);
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sim-stepper-ribbon {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #F4FAF6;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--line);
+    overflow-x: auto;
+}
+
+.sim-step-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    min-width: 75px;
+}
+
+.sim-step-node {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 13px;
+    margin-bottom: 4px;
+    transition: all 0.3s ease;
+}
+
+.sim-step-node.pending {
+    background: #ECEFF1;
+    color: #78909C;
+    border: 2px solid #CFD8DC;
+}
+
+.sim-step-node.running {
+    background: #FFE082;
+    color: #5D4037;
+    border: 2px solid #FFA000;
+    animation: pulse 1s infinite;
+}
+
+.sim-step-node.completed {
+    background: #2E7D32;
+    color: white;
+    border: 2px solid #1B5E20;
+}
+
+.sim-step-node.error {
+    background: #D32F2F;
+    color: white;
+    border: 2px solid #B71C1C;
+}
+
+.sim-step-label {
+    font-size: 11.5px;
+    color: var(--text);
+}
+
+.sim-step-status {
+    font-size: 10px;
+    color: var(--muted);
+}
+
+.sim-step-connector {
+    flex: 1;
+    height: 2px;
+    background: #CFD8DC;
+    margin: 0 4px 16px;
+    min-width: 20px;
+}
+
+.sim-modal-body {
+    padding: 18px 20px;
+    overflow-y: auto;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.sim-dividend-box {
+    background: #F9FBF9;
+    border: 1.5px solid #C8E6C9;
+    border-radius: 12px;
+    padding: 14px;
+}
+
+.sim-dividend-split-bar {
+    height: 26px;
+    border-radius: 13px;
+    overflow: hidden;
+    display: flex;
+    background: #E0E0E0;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 26px;
+    text-align: center;
+    color: white;
+}
+
+.split-worker {
+    background: #2E7D32;
+    transition: width 0.4s ease;
+}
+
+.split-coop {
+    background: #004D40;
+    transition: width 0.4s ease;
+}
+
+.sim-console-terminal {
+    background: #111827;
+    color: #10B981;
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    height: 130px;
+    overflow-y: auto;
+    border: 1px solid #374151;
+}
+
+.sim-log-line {
+    margin-bottom: 3px;
+}
+
+.sim-log-line.brand { color: #38BDF8; }
+.sim-log-line.success { color: #34D399; }
+.sim-log-line.info { color: #F3F4F6; }
+.sim-log-line.error { color: #F87171; }
+.sim-log-time { color: #9CA3AF; margin-right: 6px; }
+
+.sim-modal-footer {
+    padding: 12px 20px;
+    background: var(--paper);
+    border-top: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+/* High Contrast Overrides for Pitch Deck & Simulator */
+body.theme-high-contrast .pitch-modal-card,
+body.theme-high-contrast .sim-modal-card {
+    background: #000000 !important;
+    border: 2px solid #FFFFFF !important;
+    color: #FFFFFF !important;
+}
+
+body.theme-high-contrast .pitch-modal-header,
+body.theme-high-contrast .sim-modal-header {
+    background: #121212 !important;
+    border-bottom: 2px solid #FFD700 !important;
+}
+
+body.theme-high-contrast .pitch-stat-box,
+body.theme-high-contrast .pitch-bullet-item,
+body.theme-high-contrast .sim-dividend-box {
+    background: #121212 !important;
+    border: 2px solid #FFFFFF !important;
+    color: #FFFFFF !important;
+}
+
+body.theme-high-contrast .pitch-title {
+    color: #FFD700 !important;
+}
+
+body.theme-high-contrast .pitch-stat-val {
+    color: #FFD700 !important;
+}
+
+body.theme-high-contrast .pitch-tag {
+    background: #000000 !important;
+    color: #00FF66 !important;
+    border: 1px solid #00FF66 !important;
+}
+
+body.theme-high-contrast .sim-stepper-ribbon {
+    background: #000000 !important;
+    border-bottom: 2px solid #FFFFFF !important;
+}
+
+body.theme-high-contrast .sim-step-node.completed {
+    background: #00FF66 !important;
+    color: #000000 !important;
+    border: 2px solid #FFFFFF !important;
+}
+
+body.theme-high-contrast .jury-btn.pitch-btn,
+body.theme-high-contrast .jury-btn.sim-btn {
+    background: #121212 !important;
+    color: #FFFFFF !important;
+    border: 2px solid #FFD700 !important;
+}

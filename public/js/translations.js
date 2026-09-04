@@ -234,8 +234,21 @@ const translations = {
         a11yContrastAnnounceOff: "Standard contrast mode restored",
         a11yFontNormal: "Font size: Standard (100%)",
         a11yFontLarge: "Font size: Large (115%)",
-        a11yFontXlarge: "Font size: Maximum (130%)",
-        a11yModalDismissed: "Modal dialog closed"
+        a11yModalDismissed: "Modal dialog closed",
+
+        // Hackathon Pitch Deck & Lifecycle Simulator (Phase 20)
+        pitchModalHeading: "Smart India Hackathon 2026 · Problem Statement SIH26089",
+        btnPitchPrev: "◀ Previous",
+        btnPitchNext: "Next Slide ▶",
+        simModalHeading: "End-to-End Cooperative Lifecycle Live Simulator",
+        simStep1Title: "Booking",
+        simStep2Title: "Dispatch",
+        simStep3Title: "Accept & SLA",
+        simStep4Title: "85/15 Split",
+        simStep5Title: "PMSBY Shield",
+        btnSimReset: "🧹 Reset Data",
+        btnSimStep: "Step Next ⏭",
+        btnSimAuto: "⚡ Auto-Run Complete Lifecycle"
     },
     hi: {
         appTitle: "🤝 सहकार कनेक्ट",
@@ -472,8 +485,21 @@ const translations = {
         a11yContrastAnnounceOff: "सामान्य कंट्रास्ट मोड बहाल किया गया",
         a11yFontNormal: "फ़ॉन्ट आकार: सामान्य (100%)",
         a11yFontLarge: "फ़ॉन्ट आकार: बड़ा (115%)",
-        a11yFontXlarge: "फ़ॉन्ट आकार: अधिकतम (130%)",
-        a11yModalDismissed: "डायलॉग बॉक्स बंद किया गया"
+        a11yModalDismissed: "डायलॉग बॉक्स बंद किया गया",
+
+        // Hackathon Pitch Deck & Lifecycle Simulator (Phase 20)
+        pitchModalHeading: "स्मार्ट इंडिया हैकाथॉन 2026 · समस्या विवरण SIH26089",
+        btnPitchPrev: "◀ पिछला",
+        btnPitchNext: "अगली स्लाइड ▶",
+        simModalHeading: "सहकारी जीवनचक्र लाइव सिम्युलेटर",
+        simStep1Title: "बुकिंग",
+        simStep2Title: "डिस्पैच",
+        simStep3Title: "स्वीकृति व SLA",
+        simStep4Title: "85/15 लाभांश",
+        simStep5Title: "सुरक्षा बीमा",
+        btnSimReset: "🧹 डेटा रीसेट",
+        btnSimStep: "अगला चरण ⏭",
+        btnSimAuto: "⚡ 1-क्लिक पूर्ण सिमुलेशन चलाएं"
     }
 };
 

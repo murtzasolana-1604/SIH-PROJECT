@@ -148,6 +148,12 @@ function closeModalById(id) {
         case "cooperativeAuditModal":
             if (typeof closeCooperativeAuditModal === "function") closeCooperativeAuditModal();
             break;
+        case "judgePitchModal":
+            if (typeof closeJudgePitchModal === "function") closeJudgePitchModal();
+            break;
+        case "simulatorModal":
+            if (typeof closeSimulatorModal === "function") closeSimulatorModal();
+            break;
         default:
             const m = document.getElementById(id);
             if (m) m.classList.add("hidden");
