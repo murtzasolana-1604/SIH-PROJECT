@@ -1235,3 +1235,318 @@ footer { text-align: center; padding: 26px; color: var(--muted); font-size: 12.5
     margin-bottom: 10px;
     box-shadow: var(--shadow-sm);
 }
+
+/* ================= FEDERATION ADMIN DASHBOARD (PHASE 8) ================= */
+
+.admin-container-panel {
+    background: var(--panel);
+    border-radius: 16px;
+    padding: 24px;
+    border: 1px solid var(--line);
+    box-shadow: 0 4px 20px rgba(18,59,49,0.06);
+}
+
+.admin-welcome-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 16px;
+    margin-bottom: 20px;
+}
+
+.admin-subtitle {
+    font-size: 13.5px;
+    color: var(--muted);
+    margin-top: 4px;
+}
+
+/* Admin Tabs */
+.admin-tabs {
+    display: flex;
+    gap: 8px;
+    border-bottom: 2px solid var(--line);
+    margin-bottom: 22px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+}
+
+.admin-tab-btn {
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    padding: 10px 18px;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--muted);
+    cursor: pointer;
+    border-radius: 8px 8px 0 0;
+    transition: all .2s ease;
+    white-space: nowrap;
+}
+
+.admin-tab-btn:hover {
+    color: var(--teal-deep);
+    background: var(--teal-tint);
+}
+
+.admin-tab-btn.active {
+    color: var(--teal-deep);
+    border-bottom: 3px solid var(--teal);
+    background: var(--teal-tint);
+}
+
+/* Stat Grid & Cards */
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+.stat-card {
+    background: var(--paper);
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.stat-card .lbl {
+    font-size: 11.5px;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+}
+
+.stat-card strong {
+    font-family: var(--font-mono);
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--ink);
+    margin: 6px 0 4px;
+}
+
+.stat-card .subtext {
+    font-size: 11.5px;
+    color: var(--muted);
+}
+
+.stat-card.highlight-green {
+    border-color: #81C784;
+    background: #F1F8F3;
+}
+.stat-card.highlight-green strong { color: #1B5E20; }
+
+.stat-card.highlight-amber {
+    border-color: #FFB74D;
+    background: #FFF8E1;
+}
+.stat-card.highlight-amber strong { color: #E65100; }
+
+.stat-card.highlight-red {
+    border-color: #E57373;
+    background: #FFEBEE;
+}
+.stat-card.highlight-red strong { color: #B71C1C; }
+
+.stat-card.highlight-teal {
+    border-color: #4DB6AC;
+    background: #E0F2F1;
+}
+.stat-card.highlight-teal strong { color: #004D40; }
+
+.stat-card.highlight-gold {
+    border-color: #F6C878;
+    background: #FFF9EC;
+}
+.stat-card.highlight-gold strong { color: #8D5600; }
+
+/* Filter Chips */
+.filter-chip-group {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.filter-chip {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all .15s ease;
+}
+
+.filter-chip:hover {
+    border-color: var(--teal);
+    color: var(--teal);
+}
+
+.filter-chip.active {
+    background: var(--teal-deep);
+    color: white;
+    border-color: var(--teal-deep);
+}
+
+/* Worker Roster */
+.worker-roster-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 16px;
+}
+
+.admin-worker-card {
+    background: var(--panel);
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.admin-worker-card.pending-card {
+    border-color: #FFB74D;
+    background: #FFFDF8;
+}
+
+.worker-card-details {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--ink);
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+/* Admin Bookings & Matching */
+.admin-booking-item {
+    background: var(--panel);
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 14px;
+    position: relative;
+    overflow: hidden;
+}
+
+.admin-booking-item.emergency-border {
+    border: 2px solid #D32F2F;
+}
+
+.emergency-strip {
+    background: #D32F2F;
+    color: white;
+    font-size: 11px;
+    font-weight: 800;
+    font-family: var(--font-mono);
+    letter-spacing: 0.5px;
+    padding: 4px 12px;
+    margin: -16px -16px 12px -16px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.match-suggestions-drawer {
+    background: var(--paper);
+    border: 1.5px solid #80CBC4;
+    border-radius: 10px;
+    padding: 12px;
+    margin-top: 10px;
+}
+
+.match-candidate-item {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+}
+
+.match-candidate-item.top-match {
+    border-color: #81C784;
+    background: #F9FFF9;
+}
+
+.score-pill {
+    font-size: 11px;
+    font-weight: 800;
+    font-family: var(--font-mono);
+    background: var(--teal-tint);
+    color: var(--teal-deep);
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-left: 6px;
+}
+
+.reason-tag {
+    display: inline-block;
+    background: #EEF3F0;
+    color: var(--ink);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 10.5px;
+    margin: 2px 2px 0 0;
+}
+
+/* Forecast Grid */
+.forecast-banner {
+    background: #E8F4F8;
+    border-left: 4px solid #0288D1;
+    color: #01579B;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    margin-bottom: 16px;
+}
+
+.forecast-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.forecast-card {
+    background: var(--panel);
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin: 0;
+}
+
+.forecast-rec-box {
+    background: var(--paper);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 13px;
+    color: var(--ink);
+    border-left: 3px solid var(--teal);
+}
+
+/* Value Flow Transparency Card */
+.coop-transparency-card {
+    background: #F4FAF6;
+    border: 1.5px solid #A5D6A7;
+    border-radius: 12px;
+    padding: 16px;
+}
+
+.transparency-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14.5px;
+    color: #1B5E20;
+}

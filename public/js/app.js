@@ -299,6 +299,12 @@ function showAdminDashboard() {
     showScreen("adminDashboardScreen");
     const adminSec = document.getElementById("adminSection");
     if (adminSec) adminSec.classList.remove("hidden");
+
+    const adminName = localStorage.getItem("sahkaar_admin_name") || "Administrator";
+    const nameEl = document.getElementById("adminHeaderName");
+    if (nameEl) nameEl.textContent = adminName;
+
+    switchAdminTab("overview");
     loadAdminStats();
     loadAdminWorkers();
     loadAdminBookings();
@@ -898,72 +904,186 @@ async function markComplete(bookingId) {
 
 
 // =====================================
-// FEDERATION ADMIN DASHBOARD — now token-protected
+// FEDERATION ADMIN DASHBOARD (PHASE 8)
 // =====================================
 
+// Tab switching
+function switchAdminTab(tabName) {
+    const tabs = ["overview", "workers", "bookings", "forecast"];
+    tabs.forEach(t => {
+        const btn = document.getElementById(`adminTabBtn${t.charAt(0).toUpperCase() + t.slice(1)}`);
+        const content = document.getElementById(`adminTab${t.charAt(0).toUpperCase() + t.slice(1)}`);
+        if (btn) btn.classList.toggle("active", t === tabName);
+        if (content) content.classList.toggle("hidden", t !== tabName);
+    });
+}
+
+// 1. Overview & Metrics
 async function loadAdminStats() {
     const el = document.getElementById("adminStats");
-    el.innerHTML = `<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>`;
+    if (!el) return;
+    el.innerHTML = `<div class="skeleton" style="height:80px;"></div><div class="skeleton" style="height:80px;"></div><div class="skeleton" style="height:80px;"></div>`;
     try {
         const res = await adminFetch("/api/admin/stats");
         const data = await res.json();
         const s = data.stats;
 
         el.innerHTML = `
-            <div class="stat-card"><div class="lbl">Total Workers</div><strong>${s.totalWorkers}</strong></div>
-            <div class="stat-card"><div class="lbl">Verified Workers</div><strong>${s.verifiedWorkers}</strong></div>
-            <div class="stat-card"><div class="lbl">Customers</div><strong>${s.totalCustomers}</strong></div>
-            <div class="stat-card"><div class="lbl">Total Bookings</div><strong>${s.totalBookings}</strong></div>
-            <div class="stat-card"><div class="lbl">Pending</div><strong>${s.pendingBookings}</strong></div>
-            <div class="stat-card"><div class="lbl">Completed</div><strong>${s.completedBookings}</strong></div>
+            <div class="stat-card">
+                <div class="lbl">Total Registered Workers</div>
+                <strong>${s.totalWorkers}</strong>
+                <small class="subtext">${s.availableWorkers} available online</small>
+            </div>
+            <div class="stat-card highlight-green">
+                <div class="lbl">NCCT Verified Members</div>
+                <strong>${s.verifiedWorkers}</strong>
+                <small class="subtext">Cooperative certified</small>
+            </div>
+            <div class="stat-card ${s.pendingWorkers > 0 ? 'highlight-amber' : ''}">
+                <div class="lbl">Pending Verification</div>
+                <strong>${s.pendingWorkers}</strong>
+                <small class="subtext">${s.pendingWorkers > 0 ? 'Action required' : 'All reviews clear'}</small>
+            </div>
+            <div class="stat-card">
+                <div class="lbl">Registered Customers</div>
+                <strong>${s.totalCustomers}</strong>
+                <small class="subtext">Active community users</small>
+            </div>
+            <div class="stat-card">
+                <div class="lbl">Total Bookings</div>
+                <strong>${s.totalBookings}</strong>
+                <small class="subtext">${s.completedBookings} completed</small>
+            </div>
+            <div class="stat-card ${s.emergencyBookings > 0 ? 'highlight-red' : ''}">
+                <div class="lbl">Emergency Requests</div>
+                <strong>${s.emergencyBookings}</strong>
+                <small class="subtext">High priority dispatch</small>
+            </div>
+            <div class="stat-card highlight-teal">
+                <div class="lbl">NCCT Welfare Pool (15%)</div>
+                <strong>₹${s.totalWelfareFund}</strong>
+                <small class="subtext">Social security & insurance</small>
+            </div>
+            <div class="stat-card highlight-teal">
+                <div class="lbl">Gross Volume (GMV)</div>
+                <strong>₹${s.totalGMV}</strong>
+                <small class="subtext">Zero exploitative commission</small>
+            </div>
+            <div class="stat-card highlight-gold">
+                <div class="lbl">Direct Worker Payout (85%)</div>
+                <strong>₹${s.totalWorkerPayout}</strong>
+                <small class="subtext">Fair wage take-home</small>
+            </div>
         `;
     } catch (error) {
         console.error(error);
-        el.innerHTML = `<div class="error">Could not load stats.</div>`;
+        el.innerHTML = `<div class="error">Could not load federation stats. Please re-login.</div>`;
     }
 }
+
+// 2. Worker Verification & Roster
+window.allAdminWorkers = [];
+window.currentWorkerFilter = "all";
 
 async function loadAdminWorkers() {
     const el = document.getElementById("adminWorkers");
-    el.innerHTML = `<div class="skeleton" style="height:60px;"></div>`;
+    if (!el) return;
+    el.innerHTML = `<div class="skeleton" style="height:60px;"></div><div class="skeleton" style="height:60px;"></div>`;
     try {
         const res = await adminFetch("/api/admin/workers");
         const data = await res.json();
-
-        if (data.workers.length === 0) {
-            el.innerHTML = `<div class="empty-state"><span class="icon">👷</span>No workers registered yet.</div>`;
-            return;
-        }
-
-        el.innerHTML = "";
-
-        data.workers.forEach(worker => {
-            const div = document.createElement("div");
-            div.className = "booking-item";
-
-            const badge = worker.verified
-                ? `<span class="badge verified">${SEAL_ICON}Verified</span>`
-                : `<span class="badge unverified">Pending review</span>`;
-
-            div.innerHTML = `
-                <strong>${worker.name}</strong> ${badge}<br>
-                Skill: ${worker.skill} · Location: ${worker.location} · Phone: ${worker.phone}
-                ${worker.verified ? "" : `
-                    <div style="margin-top:8px;">
-                        <button class="primary" onclick="verifyWorker(${worker.id}, 'approve')">Approve</button>
-                        <button class="secondary" onclick="verifyWorker(${worker.id}, 'reject')">Reject</button>
-                    </div>
-                `}
-            `;
-            el.appendChild(div);
-        });
+        window.allAdminWorkers = data.workers || [];
+        renderAdminWorkers(window.currentWorkerFilter);
     } catch (error) {
         console.error(error);
-        el.innerHTML = `<div class="error">Could not load workers.</div>`;
+        el.innerHTML = `<div class="error">Could not load worker roster.</div>`;
     }
 }
 
+function filterAdminWorkers(filter) {
+    window.currentWorkerFilter = filter;
+    ["All", "Pending", "Verified"].forEach(f => {
+        const chip = document.getElementById(`wChip${f}`);
+        if (chip) chip.classList.toggle("active", f.toLowerCase() === filter);
+    });
+    renderAdminWorkers(filter);
+}
+
+function renderAdminWorkers(filter) {
+    const el = document.getElementById("adminWorkers");
+    if (!el) return;
+
+    let list = window.allAdminWorkers || [];
+    if (filter === "pending") {
+        list = list.filter(w => !w.verified);
+    } else if (filter === "verified") {
+        list = list.filter(w => !!w.verified);
+    }
+
+    if (list.length === 0) {
+        el.innerHTML = `<div class="empty-state"><span class="icon">👷</span>No workers found under '${filter}' filter.</div>`;
+        return;
+    }
+
+    let html = `<div class="worker-roster-grid">`;
+    list.forEach(worker => {
+        const verifiedBadge = worker.verified
+            ? `<span class="badge verified">🛡️ NCCT Verified Member</span>`
+            : `<span class="badge unverified">⏳ Pending Credential Review</span>`;
+
+        const availBadge = worker.is_available
+            ? `<span class="badge" style="background:#E8F5E9; color:#1B5E20; border:1px solid #81C784;">🟢 Online</span>`
+            : `<span class="badge" style="background:#FFEBEE; color:#B71C1C; border:1px solid #E57373;">🔴 Busy / On Leave</span>`;
+
+        const ratingDisplay = worker.avg_rating > 0
+            ? `⭐ ${worker.avg_rating} (${worker.rating_count} reviews)`
+            : `⭐ No ratings yet`;
+
+        html += `
+            <div class="admin-worker-card ${!worker.verified ? 'pending-card' : ''}">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
+                    <div>
+                        <strong style="font-size:16px;">${worker.name}</strong>
+                        <span class="role-badge worker" style="margin-left:6px; font-size:11px;">${worker.skill}</span>
+                    </div>
+                    <div style="display:flex; gap:6px;">
+                        ${availBadge}
+                        ${verifiedBadge}
+                    </div>
+                </div>
+
+                <div class="worker-card-details">
+                    <div><strong>Phone:</strong> <a href="tel:${worker.phone}" style="color:var(--teal-deep); font-weight:700;">${worker.phone}</a></div>
+                    <div><strong>Experience:</strong> ${worker.experience || "1 year"}</div>
+                    <div><strong>Certification:</strong> <span class="badge" style="background:var(--paper); border:1px solid var(--line);">${worker.certification || "Self-Trained"}</span></div>
+                    <div><strong>Area:</strong> ${worker.location || "Greater Noida"}</div>
+                    <div><strong>Ratings & Jobs:</strong> ${ratingDisplay} • ${worker.completed_jobs} completed</div>
+                    <div><strong>Welfare Status:</strong> ${worker.welfare_status || "Enrolled in Cooperative Welfare Fund (Demo)"}</div>
+                    <div><strong>Social Insurance:</strong> ${worker.insurance_status || "Covered: PM Suraksha Bima (Demo)"}</div>
+                </div>
+
+                <div class="admin-action-row" style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
+                    ${!worker.verified ? `
+                        <button class="primary" style="font-size:12.5px; padding:7px 14px;" onclick="verifyWorker(${worker.id}, 'approve')">✅ Approve & Verify (NCCT)</button>
+                        <button class="btn-cancel" style="font-size:12.5px; padding:7px 14px;" onclick="verifyWorker(${worker.id}, 'reject')">❌ Reject Application</button>
+                    ` : `
+                        <button class="btn-cancel" style="font-size:11.5px; padding:5px 10px; opacity:0.85;" onclick="verifyWorker(${worker.id}, 'reject')">Revoke Verification</button>
+                    `}
+                </div>
+            </div>
+        `;
+    });
+    html += `</div>`;
+    el.innerHTML = html;
+}
+
 async function verifyWorker(workerId, action) {
+    const confirmMsg = action === "approve"
+        ? "Approve and verify this worker as an official NCCT Cooperative Member?"
+        : "Are you sure you want to reject/revoke verification for this worker?";
+
+    if (!confirm(confirmMsg)) return;
+
     try {
         const res = await adminFetch("/api/admin/verify", {
             method: "POST",
@@ -979,42 +1099,111 @@ async function verifyWorker(workerId, action) {
     }
 }
 
+// 3. Bookings Allocation & Dispatch
+window.allAdminBookings = [];
+window.currentBookingFilter = "all";
+
 async function loadAdminBookings() {
     const el = document.getElementById("adminBookings");
-    el.innerHTML = `<div class="skeleton" style="height:60px;"></div>`;
+    if (!el) return;
+    el.innerHTML = `<div class="skeleton" style="height:60px;"></div><div class="skeleton" style="height:60px;"></div>`;
     try {
-        const res = await fetch("/api/bookings?status=Pending");
+        const res = await adminFetch("/api/admin/bookings");
         const data = await res.json();
-
-        if (data.bookings.length === 0) {
-            el.innerHTML = `<div class="empty-state"><span class="icon">✅</span>No pending bookings.</div>`;
-            return;
-        }
-
-        el.innerHTML = "";
-
-        data.bookings.forEach(booking => {
-            const div = document.createElement("div");
-            div.className = "booking-item";
-            const emergencyTag = booking.is_emergency ? `<span class="badge emergency">🚨 Emergency</span><br>` : "";
-
-            div.innerHTML = `
-                ${emergencyTag}
-                <strong>Booking ID:</strong> ${booking.id} — ${booking.service}<br>
-                Customer: ${booking.customer_name} · ${booking.address}<br>
-                <button class="secondary" onclick="suggestWorkers(${booking.id})">🔍 Suggest Workers</button>
-                <div id="matches-${booking.id}"></div>
-            `;
-            el.appendChild(div);
-        });
+        window.allAdminBookings = data.bookings || [];
+        renderAdminBookings(window.currentBookingFilter);
     } catch (error) {
         console.error(error);
-        el.innerHTML = `<div class="error">Could not load bookings.</div>`;
+        el.innerHTML = `<div class="error">Could not load bookings list.</div>`;
     }
 }
 
+function filterAdminBookings(filter) {
+    window.currentBookingFilter = filter;
+    ["All", "Emergency", "Pending", "Assigned", "InProgress", "Completed"].forEach(f => {
+        const chip = document.getElementById(`bChip${f}`);
+        if (chip) {
+            const match = (f.toLowerCase() === filter.toLowerCase()) || (f === "InProgress" && filter === "In Progress");
+            chip.classList.toggle("active", match);
+        }
+    });
+    renderAdminBookings(filter);
+}
+
+function renderAdminBookings(filter) {
+    const el = document.getElementById("adminBookings");
+    if (!el) return;
+
+    let list = window.allAdminBookings || [];
+    if (filter === "emergency") {
+        list = list.filter(b => b.is_emergency == 1);
+    } else if (filter !== "all") {
+        list = list.filter(b => b.status === filter);
+    }
+
+    if (list.length === 0) {
+        el.innerHTML = `<div class="empty-state"><span class="icon">📋</span>No bookings found under '${filter}' filter.</div>`;
+        return;
+    }
+
+    let html = "";
+    list.forEach(booking => {
+        const isEmergency = booking.is_emergency == 1;
+        const emergencyTag = isEmergency ? `<div class="emergency-strip">🚨 PRIORITY EMERGENCY DISPATCH</div>` : "";
+
+        let statusClass = "pending";
+        if (booking.status === "Assigned") statusClass = "assigned";
+        if (booking.status === "In Progress") statusClass = "progress";
+        if (booking.status === "Completed") statusClass = "completed";
+        if (booking.status === "Cancelled") statusClass = "cancelled";
+
+        const assignedInfo = booking.worker_name
+            ? `<div class="assigned-worker-card" style="margin:8px 0 10px;">
+                 <span class="worker-avatar">👷</span>
+                 <div class="worker-details">
+                     <strong>Assigned Worker:</strong> ${booking.worker_name} (${booking.worker_skill || booking.service})<br>
+                     <span class="worker-sub">Worker Phone: <strong>${booking.worker_phone || "N/A"}</strong></span>
+                 </div>
+               </div>`
+            : "";
+
+        const actions = booking.status === "Pending"
+            ? `<div style="margin-top:10px;">
+                 <button class="secondary" style="font-size:12.5px;" onclick="suggestWorkers(${booking.id})">🔍 Suggest Cooperative Workers</button>
+                 <div id="matches-${booking.id}" style="margin-top:8px;"></div>
+               </div>`
+            : "";
+
+        html += `
+            <div class="booking-item admin-booking-item ${isEmergency ? 'emergency-border' : ''}">
+                ${emergencyTag}
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;">
+                    <div>
+                        <strong style="font-size:16px;">${booking.service}</strong>
+                        <span style="color:var(--muted); font-size:13px;">#${booking.id}</span>
+                    </div>
+                    <span class="badge ${statusClass}">${booking.status}</span>
+                </div>
+
+                <div style="font-size:13px; line-height:1.6; color:var(--ink);">
+                    <strong>Customer:</strong> ${booking.customer_name} (<a href="tel:${booking.customer_phone}">${booking.customer_phone}</a>)<br>
+                    <strong>Address:</strong> ${booking.address}<br>
+                    <strong>Scheduled For:</strong> ${booking.booking_date} at ${booking.booking_time}
+                </div>
+
+                ${assignedInfo}
+                ${actions}
+            </div>
+        `;
+    });
+
+    el.innerHTML = html;
+}
+
+// 4. Rule-Based Smart Worker Matching
 async function suggestWorkers(bookingId) {
     const el = document.getElementById(`matches-${bookingId}`);
+    if (!el) return;
     el.innerHTML = `<div class="skeleton" style="height:36px;margin-top:8px;"></div>`;
 
     try {
@@ -1022,24 +1211,41 @@ async function suggestWorkers(bookingId) {
         const data = await res.json();
 
         if (!data.matches || data.matches.length === 0) {
-            el.innerHTML = `<div class="empty-state"><span class="icon">🤷</span>No workers registered for this skill yet.</div>`;
+            el.innerHTML = `<div class="empty-state" style="padding:12px;"><span class="icon">🤷</span>No registered workers for this skill yet.</div>`;
             return;
         }
 
-        el.innerHTML = `<p style="font-size:11.5px;color:var(--muted);font-family:var(--font-mono);margin-top:8px;">${data.note}</p>`;
+        let html = `
+            <div class="match-suggestions-drawer">
+                <div style="font-size:11.5px; color:var(--teal-deep); font-family:var(--font-mono); margin-bottom:8px; font-weight:700;">
+                    ${data.note}
+                </div>
+        `;
 
-        data.matches.forEach(worker => {
-            const div = document.createElement("div");
-            div.style.marginTop = "6px";
-            div.innerHTML = `
-                ${worker.name} — score ${worker.matchScore} (${worker.reasons.join(", ")})
-                <button class="primary" onclick="assignWorker(${bookingId}, ${worker.id})">Assign</button>
+        data.matches.forEach((worker, idx) => {
+            const isTop = idx === 0;
+            html += `
+                <div class="match-candidate-item ${isTop ? 'top-match' : ''}">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:4px;">
+                        <div>
+                            <strong style="font-size:14px;">${worker.name}</strong>
+                            ${isTop ? '<span class="badge" style="background:#E8F5E9; color:#1B5E20; border:1px solid #81C784; margin-left:4px;">Top Match</span>' : ''}
+                            <span class="score-pill">${worker.matchScore} pts</span>
+                        </div>
+                        <button class="primary" style="font-size:12px; padding:5px 12px;" onclick="assignWorker(${bookingId}, ${worker.id})">Assign</button>
+                    </div>
+                    <div style="font-size:11.5px; color:var(--muted); line-height:1.4;">
+                        ${worker.reasons.map(r => `<span class="reason-tag">${r}</span>`).join(" ")}
+                    </div>
+                </div>
             `;
-            el.appendChild(div);
         });
+
+        html += `</div>`;
+        el.innerHTML = html;
     } catch (error) {
         console.error(error);
-        el.innerHTML = `<div class="error">Could not load matches.</div>`;
+        el.innerHTML = `<div class="error">Could not calculate matches.</div>`;
     }
 }
 
@@ -1053,13 +1259,16 @@ async function assignWorker(bookingId, workerId) {
         const data = await res.json();
         alert(data.message);
         loadAdminBookings();
+        loadAdminStats();
     } catch (error) {
         console.error(error);
     }
 }
 
+// 5. NCCT Demand Forecast
 async function loadForecast() {
     const el = document.getElementById("adminForecast");
+    if (!el) return;
     el.innerHTML = `<div class="skeleton" style="height:60px;"></div>`;
     try {
         const res = await fetch("/api/forecast");
@@ -1070,20 +1279,33 @@ async function loadForecast() {
             return;
         }
 
-        el.innerHTML = `<p style="font-size:11.5px;color:var(--muted);font-family:var(--font-mono);margin-bottom:8px;">${data.note}</p>`;
+        let html = `
+            <div class="forecast-banner">
+                💡 ${data.note}
+            </div>
+            <div class="forecast-grid">
+        `;
 
         data.forecast.forEach(row => {
-            const div = document.createElement("div");
-            div.className = "booking-item";
-            div.innerHTML = `
-                <strong>${row.service}</strong><br>
-                Bookings so far: ${row.bookingCount} · Verified workers: ${row.verifiedWorkers}<br>
-                ${row.recommendation}
+            html += `
+                <div class="booking-item forecast-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <strong style="font-size:16px;">${row.service}</strong>
+                        <span class="badge" style="background:var(--paper); border:1px solid var(--line);">
+                            ${row.bookingCount} Bookings • ${row.verifiedWorkers} Verified Workers
+                        </span>
+                    </div>
+                    <div class="forecast-rec-box">
+                        <strong>NCCT Recommendation:</strong> ${row.recommendation}
+                    </div>
+                </div>
             `;
-            el.appendChild(div);
         });
+
+        html += `</div>`;
+        el.innerHTML = html;
     } catch (error) {
         console.error(error);
-        el.innerHTML = `<div class="error">Could not load forecast.</div>`;
+        el.innerHTML = `<div class="error">Could not load demand forecast.</div>`;
     }
 }

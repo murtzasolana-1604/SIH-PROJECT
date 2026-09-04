@@ -655,12 +655,12 @@
         <header>
             <button class="lang-toggle" onclick="toggleLanguage()" aria-label="Switch language">हिंदी</button>
             <h1 data-i18n="appTitle">🤝 Sahkaar Connect</h1>
-            <p>National Council for Cooperative Training (NCCT) Federation Administration</p>
-            <div class="role-badge admin">🏢 Federation Admin</div>
+            <p>National Council for Cooperative Training (NCCT) • Federation Administration Command Center</p>
+            <div class="role-badge admin">🏢 Federation Admin: <span id="adminHeaderName">Administrator</span></div>
 
             <nav class="nav-groups" aria-label="Admin navigation">
                 <div class="nav-group">
-                    <button class="nav-btn" onclick="showAdmin()" data-i18n="btnAdmin">🏛️ Overview & Operations</button>
+                    <button class="nav-btn" onclick="showAdminDashboard()" data-i18n="btnAdmin">🏛️ Refresh Data</button>
                 </div>
                 <div class="nav-divider"></div>
                 <div class="nav-group">
@@ -671,20 +671,86 @@
 
         <main class="container">
 
-            <!-- Federation Admin -->
-            <section id="adminSection" class="section">
-                <h2 data-i18n="adminTitle">🏛️ Federation Admin Dashboard</h2>
+            <!-- Admin Section Container -->
+            <section id="adminSection" class="section admin-container-panel">
+                <div class="admin-welcome-banner">
+                    <div>
+                        <h2>🏛️ Cooperative Federation Control Center</h2>
+                        <p class="admin-subtitle">Monitoring real-time gig service dispatch, cooperative member verification, and welfare security pools.</p>
+                    </div>
+                </div>
 
-                <div id="adminStats" class="stat-grid"></div>
+                <!-- Admin Tab Navigation -->
+                <div class="admin-tabs" role="tablist">
+                    <button class="admin-tab-btn active" id="adminTabBtnOverview" onclick="switchAdminTab('overview')">📊 Federation Overview</button>
+                    <button class="admin-tab-btn" id="adminTabBtnWorkers" onclick="switchAdminTab('workers')">👷 Worker Verification & Roster</button>
+                    <button class="admin-tab-btn" id="adminTabBtnBookings" onclick="switchAdminTab('bookings')">📋 Booking Allocations & Dispatch</button>
+                    <button class="admin-tab-btn" id="adminTabBtnForecast" onclick="switchAdminTab('forecast')">📈 NCCT Demand Forecast</button>
+                </div>
 
-                <h3 style="margin-bottom:12px;">Worker Verification</h3>
-                <div id="adminWorkers"></div>
+                <!-- TAB 1: OVERVIEW & STATS -->
+                <div id="adminTabOverview" class="admin-tab-content">
+                    <h3 style="margin-bottom:14px;">Key Cooperative Metrics & Performance</h3>
+                    <div id="adminStats" class="stat-grid"></div>
 
-                <h3 style="margin:20px 0 12px;">Pending Bookings — Assign a Worker</h3>
-                <div id="adminBookings"></div>
+                    <div class="coop-transparency-card" style="margin-top:20px;">
+                        <div class="transparency-header">
+                            <span class="shield-icon">🛡️</span>
+                            <strong>Transparent Cooperative Value Flow Model</strong>
+                        </div>
+                        <p style="font-size:13px; line-height:1.6; color:var(--ink); margin-top:6px;">
+                            Unlike commercial aggregator platforms charging 25-35% private middleman commissions, <strong>Sahkaar Connect</strong> operates under the NCCT cooperative framework: <strong>85% goes directly to the service worker</strong>, and <strong>15% funds member social security</strong> (PM Suraksha Bima accidental insurance, emergency welfare fund, and local federation operation).
+                        </p>
+                    </div>
+                </div>
 
-                <h3 style="margin:20px 0 12px;">📈 Demand Forecast (rule-based)</h3>
-                <div id="adminForecast"></div>
+                <!-- TAB 2: WORKERS ROSTER & VERIFICATION -->
+                <div id="adminTabWorkers" class="admin-tab-content hidden">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
+                        <div>
+                            <h3 style="margin:0;">Worker Verification & Cooperative Roster</h3>
+                            <p style="margin:2px 0 0; font-size:12.5px; color:var(--muted);">Verify member trades, certifications, and background verification.</p>
+                        </div>
+                        <div class="filter-chip-group">
+                            <button class="filter-chip active" id="wChipAll" onclick="filterAdminWorkers('all')">All Workers</button>
+                            <button class="filter-chip" id="wChipPending" onclick="filterAdminWorkers('pending')">Pending Review</button>
+                            <button class="filter-chip" id="wChipVerified" onclick="filterAdminWorkers('verified')">NCCT Verified</button>
+                        </div>
+                    </div>
+
+                    <div id="adminWorkers"></div>
+                </div>
+
+                <!-- TAB 3: BOOKINGS & DISPATCH -->
+                <div id="adminTabBookings" class="admin-tab-content hidden">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
+                        <div>
+                            <h3 style="margin:0;">Service Dispatch & Booking Allocations</h3>
+                            <p style="margin:2px 0 0; font-size:12.5px; color:var(--muted);">Manage community requests, emergency calls, and automated worker matching.</p>
+                        </div>
+                        <div class="filter-chip-group">
+                            <button class="filter-chip active" id="bChipAll" onclick="filterAdminBookings('all')">All</button>
+                            <button class="filter-chip" id="bChipEmergency" onclick="filterAdminBookings('emergency')">🚨 Emergency</button>
+                            <button class="filter-chip" id="bChipPending" onclick="filterAdminBookings('Pending')">⏳ Pending</button>
+                            <button class="filter-chip" id="bChipAssigned" onclick="filterAdminBookings('Assigned')">👤 Assigned</button>
+                            <button class="filter-chip" id="bChipInProgress" onclick="filterAdminBookings('In Progress')">⚡ In Progress</button>
+                            <button class="filter-chip" id="bChipCompleted" onclick="filterAdminBookings('Completed')">✅ Completed</button>
+                        </div>
+                    </div>
+
+                    <div id="adminBookings"></div>
+                </div>
+
+                <!-- TAB 4: DEMAND FORECAST -->
+                <div id="adminTabForecast" class="admin-tab-content hidden">
+                    <div style="margin-bottom:14px;">
+                        <h3 style="margin:0;">📈 NCCT Demand Forecasting & Workforce Mobilization</h3>
+                        <p style="margin:2px 0 0; font-size:12.5px; color:var(--muted);">Statistical ratio analysis comparing booking request volume against certified worker supply.</p>
+                    </div>
+
+                    <div id="adminForecast"></div>
+                </div>
+
             </section>
 
         </main>

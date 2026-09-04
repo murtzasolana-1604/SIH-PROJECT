@@ -62,6 +62,7 @@ app.post("/api/admin/login", adminAuth.adminLogin);
 // Admin (Federation dashboard) — all protected by requireAdminAuth below
 app.get("/api/admin/stats", adminAuth.requireAdminAuth, admin.getStats);
 app.get("/api/admin/workers", adminAuth.requireAdminAuth, admin.getAllWorkers);
+app.get("/api/admin/bookings", adminAuth.requireAdminAuth, admin.getAllBookings);
 app.post("/api/admin/verify", adminAuth.requireAdminAuth, admin.verifyWorker);
 app.post("/api/admin/assign", adminAuth.requireAdminAuth, admin.assignWorker);
 app.get("/api/admin/match/:bookingId", adminAuth.requireAdminAuth, admin.matchWorkers);
