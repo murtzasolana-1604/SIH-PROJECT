@@ -1,4 +1,5 @@
 const Database = require("better-sqlite3");
+const crypto = require("crypto");
 
 const db = new Database("sahkaar.db");
 
@@ -77,6 +78,30 @@ addColumnIfMissing("workers", "additional_skills TEXT");
 addColumnIfMissing("workers", "welfare_status TEXT DEFAULT 'Enrolled in Cooperative Welfare Fund (Demo)'");
 addColumnIfMissing("workers", "insurance_status TEXT DEFAULT 'Covered: PM Suraksha Bima / Accidental (Demo)'");
 addColumnIfMissing("workers", "is_available INTEGER DEFAULT 1");
+
+// ============================================================
+// PHASE 17: WORKER VERIFICATION & NCCT CERTIFICATION BADGES
+// ============================================================
+addColumnIfMissing("workers", "ncct_cert_id TEXT");
+addColumnIfMissing("workers", "badge_level TEXT DEFAULT 'Level 1: Certified Tradesperson'");
+addColumnIfMissing("workers", "verification_hash TEXT");
+addColumnIfMissing("workers", "verified_at DATETIME");
+addColumnIfMissing("workers", "verified_by_admin TEXT");
+addColumnIfMissing("workers", "kyc_doc_type TEXT DEFAULT 'Aadhaar / National ID'");
+addColumnIfMissing("workers", "kyc_doc_number TEXT DEFAULT 'XXXX-XXXX-9876'");
+addColumnIfMissing("workers", "badge_status TEXT DEFAULT 'Active'");
+
+db.exec(`
+    CREATE TABLE IF NOT EXISTS worker_cert_audit (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        worker_id INTEGER NOT NULL,
+        action TEXT NOT NULL,
+        badge_level TEXT NOT NULL,
+        admin_name TEXT NOT NULL,
+        notes TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+`);
 
 // RATINGS TABLE
 db.exec(`
@@ -300,6 +325,40 @@ if (!existingCust) {
     );
     console.log("Seeded default demo customer (9876543210)!");
 }
+
+// Function to generate deterministic verification hash
+function generateWorkerVerificationHash(workerId, phone, skill, certId, secret = "SAHKAAR_NCCT_2026_COOP_SECRET") {
+    return crypto.createHash("sha256")
+        .update(`${workerId}:${phone}:${skill}:${certId}:${secret}`)
+        .digest("hex");
+}
+
+// Ensure verified workers have an NCCT certification ID, level, and cryptographic hash
+const verifiedWithoutCert = db.prepare("SELECT * FROM workers WHERE verified = 1 AND (ncct_cert_id IS NULL OR verification_hash IS NULL)").all();
+for (const w of verifiedWithoutCert) {
+    const certId = `NCCT-COOP-2026-${String(w.id).padStart(4, "0")}`;
+    const badgeLevel = (w.phone === "9876543210" || w.id === 6)
+        ? "Level 2: Advanced Co-op Master Tradesperson"
+        : "Level 1: Certified Tradesperson";
+    const hash = generateWorkerVerificationHash(w.id, w.phone, w.skill, certId);
+    const verifiedDate = w.verified_at || new Date().toISOString().replace("T", " ").substring(0, 19);
+    const admin = w.verified_by_admin || "NCCT Federation Registrar / Admin";
+    const kycType = w.kyc_doc_type || "Aadhaar / National ID";
+    const kycNum = w.kyc_doc_number || `XXXX-XXXX-${w.phone.slice(-4)}`;
+
+    db.prepare(`
+        UPDATE workers 
+        SET ncct_cert_id = ?, badge_level = ?, verification_hash = ?, verified_at = ?, verified_by_admin = ?, kyc_doc_type = ?, kyc_doc_number = ?, badge_status = 'Active'
+        WHERE id = ?
+    `).run(certId, badgeLevel, hash, verifiedDate, admin, kycType, kycNum, w.id);
+
+    db.prepare(`
+        INSERT INTO worker_cert_audit (worker_id, action, badge_level, admin_name, notes)
+        VALUES (?, 'ISSUED', ?, ?, 'Initial statutory NCCT cooperative verification and cryptographic badge generation.')
+    `).run(w.id, badgeLevel, admin);
+}
+
+db.generateWorkerVerificationHash = generateWorkerVerificationHash;
 
 console.log("Database connected successfully!");
 

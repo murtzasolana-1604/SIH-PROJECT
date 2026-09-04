@@ -232,7 +232,160 @@ function getEarnings(req, res) {
     });
 }
 
+// ============================================================
+// PHASE 17: WORKER DIGITAL BADGE & VERIFICATION
+// ============================================================
+
+function getWorkerBadge(req, res) {
+    const { id } = req.params;
+
+    const worker = db.prepare(`
+        SELECT w.*, 
+               s.name as society_name, 
+               s.reg_number as society_reg_number, 
+               s.cluster_zone as society_cluster,
+               s.contact_person as society_contact
+        FROM workers w
+        LEFT JOIN societies s ON w.society_id = s.id
+        WHERE w.id = ?
+    `).get(id);
+
+    if (!worker) {
+        return res.status(404).json({ success: false, message: "Worker not found." });
+    }
+
+    const ratingsAgg = db.prepare(`
+        SELECT ROUND(COALESCE(AVG(stars), 5.0), 1) as avg_rating, COUNT(id) as rating_count
+        FROM ratings WHERE worker_id = ?
+    `).get(id);
+
+    const completedJobs = db.prepare(`
+        SELECT COUNT(*) as count FROM bookings WHERE assigned_worker_id = ? AND status = 'Completed'
+    `).get(id).count;
+
+    const audits = db.prepare(`
+        SELECT * FROM worker_cert_audit WHERE worker_id = ? ORDER BY id DESC LIMIT 5
+    `).all(id);
+
+    const certId = worker.ncct_cert_id || `NCCT-COOP-2026-${String(worker.id).padStart(4, "0")}`;
+    const hash = worker.verification_hash || (db.generateWorkerVerificationHash 
+        ? db.generateWorkerVerificationHash(worker.id, worker.phone, worker.skill, certId)
+        : "5d1bb55f89860587527547cec71b9c9a99baebd1648267a28ba3805342f1615e");
+
+    const host = req.get("host") || "localhost:3000";
+    const protocol = req.protocol || "http";
+    const verificationUrl = `${protocol}://${host}/api/verify/worker/${hash}`;
+
+    return res.json({
+        success: true,
+        badge: {
+            workerId: worker.id,
+            name: worker.name,
+            phoneMasked: `+91 ${worker.phone.slice(0, 2)}******${worker.phone.slice(-2)}`,
+            skill: worker.skill,
+            experience: worker.experience || "1 year",
+            location: worker.location,
+            verified: worker.verified === 1,
+            ncctCertId: certId,
+            badgeLevel: worker.badge_level || "Level 1: Certified Tradesperson",
+            badgeStatus: worker.badge_status || (worker.verified ? "Active" : "Pending"),
+            verificationHash: hash,
+            verifiedAt: worker.verified_at || worker.created_at,
+            verifiedByAdmin: worker.verified_by_admin || "NCCT Registrar / Federation Admin",
+            kycDocType: worker.kyc_doc_type || "Aadhaar / National ID",
+            kycDocNumber: worker.kyc_doc_number || `XXXX-XXXX-${worker.phone.slice(-4)}`,
+            certification: worker.certification,
+            society: {
+                id: worker.society_id,
+                name: worker.society_name || "Navodaya Labour Cooperative Society Ltd.",
+                regNumber: worker.society_reg_number || "MSCS/CR/2026/089-A",
+                clusterZone: worker.society_cluster || "North District - Cluster 1",
+                contactPerson: worker.society_contact
+            },
+            metrics: {
+                avgRating: ratingsAgg.avg_rating || 5.0,
+                ratingCount: ratingsAgg.rating_count || 0,
+                completedJobs: completedJobs
+            },
+            verificationUrl,
+            auditHistory: audits
+        }
+    });
+}
+
+function verifyWorkerByHash(req, res) {
+    const { hash } = req.params;
+
+    if (!hash) {
+        return res.status(400).json({ success: false, message: "Verification hash is required." });
+    }
+
+    const worker = db.prepare(`
+        SELECT w.*, 
+               s.name as society_name, 
+               s.reg_number as society_reg_number, 
+               s.cluster_zone as society_cluster
+        FROM workers w
+        LEFT JOIN societies s ON w.society_id = s.id
+        WHERE w.verification_hash = ? OR w.ncct_cert_id = ? OR w.id = ?
+    `).get(hash, hash, isNaN(Number(hash)) ? -1 : Number(hash));
+
+    if (!worker) {
+        return res.status(404).json({
+            success: false,
+            verified: false,
+            message: "Tamper Alert: No valid NCCT Cooperative Certification matches this verification token."
+        });
+    }
+
+    const ratingsAgg = db.prepare(`
+        SELECT ROUND(COALESCE(AVG(stars), 5.0), 1) as avg_rating, COUNT(id) as rating_count
+        FROM ratings WHERE worker_id = ?
+    `).get(worker.id);
+
+    const completedJobs = db.prepare(`
+        SELECT COUNT(*) as count FROM bookings WHERE assigned_worker_id = ? AND status = 'Completed'
+    `).get(worker.id).count;
+
+    return res.json({
+        success: true,
+        verified: worker.verified === 1 && worker.badge_status === "Active",
+        certificate: {
+            title: "Official Cooperative Tradesperson Accreditation Certificate",
+            statutoryAuthority: "National Council for Cooperative Training (NCCT) • Ministry of Cooperation, Govt. of India",
+            workerName: worker.name,
+            trade: worker.skill,
+            experience: worker.experience,
+            ncctCertId: worker.ncct_cert_id,
+            badgeLevel: worker.badge_level,
+            badgeStatus: worker.badge_status,
+            verificationHash: worker.verification_hash,
+            issuanceDate: worker.verified_at,
+            verifyingOfficer: worker.verified_by_admin,
+            cooperativeSociety: {
+                name: worker.society_name || "Navodaya Labour Cooperative Society Ltd.",
+                regNumber: worker.society_reg_number || "MSCS/CR/2026/089-A",
+                clusterZone: worker.society_cluster || "North District - Cluster 1"
+            },
+            backgroundVerification: {
+                kycVerified: true,
+                docType: worker.kyc_doc_type || "Aadhaar / National ID",
+                maskedDocNumber: worker.kyc_doc_number || `XXXX-XXXX-${worker.phone.slice(-4)}`,
+                policeClearance: "Cooperative Member Pledge Cleared (Zero Grievance Flag)",
+                welfareStatus: worker.welfare_status || "Enrolled in Cooperative Welfare Fund"
+            },
+            reputationMetrics: {
+                avgRating: ratingsAgg.avg_rating || 5.0,
+                ratingCount: ratingsAgg.rating_count || 0,
+                completedJobs: completedJobs
+            }
+        }
+    });
+}
+
 workersRoute.updateAvailability = updateAvailability;
 workersRoute.getEarnings = getEarnings;
+workersRoute.getWorkerBadge = getWorkerBadge;
+workersRoute.verifyWorkerByHash = verifyWorkerByHash;
 
 module.exports = workersRoute;

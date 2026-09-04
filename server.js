@@ -60,6 +60,8 @@ app.get("/api/workers", workersRoute);
 app.post("/api/workers", workersRoute);
 app.post("/api/workers/:id/availability", workersRoute.updateAvailability);
 app.get("/api/workers/:id/earnings", workersRoute.getEarnings);
+app.get("/api/workers/:id/badge", workersRoute.getWorkerBadge);
+app.get("/api/verify/worker/:hash", workersRoute.verifyWorkerByHash);
 
 // Bookings
 app.get("/api/bookings", bookings.bookingsRoute);
@@ -89,6 +91,8 @@ app.get("/api/admin/stats", adminAuth.requireAdminAuth, admin.getStats);
 app.get("/api/admin/workers", adminAuth.requireAdminAuth, admin.getAllWorkers);
 app.get("/api/admin/bookings", adminAuth.requireAdminAuth, admin.getAllBookings);
 app.post("/api/admin/verify", adminAuth.requireAdminAuth, admin.verifyWorker);
+app.post("/api/admin/workers/:id/badge", adminAuth.requireAdminAuth, admin.issueWorkerBadge);
+app.post("/api/admin/workers/:id/revoke-badge", adminAuth.requireAdminAuth, admin.revokeWorkerBadge);
 app.post("/api/admin/assign", adminAuth.requireAdminAuth, admin.assignWorker);
 app.get("/api/admin/match/:bookingId", adminAuth.requireAdminAuth, admin.matchWorkers);
 

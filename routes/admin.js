@@ -122,28 +122,143 @@ function verifyWorker(req, res) {
         return res.status(404).json({ success: false, message: "Worker not found." });
     }
 
+    const adminName = req.admin ? req.admin.name : "Federation Administrator";
+
     if (action === "approve") {
-        db.prepare("UPDATE workers SET verified = 1 WHERE id = ?").run(workerId);
+        const certId = worker.ncct_cert_id || `NCCT-COOP-2026-${String(workerId).padStart(4, "0")}`;
+        const badgeLevel = worker.badge_level || "Level 1: Certified Tradesperson";
+        const hash = db.generateWorkerVerificationHash
+            ? db.generateWorkerVerificationHash(worker.id, worker.phone, worker.skill, certId)
+            : "5d1bb55f89860587527547cec71b9c9a99baebd1648267a28ba3805342f1615e";
+
+        db.prepare(`
+            UPDATE workers 
+            SET verified = 1, 
+                ncct_cert_id = ?, 
+                badge_level = ?, 
+                verification_hash = ?, 
+                verified_at = CURRENT_TIMESTAMP, 
+                verified_by_admin = ?, 
+                badge_status = 'Active' 
+            WHERE id = ?
+        `).run(certId, badgeLevel, hash, adminName, workerId);
+
+        db.prepare(`
+            INSERT INTO worker_cert_audit (worker_id, action, badge_level, admin_name, notes)
+            VALUES (?, 'ISSUED', ?, ?, 'Cooperative member verified and NCCT digital badge issued by federation admin.')
+        `).run(workerId, badgeLevel, adminName);
+
         const updated = db.prepare("SELECT * FROM workers WHERE id = ?").get(workerId);
         return res.json({
             success: true,
-            message: `Worker ${updated.name} verified as NCCT cooperative certified member.`,
+            message: `Worker ${updated.name} verified as NCCT cooperative certified member (${certId}).`,
             worker: updated
         });
     }
 
     // Action === "reject"
+    db.prepare(`
+        UPDATE workers 
+        SET verified = 0, badge_status = 'Revoked' 
+        WHERE id = ?
+    `).run(workerId);
+
+    db.prepare(`
+        INSERT INTO worker_cert_audit (worker_id, action, badge_level, admin_name, notes)
+        VALUES (?, 'REVOKED', ?, ?, 'Verification and NCCT certification revoked by administrator.')
+    `).run(workerId, worker.badge_level || "Unverified", adminName);
+
     const hasBookings = db.prepare("SELECT COUNT(*) AS c FROM bookings WHERE assigned_worker_id = ?").get(workerId).c;
-    if (hasBookings > 0) {
-        db.prepare("UPDATE workers SET verified = 0 WHERE id = ?").run(workerId);
-        return res.json({
-            success: true,
-            message: "Worker verification revoked (record retained due to existing booking history)."
-        });
-    } else {
+    if (hasBookings === 0) {
         db.prepare("DELETE FROM workers WHERE id = ?").run(workerId);
         return res.json({ success: true, message: "Worker application rejected and removed." });
     }
+
+    return res.json({
+        success: true,
+        message: "Worker verification and certification revoked (record retained due to existing booking history)."
+    });
+}
+
+// =========================
+// ISSUE OR UPGRADE NCCT CERTIFICATION BADGE (Phase 17)
+// =========================
+function issueWorkerBadge(req, res) {
+    const workerId = Number(req.params.id);
+    const { badgeLevel, kycDocType, kycDocNumber, notes } = req.body;
+
+    const worker = db.prepare("SELECT * FROM workers WHERE id = ?").get(workerId);
+    if (!worker) {
+        return res.status(404).json({ success: false, message: "Worker not found." });
+    }
+
+    const adminName = req.admin ? req.admin.name : "Federation Administrator";
+    const certId = worker.ncct_cert_id || `NCCT-COOP-2026-${String(workerId).padStart(4, "0")}`;
+    const level = badgeLevel || worker.badge_level || "Level 1: Certified Tradesperson";
+    const docType = kycDocType || worker.kyc_doc_type || "Aadhaar / National ID";
+    const docNum = kycDocNumber || worker.kyc_doc_number || `XXXX-XXXX-${worker.phone.slice(-4)}`;
+
+    const hash = db.generateWorkerVerificationHash
+        ? db.generateWorkerVerificationHash(worker.id, worker.phone, worker.skill, certId)
+        : "5d1bb55f89860587527547cec71b9c9a99baebd1648267a28ba3805342f1615e";
+
+    db.prepare(`
+        UPDATE workers 
+        SET verified = 1,
+            ncct_cert_id = ?,
+            badge_level = ?,
+            verification_hash = ?,
+            verified_at = CURRENT_TIMESTAMP,
+            verified_by_admin = ?,
+            kyc_doc_type = ?,
+            kyc_doc_number = ?,
+            badge_status = 'Active'
+        WHERE id = ?
+    `).run(certId, level, hash, adminName, docType, docNum, workerId);
+
+    const auditAction = worker.verified === 1 ? "LEVEL_UPGRADED" : "ISSUED";
+    db.prepare(`
+        INSERT INTO worker_cert_audit (worker_id, action, badge_level, admin_name, notes)
+        VALUES (?, ?, ?, ?, ?)
+    `).run(workerId, auditAction, level, adminName, notes || "Statutory NCCT Certification credential issued.");
+
+    const updated = db.prepare("SELECT * FROM workers WHERE id = ?").get(workerId);
+    return res.json({
+        success: true,
+        message: `NCCT digital badge (${level}) successfully issued to ${updated.name}.`,
+        worker: updated
+    });
+}
+
+// =========================
+// REVOKE / SUSPEND NCCT BADGE (Phase 17)
+// =========================
+function revokeWorkerBadge(req, res) {
+    const workerId = Number(req.params.id);
+    const { reason } = req.body;
+
+    const worker = db.prepare("SELECT * FROM workers WHERE id = ?").get(workerId);
+    if (!worker) {
+        return res.status(404).json({ success: false, message: "Worker not found." });
+    }
+
+    const adminName = req.admin ? req.admin.name : "Federation Administrator";
+
+    db.prepare(`
+        UPDATE workers 
+        SET verified = 0, badge_status = 'Suspended'
+        WHERE id = ?
+    `).run(workerId);
+
+    db.prepare(`
+        INSERT INTO worker_cert_audit (worker_id, action, badge_level, admin_name, notes)
+        VALUES (?, 'SUSPENDED', ?, ?, ?)
+    `).run(workerId, worker.badge_level || "Level 1", adminName, reason || "Certification suspended by administrator.");
+
+    return res.json({
+        success: true,
+        message: `Worker ${worker.name}'s NCCT certification has been suspended.`
+    });
 }
 
 // =========================
@@ -285,6 +400,8 @@ module.exports = {
     getAllWorkers,
     getAllBookings,
     verifyWorker,
+    issueWorkerBadge,
+    revokeWorkerBadge,
     assignWorker,
     matchWorkers
 };

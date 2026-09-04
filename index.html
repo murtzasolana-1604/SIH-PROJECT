@@ -1074,6 +1074,72 @@
             </div>
         </div>
 
+        <!-- ===================== WORKER DIGITAL ID CARD MODAL (PHASE 17) ===================== -->
+        <div id="workerDigitalIdModal" class="modal-overlay hidden" onclick="if(event.target===this) closeWorkerDigitalIdModal()">
+            <div class="modal-card id-card-modal-container" style="max-width:540px; width:95%; background:white; border-radius:20px; padding:0; overflow:hidden; border:2px solid var(--teal-deep); box-shadow:0 18px 50px rgba(0,0,0,0.3);">
+                <div style="padding:16px 20px; background:var(--teal-deep); color:white; display:flex; justify-content:space-between; align-items:center;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="font-size:22px;">🏛️</span>
+                        <div>
+                            <strong style="font-size:15px; letter-spacing:0.3px;">सहकार डिजिटल पहचान पत्र</strong><br>
+                            <small style="opacity:0.85; font-size:11px;">Ministry of Cooperation • NCCT SIH26089</small>
+                        </div>
+                    </div>
+                    <button type="button" class="sos-close-btn" style="color:white;" onclick="closeWorkerDigitalIdModal()" aria-label="Close modal">×</button>
+                </div>
+
+                <div id="workerDigitalIdContent" style="padding:20px; overflow-y:auto; max-height:75vh;">
+                    <div class="skeleton" style="height:280px;"></div>
+                </div>
+
+                <div style="padding:14px 20px; background:var(--paper); border-top:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                    <button type="button" class="secondary btn-sm" onclick="closeWorkerDigitalIdModal()">Close</button>
+                    <div style="display:flex; gap:8px;">
+                        <button type="button" class="secondary btn-sm" onclick="copyVerificationLink()">📋 Copy Link</button>
+                        <button type="button" class="primary cta-gold btn-sm" onclick="printWorkerDigitalId()">🖨️ Print / Save ID Card</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===================== CITIZEN TRUST & VERIFICATION MODAL (PHASE 17) ===================== -->
+        <div id="citizenTrustModal" class="modal-overlay hidden" onclick="if(event.target===this) closeCitizenTrustModal()">
+            <div class="modal-card" style="max-width:580px; width:95%; background:white; border-radius:18px; padding:24px; border:2px solid #2E7D32; box-shadow:0 14px 45px rgba(0,0,0,0.25); max-height:85vh; display:flex; flex-direction:column;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--line); padding-bottom:10px;">
+                    <div>
+                        <h3 style="margin:0; font-size:18px; color:#1B5E20;">🛡️ Official Cooperative Tradesperson Verification</h3>
+                        <small style="color:var(--muted);">National Council for Cooperative Training (NCCT) Statutory Accreditation</small>
+                    </div>
+                    <button type="button" class="sos-close-btn" onclick="closeCitizenTrustModal()" aria-label="Close modal">×</button>
+                </div>
+
+                <div id="citizenTrustContent" style="overflow-y:auto; flex:1; padding-right:6px;">
+                    <div class="skeleton" style="height:220px;"></div>
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px; border-top:1px solid var(--line); padding-top:12px;">
+                    <button type="button" class="secondary" onclick="closeCitizenTrustModal()">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===================== ADMIN BADGE CREDENTIALING MODAL (PHASE 17) ===================== -->
+        <div id="adminBadgeModal" class="modal-overlay hidden" onclick="if(event.target===this) closeAdminBadgeModal()">
+            <div class="modal-card" style="max-width:560px; width:95%; background:white; border-radius:18px; padding:24px; border:2px solid var(--teal-deep); box-shadow:0 14px 45px rgba(0,0,0,0.25); max-height:85vh; display:flex; flex-direction:column;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--line); padding-bottom:10px;">
+                    <div>
+                        <h3 style="margin:0; font-size:18px;">🎖️ NCCT Skill Credentialing & Tier Upgrade</h3>
+                        <small style="color:var(--muted);">Federation Verification Authority • Multi-State Cooperative Societies Act</small>
+                    </div>
+                    <button type="button" class="sos-close-btn" onclick="closeAdminBadgeModal()" aria-label="Close modal">×</button>
+                </div>
+
+                <div id="adminBadgeContent" style="overflow-y:auto; flex:1;">
+                    <div class="skeleton" style="height:200px;"></div>
+                </div>
+            </div>
+        </div>
+
         <footer>
             <p data-i18n="footer">SIH26089 • Smart Automation • HacNova</p>
         </footer>

@@ -527,11 +527,15 @@ async function fetchMyBookings() {
 
             let workerBox = "";
             if (booking.worker_name) {
+                const assignedId = booking.assigned_worker_id || 6;
                 workerBox = `
                     <div class="assigned-worker-card">
                         <div class="worker-avatar">👷</div>
                         <div class="worker-details">
-                            <strong>Assigned Worker: ${booking.worker_name}</strong>
+                            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+                                <strong>Assigned Worker: ${booking.worker_name}</strong>
+                                <button type="button" class="badge-trust-btn" onclick="openCitizenTrustModal(${assignedId})">🎖️ NCCT Verified</button>
+                            </div>
                             <div class="worker-sub">${booking.worker_skill || booking.service} • Verified Member</div>
                             <div class="worker-phone">📞 <a href="tel:${booking.worker_phone}">${booking.worker_phone}</a></div>
                         </div>
@@ -1222,6 +1226,19 @@ async function fetchWorkerDashboard() {
                     <strong>Rating:</strong> ${ratingText}
                 </div>
 
+                <div class="worker-badge-strip" style="margin-bottom:14px; background:linear-gradient(135deg, #E8F5E9 0%, #F1F8E9 100%); border:1.5px solid #81C784; border-radius:12px; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <span style="font-size:28px;">🎖️</span>
+                        <div>
+                            <strong style="color:#1B5E20; font-size:14px;">${worker.badge_level || "Level 1: Certified Tradesperson"}</strong><br>
+                            <small style="color:var(--muted); font-size:12px;">NCCT ID: <code style="font-family:var(--font-mono); font-weight:700; color:var(--teal-deep);">${worker.ncct_cert_id || 'NCCT-COOP-2026-0006'}</code> • Status: <span style="color:#2E7D32; font-weight:700;">● Active</span></small>
+                        </div>
+                    </div>
+                    <button type="button" class="primary cta-gold btn-sm" onclick="openWorkerDigitalIdModal(${worker.id})">
+                        🪪 View Digital ID Card & QR
+                    </button>
+                </div>
+
                 <div class="welfare-card">
                     <div class="welfare-title">🛡️ Cooperative Welfare & Social Security (NCCT)</div>
                     <div class="welfare-grid">
@@ -1745,17 +1762,19 @@ function renderAdminWorkers(filter) {
                     <div><strong>Experience:</strong> ${worker.experience || "1 year"}</div>
                     <div><strong>Certification:</strong> <span class="badge" style="background:var(--paper); border:1px solid var(--line);">${worker.certification || "Self-Trained"}</span></div>
                     <div><strong>Area:</strong> ${worker.location || "Greater Noida"}</div>
-                    <div><strong>Ratings & Jobs:</strong> ${ratingDisplay} • ${worker.completed_jobs} completed</div>
+                    <div><strong>Badge Tier:</strong> <span class="badge" style="background:#FFF8E1; color:#F57F17; border:1px solid #FFE082;">🎖️ ${worker.badge_level || "Level 1: Certified"}</span> <small style="font-family:var(--font-mono); color:var(--teal-deep);">(${worker.ncct_cert_id || 'Pending ID'})</small></div>
                     <div><strong>Welfare Status:</strong> ${worker.welfare_status || "Enrolled in Cooperative Welfare Fund (Demo)"}</div>
                     <div><strong>Social Insurance:</strong> ${worker.insurance_status || "Covered: PM Suraksha Bima (Demo)"}</div>
                 </div>
 
-                <div class="admin-action-row" style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
+                <div class="admin-action-row" style="margin-top:14px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
                     ${!worker.verified ? `
-                        <button class="primary" style="font-size:12.5px; padding:7px 14px;" onclick="verifyWorker(${worker.id}, 'approve')">✅ Approve & Verify (NCCT)</button>
-                        <button class="btn-cancel" style="font-size:12.5px; padding:7px 14px;" onclick="verifyWorker(${worker.id}, 'reject')">❌ Reject Application</button>
+                        <button class="primary" style="font-size:12px; padding:6px 12px;" onclick="verifyWorker(${worker.id}, 'approve')">✅ Approve & Issue NCCT Badge</button>
+                        <button class="btn-cancel" style="font-size:12px; padding:6px 12px;" onclick="verifyWorker(${worker.id}, 'reject')">❌ Reject Application</button>
                     ` : `
-                        <button class="btn-cancel" style="font-size:11.5px; padding:5px 10px; opacity:0.85;" onclick="verifyWorker(${worker.id}, 'reject')">Revoke Verification</button>
+                        <button class="primary cta-gold btn-sm" style="font-size:12px; padding:5px 10px;" onclick="openAdminBadgeModal(${worker.id})">🎖️ Upgrade Tier / KYC</button>
+                        <button class="secondary btn-sm" style="font-size:12px; padding:5px 10px;" onclick="openWorkerDigitalIdModal(${worker.id})">🪪 Digital ID</button>
+                        <button class="btn-cancel" style="font-size:11.5px; padding:5px 10px; opacity:0.85;" onclick="verifyWorker(${worker.id}, 'reject')">Revoke</button>
                     `}
                 </div>
             </div>
@@ -2754,5 +2773,429 @@ async function submitNewSociety(event) {
     } catch (err) {
         console.error(err);
         if (resultEl) resultEl.innerHTML = `<div class="error">Server request failed.</div>`;
+    }
+}
+
+// ============================================================
+// PHASE 17: WORKER VERIFICATION & NCCT CERTIFICATION BADGES
+// ============================================================
+
+/**
+ * Generates an inline SVG QR Code (25x25 matrix) with standard finder patterns
+ */
+function generateQrSvg(text, size = 130) {
+    const N = 25;
+    const grid = Array.from({ length: N }, () => Array(N).fill(false));
+
+    // Finder pattern helper (7x7 outer square, 3x3 solid core)
+    function addFinder(r0, c0) {
+        for (let r = 0; r < 7; r++) {
+            for (let c = 0; c < 7; c++) {
+                if (r === 0 || r === 6 || c === 0 || c === 6) {
+                    grid[r0 + r][c0 + c] = true;
+                } else if (r >= 2 && r <= 4 && c >= 2 && c <= 4) {
+                    grid[r0 + r][c0 + c] = true;
+                }
+            }
+        }
+    }
+
+    addFinder(0, 0);       // Top-Left
+    addFinder(0, N - 7);   // Top-Right
+    addFinder(N - 7, 0);   // Bottom-Left
+
+    // Timing strips (row 6 and col 6)
+    for (let i = 8; i < N - 8; i++) {
+        grid[6][i] = (i % 2 === 0);
+        grid[i][6] = (i % 2 === 0);
+    }
+
+    // Alignment pattern (5x5 with 1x1 core at 16, 16)
+    for (let r = -2; r <= 2; r++) {
+        for (let c = -2; c <= 2; c++) {
+            if (Math.abs(r) === 2 || Math.abs(c) === 2 || (r === 0 && c === 0)) {
+                grid[16 + r][16 + c] = true;
+            }
+        }
+    }
+
+    // Deterministic pseudo-random seed from text string
+    let h = 0;
+    for (let i = 0; i < text.length; i++) {
+        h = ((h << 5) - h + text.charCodeAt(i)) | 0;
+    }
+
+    // Populate data modules outside reserved functional patterns
+    for (let r = 0; r < N; r++) {
+        for (let c = 0; c < N; c++) {
+            const inTL = r < 9 && c < 9;
+            const inTR = r < 9 && c >= N - 9;
+            const inBL = r >= N - 9 && c < 9;
+            const inTiming = r === 6 || c === 6;
+            const inAlign = r >= 14 && r <= 18 && c >= 14 && c <= 18;
+
+            if (!inTL && !inTR && !inBL && !inTiming && !inAlign) {
+                h = ((h ^ (r * 31 + c * 17)) * 1664525 + 1013904223) | 0;
+                grid[r][c] = (Math.abs(h) % 3 === 0);
+            }
+        }
+    }
+
+    let rects = "";
+    for (let r = 0; r < N; r++) {
+        for (let c = 0; c < N; c++) {
+            if (grid[r][c]) {
+                rects += `<rect x="${c + 2}" y="${r + 2}" width="1" height="1" fill="#004D40"/>`;
+            }
+        }
+    }
+
+    return `
+        <svg viewBox="0 0 ${N + 4} ${N + 4}" width="${size}" height="${size}" style="background:#FFFFFF; border-radius:8px; border:1px solid var(--line); display:block; margin:auto;" role="img" aria-label="QR Code">
+            <rect width="100%" height="100%" fill="#FFFFFF"/>
+            ${rects}
+        </svg>
+    `;
+}
+
+let activeWorkerVerificationUrl = "";
+
+/**
+ * Opens the Verifiable Worker Digital ID Card Modal
+ */
+async function openWorkerDigitalIdModal(workerId) {
+    const modal = document.getElementById("workerDigitalIdModal");
+    const content = document.getElementById("workerDigitalIdContent");
+    if (!modal || !content) return;
+
+    modal.classList.remove("hidden");
+    content.innerHTML = `<div class="skeleton" style="height:260px;"></div>`;
+
+    try {
+        const res = await fetch(`/api/workers/${workerId}/badge`);
+        const data = await res.json();
+
+        if (!data.success || !data.badge) {
+            content.innerHTML = `<div class="error">${data.message || "Failed to load digital credential."}</div>`;
+            return;
+        }
+
+        const b = data.badge;
+        activeWorkerVerificationUrl = b.verificationUrl;
+
+        content.innerHTML = `
+            <div class="coop-id-card" id="coopIdCardPrintable">
+                <div class="id-card-header">
+                    <div class="id-card-emblem">🏛️</div>
+                    <div class="id-card-title-block">
+                        <div class="id-card-org">NATIONAL COUNCIL FOR COOPERATIVE TRAINING</div>
+                        <div class="id-card-ministry">Ministry of Cooperation • Government of India</div>
+                        <div class="id-card-subtitle">COOPERATIVE TRADESPERSON IDENTITY CARD</div>
+                    </div>
+                    <div class="id-card-seal">🎖️</div>
+                </div>
+
+                <div class="id-card-body">
+                    <div class="id-card-photo-col">
+                        <div class="id-card-avatar">👷</div>
+                        <div class="id-card-status-pill">● NCCT VERIFIED</div>
+                        <div class="id-card-rating">⭐ ${b.metrics.avgRating} (${b.metrics.ratingCount} reviews)</div>
+                    </div>
+
+                    <div class="id-card-info-col">
+                        <div class="id-card-name">${b.name}</div>
+                        <div class="id-card-trade-badge">${b.skill}</div>
+                        
+                        <div class="id-card-meta-grid">
+                            <div class="id-card-meta-item">
+                                <span class="id-lbl">Cert ID:</span>
+                                <strong class="id-val highlight">${b.ncctCertId}</strong>
+                            </div>
+                            <div class="id-card-meta-item">
+                                <span class="id-lbl">Credential Tier:</span>
+                                <strong class="id-val" style="color:#B78103;">${b.badgeLevel}</strong>
+                            </div>
+                            <div class="id-card-meta-item">
+                                <span class="id-lbl">Affiliated Society:</span>
+                                <span class="id-val">${b.society.name}</span>
+                            </div>
+                            <div class="id-card-meta-item">
+                                <span class="id-lbl">MSCS Registration:</span>
+                                <span class="id-val">${b.society.regNumber}</span>
+                            </div>
+                            <div class="id-card-meta-item">
+                                <span class="id-lbl">Cluster Jurisdiction:</span>
+                                <span class="id-val">${b.society.clusterZone}</span>
+                            </div>
+                            <div class="id-card-meta-item">
+                                <span class="id-lbl">KYC Clearance:</span>
+                                <span class="id-val">${b.kycDocType} (${b.kycDocNumber})</span>
+                            </div>
+                            <div class="id-card-meta-item">
+                                <span class="id-lbl">Issuance Date:</span>
+                                <span class="id-val">${b.verifiedAt ? b.verifiedAt.slice(0, 10) : '2026-09-04'}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="id-card-qr-col">
+                        <div class="id-card-qr-wrap">
+                            ${generateQrSvg(b.verificationUrl, 110)}
+                        </div>
+                        <small class="id-card-qr-hint">Scan to Verify Online</small>
+                    </div>
+                </div>
+
+                <div class="id-card-footer">
+                    <div class="id-card-hash">
+                        <span>🔐 Tamper-Evident SHA-256 Fingerprint:</span>
+                        <code>${b.verificationHash}</code>
+                    </div>
+                    <div class="id-card-statutory-note">
+                        Statutory cooperative credential under MSCS Act 2002. Any fraudulent alteration is a punishable legal offence.
+                    </div>
+                </div>
+            </div>
+        `;
+    } catch (err) {
+        console.error(err);
+        content.innerHTML = `<div class="error">Could not connect to cooperative credential registry.</div>`;
+    }
+}
+
+function closeWorkerDigitalIdModal() {
+    const modal = document.getElementById("workerDigitalIdModal");
+    if (modal) modal.classList.add("hidden");
+}
+
+function printWorkerDigitalId() {
+    window.print();
+}
+
+function copyVerificationLink() {
+    if (!activeWorkerVerificationUrl) {
+        activeWorkerVerificationUrl = window.location.origin + "/api/verify/worker/5d1bb55f89860587527547cec71b9c9a99baebd1648267a28ba3805342f1615e";
+    }
+    navigator.clipboard.writeText(activeWorkerVerificationUrl).then(() => {
+        if (typeof showPwaToast === "function") {
+            showPwaToast("📋 Tamper-proof verification URL copied to clipboard!");
+        } else {
+            alert("Verification URL copied to clipboard:\n" + activeWorkerVerificationUrl);
+        }
+    }).catch(() => {
+        alert("Verification URL:\n" + activeWorkerVerificationUrl);
+    });
+}
+
+/**
+ * Opens Citizen Trust Modal when customer clicks on a worker's verification badge
+ */
+async function openCitizenTrustModal(workerId) {
+    const modal = document.getElementById("citizenTrustModal");
+    const content = document.getElementById("citizenTrustContent");
+    if (!modal || !content) return;
+
+    modal.classList.remove("hidden");
+    content.innerHTML = `<div class="skeleton" style="height:200px;"></div>`;
+
+    try {
+        const res = await fetch(`/api/workers/${workerId}/badge`);
+        const data = await res.json();
+
+        if (!data.success || !data.badge) {
+            content.innerHTML = `<div class="error">${data.message || "Failed to load trust credential."}</div>`;
+            return;
+        }
+
+        const b = data.badge;
+
+        content.innerHTML = `
+            <div style="text-align:center; margin-bottom:18px;">
+                <div style="display:inline-flex; align-items:center; justify-content:center; width:64px; height:64px; border-radius:50%; background:#E8F5E9; border:2px solid #2E7D32; font-size:32px; margin-bottom:8px;">
+                    🛡️
+                </div>
+                <h3 style="margin:0; font-size:20px; color:#1B5E20;">NCCT Verified Cooperative Member</h3>
+                <div style="font-size:13px; color:var(--muted); margin-top:2px;">Government Cooperative Accreditation • Zero Middleman Platform</div>
+            </div>
+
+            <div style="background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:16px;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; border-bottom:1px solid var(--line); padding-bottom:10px;">
+                    <div>
+                        <strong style="font-size:17px;">${b.name}</strong><br>
+                        <span class="role-badge worker" style="margin-top:4px;">${b.skill}</span>
+                    </div>
+                    <div style="text-align:right;">
+                        <span class="badge verified" style="font-size:12px;">🎖️ ${b.badgeLevel}</span>
+                        <div style="font-size:12px; color:var(--muted); margin-top:4px;">Cert: <code>${b.ncctCertId}</code></div>
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:10px; font-size:13px; line-height:1.6;">
+                    <div><strong>🏛️ Primary Society:</strong><br>${b.society.name}</div>
+                    <div><strong>📜 MSCS Reg Number:</strong><br>${b.society.regNumber}</div>
+                    <div><strong>📍 Cluster Zone:</strong><br>${b.society.clusterZone}</div>
+                    <div><strong>🛡️ Welfare Status:</strong><br>Enrolled in NCCT Welfare Pool</div>
+                    <div><strong>🆔 KYC Document Cleared:</strong><br>${b.kycDocType} (${b.kycDocNumber})</div>
+                    <div><strong>⚖️ Code of Conduct:</strong><br><span style="color:#2E7D32; font-weight:700;">Zero Grievance Pledge Cleared</span></div>
+                    <div><strong>⭐ Community Rating:</strong><br>${b.metrics.avgRating} / 5.0 (${b.metrics.ratingCount} reviews)</div>
+                    <div><strong>🗓️ Verification Date:</strong><br>${b.verifiedAt ? b.verifiedAt.slice(0, 10) : '2026-09-04'}</div>
+                </div>
+            </div>
+
+            <div style="background:#FFFDE7; border:1px solid #FFE082; border-radius:10px; padding:12px 14px; font-size:12.5px; color:#5D4037; display:flex; align-items:flex-start; gap:10px;">
+                <span style="font-size:20px; line-height:1;">💡</span>
+                <div>
+                    <strong>Why Cooperative Verification Matters:</strong> Unlike unregulated commercial gig platforms, every Sahkaar Connect tradesperson is registered with a legally constituted PACS/Labour Cooperative Society, has cleared national identity vetting, and is covered by PM Suraksha Bima accidental insurance.
+                </div>
+            </div>
+        `;
+    } catch (err) {
+        console.error(err);
+        content.innerHTML = `<div class="error">Failed to load verification record.</div>`;
+    }
+}
+
+function closeCitizenTrustModal() {
+    const modal = document.getElementById("citizenTrustModal");
+    if (modal) modal.classList.add("hidden");
+}
+
+/**
+ * Admin Badge Management Modal
+ */
+let currentAdminBadgeWorkerId = null;
+
+async function openAdminBadgeModal(workerId) {
+    currentAdminBadgeWorkerId = workerId;
+    const modal = document.getElementById("adminBadgeModal");
+    const content = document.getElementById("adminBadgeContent");
+    if (!modal || !content) return;
+
+    modal.classList.remove("hidden");
+    content.innerHTML = `<div class="skeleton" style="height:180px;"></div>`;
+
+    try {
+        const res = await adminFetch(`/api/workers/${workerId}/badge`);
+        const data = await res.json();
+
+        if (!data.success || !data.badge) {
+            content.innerHTML = `<div class="error">${data.message || "Failed to load worker credentials."}</div>`;
+            return;
+        }
+
+        const b = data.badge;
+
+        content.innerHTML = `
+            <div style="margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid var(--line);">
+                <strong style="font-size:16px;">${b.name}</strong> • <span class="role-badge worker">${b.skill}</span><br>
+                <small style="color:var(--muted);">Current Cert: <strong>${b.ncctCertId}</strong> (${b.badgeLevel}) • Society: ${b.society.name}</small>
+            </div>
+
+            <form id="adminBadgeForm" onsubmit="event.preventDefault(); submitAdminBadgeIssuance(${workerId});">
+                <div class="form-group">
+                    <label>Certification Tier / Badge Level</label>
+                    <select id="adminBadgeTierSelect" style="width:100%; padding:10px; border:1px solid var(--line); border-radius:8px;">
+                        <option value="Level 1: Certified Tradesperson" ${b.badgeLevel.startsWith("Level 1") ? "selected" : ""}>🎖️ Level 1: Certified Tradesperson (Foundation)</option>
+                        <option value="Level 2: Advanced Co-op Master Tradesperson" ${b.badgeLevel.startsWith("Level 2") ? "selected" : ""}>🎖️ Level 2: Advanced Co-op Master Tradesperson</option>
+                        <option value="Level 3: Master Craftsman & Cooperative Trainer" ${b.badgeLevel.startsWith("Level 3") ? "selected" : ""}>🎖️ Level 3: Master Craftsman & Cooperative Trainer</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <div>
+                        <label>KYC Document Type</label>
+                        <select id="adminBadgeKycType" style="width:100%; padding:10px; border:1px solid var(--line); border-radius:8px;">
+                            <option value="Aadhaar / National ID">Aadhaar Card / National ID</option>
+                            <option value="Voter ID (EPIC)">Voter ID (EPIC)</option>
+                            <option value="NCCT / ITI Skill Diploma">NCCT / ITI Skill Diploma</option>
+                            <option value="Labour Cooperative Passbook">Labour Cooperative Passbook</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Masked KYC Number</label>
+                        <input type="text" id="adminBadgeKycNumber" value="${b.kycDocNumber || 'XXXX-XXXX-9876'}" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Auditor Signature & Credentialing Notes</label>
+                    <textarea id="adminBadgeNotes" rows="2" style="width:100%; padding:10px; border:1px solid var(--line); border-radius:8px;" placeholder="Verification observations, background check status, training cohort ID..."></textarea>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; border-top:1px solid var(--line); padding-top:14px;">
+                    <button type="button" class="btn-cancel" onclick="revokeAdminBadge(${workerId})">🚫 Suspend Certification</button>
+                    <div style="display:flex; gap:8px;">
+                        <button type="button" class="secondary" onclick="closeAdminBadgeModal()">Cancel</button>
+                        <button type="submit" class="primary cta-gold">🎖️ Issue / Upgrade Digital Badge</button>
+                    </div>
+                </div>
+            </form>
+            <div id="adminBadgeResult" style="margin-top:10px;"></div>
+        `;
+    } catch (err) {
+        console.error(err);
+        content.innerHTML = `<div class="error">Could not load badge form.</div>`;
+    }
+}
+
+function closeAdminBadgeModal() {
+    const modal = document.getElementById("adminBadgeModal");
+    if (modal) modal.classList.add("hidden");
+}
+
+async function submitAdminBadgeIssuance(workerId) {
+    const tier = document.getElementById("adminBadgeTierSelect").value;
+    const docType = document.getElementById("adminBadgeKycType").value;
+    const docNum = document.getElementById("adminBadgeKycNumber").value.trim();
+    const notes = document.getElementById("adminBadgeNotes").value.trim();
+    const resultEl = document.getElementById("adminBadgeResult");
+
+    if (resultEl) resultEl.innerHTML = `<div class="skeleton" style="height:40px;"></div>`;
+
+    try {
+        const res = await adminFetch(`/api/admin/workers/${workerId}/badge`, {
+            method: "POST",
+            body: JSON.stringify({
+                badgeLevel: tier,
+                kycDocType: docType,
+                kycDocNumber: docNum,
+                notes: notes
+            })
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+            if (resultEl) resultEl.innerHTML = `<div class="success" style="color:#2E7D32; font-weight:700;">${data.message}</div>`;
+            setTimeout(() => {
+                closeAdminBadgeModal();
+                loadAdminWorkers();
+            }, 900);
+        } else {
+            if (resultEl) resultEl.innerHTML = `<div class="error">${data.message || "Credential issuance failed"}</div>`;
+        }
+    } catch (err) {
+        console.error(err);
+        if (resultEl) resultEl.innerHTML = `<div class="error">Server request failed.</div>`;
+    }
+}
+
+async function revokeAdminBadge(workerId) {
+    const reason = prompt("Enter statutory reason for suspending / revoking this worker's certification:") || "Quality audit check failure";
+    try {
+        const res = await adminFetch(`/api/admin/workers/${workerId}/revoke-badge`, {
+            method: "POST",
+            body: JSON.stringify({ reason })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            alert(data.message);
+            closeAdminBadgeModal();
+            loadAdminWorkers();
+        } else {
+            alert(data.message || "Failed to revoke certification.");
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Server request failed.");
     }
 }

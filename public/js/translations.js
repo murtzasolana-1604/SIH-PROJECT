@@ -191,7 +191,24 @@ const translations = {
         pwaInstallSub: "Works 100% offline with zero data consumption.",
         btnInstallPwa: "Install App",
         bookingOfflineTitle: "Booking Saved in Offline Cooperative Vault!",
-        bookingOfflineQueuedMsg: "📡 Your booking has been safely stored in your offline cooperative vault. It will auto-sync the moment your connection returns!"
+        bookingOfflineQueuedMsg: "📡 Your booking has been safely stored in your offline cooperative vault. It will auto-sync the moment your connection returns!",
+
+        // Worker Verification & NCCT Certification Digital Badges (Phase 17)
+        badgeLevel1: "Level 1: Certified Tradesperson",
+        badgeLevel2: "Level 2: Advanced Co-op Master Tradesperson",
+        badgeLevel3: "Level 3: Master Craftsman & Cooperative Trainer",
+        digitalIdCardTitle: "Cooperative Tradesperson Identity Card",
+        digitalIdMinistry: "Ministry of Cooperation • National Council for Cooperative Training",
+        badgeVerifiedLabel: "NCCT Verified",
+        btnViewDigitalId: "🪪 View Digital ID Card & QR",
+        btnCitizenTrust: "Official Verification Statement",
+        btnUpgradeBadge: "🎖️ Upgrade Tier / KYC",
+        tamperProofHash: "Tamper-Evident SHA-256 Fingerprint",
+        scanToVerify: "Scan to Verify Online",
+        statutoryCardNotice: "Statutory cooperative credential under MSCS Act 2002. Any fraudulent alteration is a punishable legal offence.",
+        citizenTrustHeading: "NCCT Verified Cooperative Member",
+        citizenTrustSub: "Government Cooperative Accreditation • Zero Middleman Platform",
+        badgeCopiedToast: "📋 Tamper-proof verification URL copied to clipboard!"
     },
     hi: {
         appTitle: "🤝 सहकार कनेक्ट",
@@ -385,7 +402,24 @@ const translations = {
         pwaInstallSub: "शून्य डेटा खपत के साथ 100% ऑफ़लाइन काम करता है।",
         btnInstallPwa: "ऐप इंस्टॉल करें",
         bookingOfflineTitle: "बुकिंग ऑफ़लाइन सहकारी वॉल्ट में सुरक्षित रूप से सहेजी गई!",
-        bookingOfflineQueuedMsg: "📡 आपकी बुकिंग आपके ऑफ़लाइन सहकारी वॉल्ट में सुरक्षित रूप से संग्रहीत हो गई है। कनेक्शन वापस आते ही यह स्वतः सिंक हो जाएगी!"
+        bookingOfflineQueuedMsg: "📡 आपकी बुकिंग आपके ऑफ़लाइन सहकारी वॉल्ट में सुरक्षित रूप से संग्रहीत हो गई है। कनेक्शन वापस आते ही यह स्वतः सिंक हो जाएगी!",
+
+        // Worker Verification & NCCT Certification Digital Badges (Phase 17)
+        badgeLevel1: "स्तर 1: प्रमाणित कामगार",
+        badgeLevel2: "स्तर 2: उन्नत सहकारी मास्टर कामगार",
+        badgeLevel3: "स्तर 3: मास्टर शिल्पकार एवं सहकारी प्रशिक्षक",
+        digitalIdCardTitle: "सहकारी कामगार डिजिटल पहचान पत्र",
+        digitalIdMinistry: "सहकारिता मंत्रालय • राष्ट्रीय सहकारी प्रशिक्षण परिषद (NCCT)",
+        badgeVerifiedLabel: "NCCT सत्यापित",
+        btnViewDigitalId: "🪪 डिजिटल पहचान पत्र व क्यूआर देखें",
+        btnCitizenTrust: "आधिकारिक सत्यापन प्रमाण",
+        btnUpgradeBadge: "🎖️ टियर अपग्रेड / केवाईसी",
+        tamperProofHash: "छेड़छाड़-रोधी SHA-256 डिजिटल फिंगरप्रिंट",
+        scanToVerify: "ऑनलाइन सत्यापन हेतु स्कैन करें",
+        statutoryCardNotice: "MSCS अधिनियम 2002 के तहत वैधानिक सहकारी साख पत्र। कोई भी अनधिकृत फेरबदल कानूनी रूप से दंडनीय अपराध है।",
+        citizenTrustHeading: "NCCT सत्यापित सहकारी सदस्य",
+        citizenTrustSub: "सरकारी सहकारी प्रमाणन • शून्य बिचौलिया मंच",
+        badgeCopiedToast: "📋 डिजिटल सत्यापन लिंक क्लिपबोर्ड पर कॉपी हो गया!"
     }
 };
 
