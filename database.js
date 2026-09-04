@@ -73,6 +73,7 @@ addColumnIfMissing("workers", "certification TEXT DEFAULT 'Self-Trained'");
 addColumnIfMissing("workers", "additional_skills TEXT");
 addColumnIfMissing("workers", "welfare_status TEXT DEFAULT 'Enrolled in Cooperative Welfare Fund (Demo)'");
 addColumnIfMissing("workers", "insurance_status TEXT DEFAULT 'Covered: PM Suraksha Bima / Accidental (Demo)'");
+addColumnIfMissing("workers", "is_available INTEGER DEFAULT 1");
 
 // RATINGS TABLE
 db.exec(`

@@ -634,6 +634,10 @@ async function fetchWorkerDashboard() {
         const ratingRes = await fetch(`/api/ratings?workerId=${worker.id}`);
         const ratingData = await ratingRes.json();
 
+        const earnRes = await fetch(`/api/workers/${worker.id}/earnings`).catch(() => null);
+        const earnData = earnRes ? await earnRes.json() : { success: false, earnings: {} };
+        const earnings = earnData.earnings || { today: 0, week: 0, total: 0, cooperativeShare: 0, completedJobsCount: 0 };
+
         const verifiedBadge = worker.verified
             ? `<span class="badge verified">${SEAL_ICON}Verified Member</span>`
             : `<span class="badge unverified">🟡 Pending Review</span>`;
@@ -642,20 +646,28 @@ async function fetchWorkerDashboard() {
             ? `⭐ ${ratingData.average} (${ratingData.count} ratings)`
             : "No ratings yet";
 
+        const isAvail = worker.is_available !== 0;
+        const availBtn = isAvail
+            ? `<button class="avail-toggle-btn online" onclick="toggleWorkerLiveAvailability(${worker.id}, 1)">🟢 AVAILABLE FOR WORK</button>`
+            : `<button class="avail-toggle-btn offline" onclick="toggleWorkerLiveAvailability(${worker.id}, 0)">🔴 BUSY / ON LEAVE</button>`;
+
         let html = `
             <div class="worker-profile">
-                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
                     <div>
-                        <strong style="font-size:18px;">${worker.name}</strong><br>
+                        <strong style="font-size:19px;">${worker.name}</strong><br>
                         <span class="role-badge worker" style="margin-top:4px;">${worker.skill}</span>
+                        <div style="margin-top:6px;">${verifiedBadge}</div>
                     </div>
-                    ${verifiedBadge}
+                    <div style="text-align:right;">
+                        ${availBtn}
+                    </div>
                 </div>
                 <div style="font-size:13.5px; line-height:1.7; color:var(--ink); margin-bottom:12px;">
                     <strong>Experience:</strong> ${worker.experience || "1 year"}<br>
                     <strong>Certification:</strong> ${worker.certification || "Cooperative / NCCT Certified"}<br>
                     <strong>Service Area:</strong> ${worker.location || "Greater Noida"}<br>
-                    <strong>Availability:</strong> ${worker.availability || "Full Day"}<br>
+                    <strong>Operating Hours:</strong> ${worker.availability || "Full Day"}<br>
                     <strong>Rating:</strong> ${ratingText}
                 </div>
 
@@ -674,13 +686,41 @@ async function fetchWorkerDashboard() {
                     <small class="hint">Demonstration cooperative coverage — future-ready for NCCT / e-Shram linkage.</small>
                 </div>
             </div>
+
+            <!-- Cooperative Earnings Ledger -->
+            <div class="earnings-summary-card">
+                <div class="earnings-header">
+                    <span class="earnings-title">💰 Cooperative Earnings Ledger</span>
+                    <span class="completed-jobs-chip">${earnings.completedJobsCount} Jobs Completed</span>
+                </div>
+                <div class="earnings-grid">
+                    <div class="earnings-stat-card">
+                        <span class="stat-label">Today's Earnings</span>
+                        <span class="stat-val">₹${earnings.today}</span>
+                    </div>
+                    <div class="earnings-stat-card">
+                        <span class="stat-label">This Week</span>
+                        <span class="stat-val">₹${earnings.week}</span>
+                    </div>
+                    <div class="earnings-stat-card">
+                        <span class="stat-label">Coop Share (15%)</span>
+                        <span class="stat-val coop">₹${earnings.cooperativeShare}</span>
+                    </div>
+                    <div class="earnings-stat-card highlight">
+                        <span class="stat-label">Net Take-Home</span>
+                        <span class="stat-val">₹${earnings.total}</span>
+                    </div>
+                </div>
+                <small class="hint">Transparent cooperative ledger: zero private middleman commission — 85% directly to you, 15% to NCCT welfare fund.</small>
+            </div>
         `;
 
+        // Active Jobs
         const activeRes = await fetch(`/api/bookings?assignedWorkerId=${worker.id}`);
         const activeData = await activeRes.json();
         const activeBookings = (activeData.bookings || []).filter(b => b.status === "Assigned" || b.status === "In Progress");
 
-        html += `<h3 style="margin-bottom:12px;">My Active Jobs</h3>`;
+        html += `<h3 style="margin-bottom:12px;">My Active Jobs (${activeBookings.length})</h3>`;
 
         if (activeBookings.length === 0) {
             html += `<div class="empty-state"><span class="icon">🗓️</span>No active jobs right now.</div>`;
@@ -711,24 +751,56 @@ async function fetchWorkerDashboard() {
             });
         }
 
+        // Available Jobs
         const jobsRes = await fetch(`/api/bookings?service=${encodeURIComponent(worker.skill)}&status=Pending`);
         const jobsData = await jobsRes.json();
+        const unpassedJobs = (jobsData.bookings || []).filter(b => !window.dismissedJobIds.has(b.id));
 
-        html += `<h3 style="margin:20px 0 12px;">Available Jobs</h3>`;
+        html += `<h3 style="margin:22px 0 12px;">Incoming Available Jobs (${unpassedJobs.length})</h3>`;
 
-        if (!jobsData.success || jobsData.bookings.length === 0) {
+        if (!isAvail) {
+            html += `<div class="busy-alert-banner">⏸️ You are currently marked as <strong>BUSY / ON LEAVE</strong>. Switch your status above to <strong>AVAILABLE</strong> to accept new jobs.</div>`;
+        }
+
+        if (unpassedJobs.length === 0) {
             html += `<div class="empty-state"><span class="icon">📭</span>No pending jobs right now for ${worker.skill}.</div>`;
         } else {
-            jobsData.bookings.forEach(booking => {
-                const emergencyTag = booking.is_emergency ? `<span class="badge emergency">🚨 Emergency</span><br>` : "";
+            unpassedJobs.forEach(booking => {
+                const emergencyTag = booking.is_emergency ? `<span class="badge emergency">🚨 EMERGENCY PRIORITY DISPATCH</span><br>` : "";
                 html += `
-                    <div class="booking-item">
-                        ${emergencyTag}
-                        <strong>Booking ID:</strong> ${booking.id}<br>
+                    <div class="booking-item" id="avail-job-${booking.id}">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;">
+                            <div>${emergencyTag}<strong style="font-size:15px;">${booking.service}</strong></div>
+                            <span class="badge" style="background:#FFF4E5; color:#8C5300; border:1px solid #FFE0B2;">Open Dispatch</span>
+                        </div>
+                        <strong>Booking ID:</strong> #${booking.id}<br>
                         <strong>Customer:</strong> ${booking.customer_name}<br>
                         <strong>Address:</strong> ${booking.address}<br>
-                        <strong>Date:</strong> ${booking.booking_date} ${booking.booking_time}<br>
-                        <button class="primary" onclick="acceptJob(${booking.id}, ${worker.id})">Accept Job</button>
+                        <strong>Date & Time:</strong> ${booking.booking_date} ${booking.booking_time}<br>
+                        <div class="job-actions-row" style="margin-top:12px; display:flex; gap:10px;">
+                            <button class="primary" ${!isAvail ? "disabled style='opacity:0.5; cursor:not-allowed;'" : ""} onclick="acceptJob(${booking.id}, ${worker.id})">Accept Job</button>
+                            <button class="btn-pass" onclick="passAvailableJob(${booking.id})">Pass / Decline</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // Ratings & Reviews
+        html += `<h3 style="margin:24px 0 12px;">⭐ Member Ratings & Feedback</h3>`;
+        const reviews = ratingData.ratings || [];
+        if (reviews.length === 0) {
+            html += `<div class="empty-state"><span class="icon">⭐</span>No customer ratings yet. Complete jobs to build your cooperative service reputation!</div>`;
+        } else {
+            reviews.forEach(r => {
+                const starsDisplay = "⭐".repeat(Math.min(5, Math.max(1, r.stars)));
+                html += `
+                    <div class="review-item">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                            <strong>${starsDisplay} (${r.stars}/5)</strong>
+                            <small style="color:var(--muted); font-family:var(--font-mono);">${r.created_at || "Verified"}</small>
+                        </div>
+                        <p style="margin:0; font-size:13px; color:var(--ink);">${r.comment ? `"${r.comment}"` : "<em>Verified satisfactory service completion</em>"}</p>
                     </div>
                 `;
             });
@@ -739,6 +811,39 @@ async function fetchWorkerDashboard() {
     } catch (error) {
         console.error(error);
         result.innerHTML = `<div class="error">Server connection failed.</div>`;
+    }
+}
+
+// Helper: Pass / Dismiss an open job
+window.dismissedJobIds = window.dismissedJobIds || new Set();
+
+function passAvailableJob(bookingId) {
+    window.dismissedJobIds.add(bookingId);
+    const item = document.getElementById(`avail-job-${bookingId}`);
+    if (item) {
+        item.style.opacity = "0.45";
+        item.innerHTML = `<div style="padding:10px; color:var(--muted); font-size:13px;"><em>Job #${bookingId} passed. Available for other cooperative members.</em></div>`;
+    }
+}
+
+// Helper: Toggle Live Availability
+async function toggleWorkerLiveAvailability(workerId, currentStatus) {
+    const nextStatus = currentStatus ? 0 : 1;
+    try {
+        const res = await fetch(`/api/workers/${workerId}/availability`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ isAvailable: nextStatus })
+        });
+        const data = await res.json();
+        if (data.success) {
+            fetchWorkerDashboard();
+        } else {
+            alert(data.message);
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Server connection failed.");
     }
 }
 
@@ -756,6 +861,8 @@ async function acceptJob(bookingId, workerId) {
         console.error(error);
         alert("Server connection failed.");
     }
+}
+
 async function startWorkerJob(bookingId) {
     try {
         const res = await fetch(`/api/bookings/${bookingId}/start`, {

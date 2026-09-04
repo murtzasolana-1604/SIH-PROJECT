@@ -123,4 +123,95 @@ function workersRoute(req, res) {
     return res.status(405).json({ success: false, message: "Method not allowed" });
 }
 
+// =====================================
+// UPDATE AVAILABILITY (Available / Busy)
+// =====================================
+function updateAvailability(req, res) {
+    const workerId = Number(req.params.id);
+    const { isAvailable } = req.body;
+
+    if (isAvailable === undefined) {
+        return res.status(400).json({ success: false, message: "isAvailable (0 or 1) is required." });
+    }
+
+    const worker = db.prepare("SELECT * FROM workers WHERE id = ?").get(workerId);
+    if (!worker) {
+        return res.status(404).json({ success: false, message: "Worker not found." });
+    }
+
+    db.prepare("UPDATE workers SET is_available = ? WHERE id = ?").run(isAvailable ? 1 : 0, workerId);
+    const updated = db.prepare("SELECT * FROM workers WHERE id = ?").get(workerId);
+
+    return res.json({
+        success: true,
+        message: isAvailable ? "You are now AVAILABLE for jobs." : "You are now marked BUSY / ON LEAVE.",
+        worker: updated
+    });
+}
+
+// =====================================
+// GET WORKER EARNINGS BREAKDOWN
+// =====================================
+function getEarnings(req, res) {
+    const workerId = Number(req.params.id);
+    const worker = db.prepare("SELECT * FROM workers WHERE id = ?").get(workerId);
+
+    if (!worker) {
+        return res.status(404).json({ success: false, message: "Worker not found." });
+    }
+
+    const invoices = db.prepare(`
+        SELECT i.*, b.booking_date, b.service, b.created_at AS booking_created_at
+        FROM invoices i
+        JOIN bookings b ON i.booking_id = b.id
+        WHERE b.assigned_worker_id = ?
+        ORDER BY i.id DESC
+    `).all(workerId);
+
+    const now = new Date();
+    const todayStr = now.toISOString().split("T")[0];
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    let todayEarnings = 0;
+    let weekEarnings = 0;
+    let totalEarnings = 0;
+    let totalCoopShare = 0;
+    let totalAmount = 0;
+
+    invoices.forEach(inv => {
+        const invDate = new Date(inv.created_at || inv.booking_date);
+        const earning = Number(inv.worker_earning) || 0;
+        const coop = Number(inv.cooperative_share) || 0;
+        const total = Number(inv.total_amount) || 0;
+
+        totalEarnings += earning;
+        totalCoopShare += coop;
+        totalAmount += total;
+
+        if (inv.booking_date === todayStr || (inv.created_at && String(inv.created_at).startsWith(todayStr))) {
+            todayEarnings += earning;
+        }
+
+        if (invDate >= sevenDaysAgo) {
+            weekEarnings += earning;
+        }
+    });
+
+    return res.json({
+        success: true,
+        earnings: {
+            today: Math.round(todayEarnings * 100) / 100,
+            week: Math.round(weekEarnings * 100) / 100,
+            total: Math.round(totalEarnings * 100) / 100,
+            cooperativeShare: Math.round(totalCoopShare * 100) / 100,
+            grossTotal: Math.round(totalAmount * 100) / 100,
+            completedJobsCount: invoices.length,
+            invoices: invoices.slice(0, 5)
+        }
+    });
+}
+
+workersRoute.updateAvailability = updateAvailability;
+workersRoute.getEarnings = getEarnings;
+
 module.exports = workersRoute;

@@ -38,6 +38,8 @@ app.post("/api/customer/location", customerRoute.updateLocation);
 // Workers
 app.get("/api/workers", workersRoute);
 app.post("/api/workers", workersRoute);
+app.post("/api/workers/:id/availability", workersRoute.updateAvailability);
+app.get("/api/workers/:id/earnings", workersRoute.getEarnings);
 
 // Bookings
 app.get("/api/bookings", bookings.bookingsRoute);
