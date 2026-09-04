@@ -380,6 +380,27 @@ document.getElementById("bookingForm").addEventListener("submit", async function
         customerLng: document.getElementById("customerLng").value || null
     };
 
+    // PHASE 16: Offline-first check
+    if (!navigator.onLine && typeof queueOfflineBooking === "function") {
+        const offlineResult = queueOfflineBooking(booking);
+        const result = document.getElementById("bookingResult");
+        result.innerHTML = `
+            <div class="success" style="background:#FFFDE7; border:1.5px solid #FBC02D; color:#5D4037;">
+                <div>
+                    <strong style="color:#F57F17;">📡 ${t('bookingOfflineTitle', 'Booking Saved in Offline Cooperative Vault!')}</strong><br><br>
+                    <strong>Queue Reference:</strong> <code style="font-family:var(--font-mono);">${offlineResult.booking.id}</code><br>
+                    <strong>Service:</strong> ${offlineResult.booking.service}<br>
+                    <strong>Customer:</strong> ${offlineResult.booking.customer_name}<br>
+                    <strong>Scheduled For:</strong> ${offlineResult.booking.booking_date} at ${offlineResult.booking.booking_time}<br>
+                    <strong>Status:</strong> <span class="badge" style="background:#FFE082; color:#5D4037;">⏳ Queued (Offline)</span><br><br>
+                    <small style="color:#6D4C41;">${offlineResult.message}</small>
+                </div>
+            </div>
+        `;
+        document.getElementById("bookingForm").reset();
+        return;
+    }
+
     try {
         const response = await fetch("/api/bookings", {
             method: "POST",
@@ -410,7 +431,23 @@ document.getElementById("bookingForm").addEventListener("submit", async function
         }
     } catch (error) {
         console.error(error);
-        document.getElementById("bookingResult").innerHTML = `<div class="error">Server connection failed.</div>`;
+        // If network request failed unexpectedly, queue to offline vault
+        if (typeof queueOfflineBooking === "function") {
+            const offlineResult = queueOfflineBooking(booking);
+            document.getElementById("bookingResult").innerHTML = `
+                <div class="success" style="background:#FFFDE7; border:1.5px solid #FBC02D; color:#5D4037;">
+                    <div>
+                        <strong style="color:#F57F17;">📡 Network Disconnected: Saved to Offline Vault!</strong><br><br>
+                        <strong>Queue Reference:</strong> <code style="font-family:var(--font-mono);">${offlineResult.booking.id}</code><br>
+                        <strong>Status:</strong> <span class="badge" style="background:#FFE082; color:#5D4037;">⏳ Queued (Offline)</span><br><br>
+                        <small style="color:#6D4C41;">${offlineResult.message}</small>
+                    </div>
+                </div>
+            `;
+            document.getElementById("bookingForm").reset();
+        } else {
+            document.getElementById("bookingResult").innerHTML = `<div class="error">Server connection failed.</div>`;
+        }
     }
 });
 
@@ -433,8 +470,13 @@ async function fetchMyBookings() {
     try {
         const response = await fetch(`/api/bookings?phone=${encodeURIComponent(phone)}`);
         const data = await response.json();
+        const bookingsList = (data.success && data.bookings) ? data.bookings : [];
 
-        if (!data.success || data.bookings.length === 0) {
+        const offlineList = typeof getOfflineOutbox === "function"
+            ? getOfflineOutbox().filter(i => i.payload && i.payload.customerPhone === phone)
+            : [];
+
+        if (bookingsList.length === 0 && offlineList.length === 0) {
             result.innerHTML = `
                 <div class="empty-state">
                     <span class="icon">📭</span>
@@ -446,7 +488,29 @@ async function fetchMyBookings() {
 
         result.innerHTML = "";
 
-        for (const booking of data.bookings) {
+        // Prepend any offline-queued bookings
+        if (offlineList.length > 0) {
+            offlineList.forEach(item => {
+                const offItem = document.createElement("div");
+                offItem.className = "booking-item";
+                offItem.style.borderLeft = "4px solid #FBC02D";
+                offItem.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <strong>${item.payload.service}</strong>
+                        <span class="badge" style="background:#FFF8E1; color:#F57F17; border:1px solid #FFE082;">⏳ Queued (Offline)</span>
+                    </div>
+                    <div style="font-size:13px; line-height:1.6;">
+                        <strong>Queue Reference:</strong> <code style="font-family:var(--font-mono);">${item.queueId}</code><br>
+                        <strong>Customer:</strong> ${item.payload.customerName}<br>
+                        <strong>Address:</strong> ${item.payload.address}<br>
+                        <strong>Scheduled For:</strong> ${item.payload.bookingDate} at ${item.payload.bookingTime}
+                    </div>
+                `;
+                result.appendChild(offItem);
+            });
+        }
+
+        for (const booking of bookingsList) {
 
             const item = document.createElement("div");
             item.className = "booking-item";
@@ -718,8 +782,33 @@ async function fetchMyBookings() {
         }
 
     } catch (error) {
-        console.error(error);
-        result.innerHTML = `<div class="error">Server connection failed.</div>`;
+        console.error("fetchMyBookings connection failed:", error);
+        const offlineList = typeof getOfflineOutbox === "function"
+            ? getOfflineOutbox().filter(i => i.payload && i.payload.customerPhone === phone)
+            : [];
+
+        if (offlineList.length > 0) {
+            let offlineHtml = `<div class="offline-bookings-notice" style="background:#FFFDE7; border:1.5px solid #FBC02D; padding:12px 14px; border-radius:10px; margin-bottom:14px; font-size:13px; color:#5D4037;"><strong>⚠️ Offline Mode Active:</strong> Showing ${offlineList.length} booking(s) saved in your local cooperative vault. They will auto-sync once online.</div>`;
+            offlineList.forEach(item => {
+                offlineHtml += `
+                    <div class="booking-item" style="border-left:4px solid #FBC02D;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                            <strong>${item.payload.service}</strong>
+                            <span class="badge" style="background:#FFF8E1; color:#F57F17; border:1px solid #FFE082;">⏳ Queued (Offline)</span>
+                        </div>
+                        <div style="font-size:13px; line-height:1.6;">
+                            <strong>Queue Reference:</strong> <code style="font-family:var(--font-mono);">${item.queueId}</code><br>
+                            <strong>Customer:</strong> ${item.payload.customerName}<br>
+                            <strong>Address:</strong> ${item.payload.address}<br>
+                            <strong>Scheduled:</strong> ${item.payload.bookingDate} at ${item.payload.bookingTime}
+                        </div>
+                    </div>
+                `;
+            });
+            result.innerHTML = offlineHtml;
+        } else {
+            result.innerHTML = `<div class="error">Server connection failed. Working from offline cache.</div>`;
+        }
     }
 }
 

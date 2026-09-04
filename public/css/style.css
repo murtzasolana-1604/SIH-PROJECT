@@ -3445,4 +3445,192 @@ footer { text-align: center; padding: 26px; color: var(--muted); font-size: 12.5
     .audit-grid-2 {
         grid-template-columns: 1fr;
     }
-}
+}
+
+/* ============================================================
+   PHASE 16: PWA & OFFLINE-FIRST CAPABILITIES STYLES
+   ============================================================ */
+
+/* Pinned Network Status Banner */
+.network-banner {
+    position: sticky;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 9999;
+    padding: 10px 16px;
+    font-size: 13px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+    transition: all 0.3s ease;
+}
+
+.network-banner.offline {
+    background: #FFF3E0;
+    border-bottom: 2px solid #FF9800;
+    color: #E65100;
+}
+
+.network-banner.online {
+    background: #E8F5E9;
+    border-bottom: 2px solid #4CAF50;
+    color: #1B5E20;
+}
+
+.network-banner-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    line-height: 1.4;
+}
+
+.net-pulse-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.net-pulse-dot.offline {
+    background: #F57C00;
+    box-shadow: 0 0 0 0 rgba(245, 124, 0, 0.7);
+    animation: netPulse 1.6s infinite cubic-bezier(0.66, 0, 0, 1);
+}
+
+.net-pulse-dot.online {
+    background: #2E7D32;
+    box-shadow: 0 0 0 0 rgba(46, 125, 50, 0.7);
+}
+
+@keyframes netPulse {
+    to {
+        box-shadow: 0 0 0 10px rgba(245, 124, 0, 0);
+    }
+}
+
+.network-banner-actions {
+    margin-left: 12px;
+}
+
+.net-btn-retry {
+    background: #E65100;
+    color: white;
+    border: none;
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s ease;
+}
+
+.net-btn-retry:hover {
+    background: #BF360C;
+}
+
+/* PWA Install Banner */
+.pwa-install-banner {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #004D40;
+    color: white;
+    border-radius: 16px;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    box-shadow: 0 10px 30px rgba(0, 77, 64, 0.35);
+    z-index: 9998;
+    max-width: 480px;
+    width: 90%;
+    border: 1.5px solid #00796B;
+    animation: slideUpPwa 0.35s ease-out;
+}
+
+@keyframes slideUpPwa {
+    from {
+        opacity: 0;
+        transform: translate(-50%, 20px);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+}
+
+.pwa-install-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.pwa-install-icon {
+    font-size: 28px;
+    line-height: 1;
+}
+
+.pwa-install-content strong {
+    display: block;
+    font-size: 14px;
+    color: #FFFFFF;
+}
+
+.pwa-install-content small {
+    color: #B2DFDB;
+    font-size: 11.5px;
+}
+
+.pwa-install-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pwa-dismiss-btn {
+    background: transparent;
+    border: none;
+    color: #80CBC4;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+    border-radius: 50%;
+}
+
+.pwa-dismiss-btn:hover {
+    color: white;
+}
+
+/* PWA Toast Notification */
+.pwa-toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: #1B5E20;
+    color: white;
+    padding: 12px 18px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+    z-index: 10001;
+    display: none;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.pwa-toast.visible {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+}
+

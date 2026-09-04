@@ -4,11 +4,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#004D40">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="description" content="Cooperative Gig Services Platform for Household & Community Services (Ministry of Cooperation / NCCT)">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icons/icon-192.svg">
+    <link rel="icon" type="image/svg+xml" href="/icons/icon-192.svg">
     <title>Sahkaar Connect</title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
 
 <body>
+
+    <!-- ===================== NETWORK LIVENESS STATUS BANNER (PHASE 16) ===================== -->
+    <div id="networkStatusBanner" class="network-banner hidden" role="alert" aria-live="polite"></div>
+
+    <!-- ===================== PWA INSTALL PROMPT BANNER (PHASE 16) ===================== -->
+    <div id="pwaInstallBanner" class="pwa-install-banner hidden">
+        <div class="pwa-install-content">
+            <span class="pwa-install-icon">📱</span>
+            <div>
+                <strong data-i18n="pwaInstallTitle">Install Sahkaar Connect App</strong>
+                <small data-i18n="pwaInstallSub">Works 100% offline with zero data consumption.</small>
+            </div>
+        </div>
+        <div class="pwa-install-actions">
+            <button class="primary cta-gold btn-sm" onclick="triggerPwaInstall()" data-i18n="btnInstallPwa">Install App</button>
+            <button class="pwa-dismiss-btn" onclick="dismissPwaInstallBanner()" aria-label="Dismiss">✕</button>
+        </div>
+    </div>
 
     <!-- ===================== ROLE SELECTION ===================== -->
     <div id="roleScreen" class="screen">
@@ -1104,6 +1129,7 @@
     <script src="/js/role.js"></script>
     <script src="/js/app.js"></script>
     <script src="/js/chatbot.js"></script>
+    <script src="/js/pwa.js"></script>
 
 </body>
 

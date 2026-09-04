@@ -178,7 +178,20 @@ const translations = {
         btnExportAudit: "📥 Export Audit Report",
         demandVsCapacityTitle: "📊 7-Day Projected Demand vs Worker Capacity",
         fairWageTitle: "⚖️ Fair Wage & Aggregator Elimination Matrix",
-        ncctUpskillingHeader: "🎓 NCCT Capacity Building & Skill Upskilling Cohorts"
+        ncctUpskillingHeader: "🎓 NCCT Capacity Building & Skill Upskilling Cohorts",
+
+        // PWA & Offline-First Capabilities (Phase 16)
+        offlineBannerTitle: "⚠️ OFFLINE MODE:",
+        offlineBannerSub: "Working from local cooperative device vault. Any new bookings will be safely queued and auto-synced once online.",
+        btnRetrySync: "🔄 Retry Sync",
+        onlineRestoredTitle: "✅ ONLINE:",
+        onlineRestoredSub: "Connected to Sahkaar Cooperative Federation.",
+        stillOfflineNotice: "Device is still offline. Reconnect to Wi-Fi or mobile data.",
+        pwaInstallTitle: "Install Sahkaar Connect App",
+        pwaInstallSub: "Works 100% offline with zero data consumption.",
+        btnInstallPwa: "Install App",
+        bookingOfflineTitle: "Booking Saved in Offline Cooperative Vault!",
+        bookingOfflineQueuedMsg: "📡 Your booking has been safely stored in your offline cooperative vault. It will auto-sync the moment your connection returns!"
     },
     hi: {
         appTitle: "🤝 सहकार कनेक्ट",
@@ -359,7 +372,20 @@ const translations = {
         btnExportAudit: "📥 ऑडिट रिपोर्ट निर्यात करें",
         demandVsCapacityTitle: "📊 7-दिवसीय अनुमानित मांग बनाम कामगार क्षमता",
         fairWageTitle: "⚖️ उचित मजदूरी एवं निजी बिचौलिया उन्मूलन तालिका",
-        ncctUpskillingHeader: "🎓 NCCT क्षमता निर्माण एवं कौशल उन्नयन समूह"
+        ncctUpskillingHeader: "🎓 NCCT क्षमता निर्माण एवं कौशल उन्नयन समूह",
+
+        // PWA & Offline-First Capabilities (Phase 16)
+        offlineBannerTitle: "⚠️ ऑफ़लाइन मोड:",
+        offlineBannerSub: "स्थानीय सहकारी वॉल्ट से कार्य कर रहे हैं। नई बुकिंग सुरक्षित रूप से कतार में रहेंगी और ऑनलाइन आते ही स्वतः सिंक होंगी।",
+        btnRetrySync: "🔄 पुनः सिंक करें",
+        onlineRestoredTitle: "✅ ऑनलाइन:",
+        onlineRestoredSub: "सहकार सहकारी फेडरेशन से पुनः जुड़ गए हैं।",
+        stillOfflineNotice: "उपकरण अभी भी ऑफ़लाइन है। कृपया वाई-फाई या मोबाइल डेटा से पुनः कनेक्ट करें।",
+        pwaInstallTitle: "सहकार कनेक्ट ऐप इंस्टॉल करें",
+        pwaInstallSub: "शून्य डेटा खपत के साथ 100% ऑफ़लाइन काम करता है।",
+        btnInstallPwa: "ऐप इंस्टॉल करें",
+        bookingOfflineTitle: "बुकिंग ऑफ़लाइन सहकारी वॉल्ट में सुरक्षित रूप से सहेजी गई!",
+        bookingOfflineQueuedMsg: "📡 आपकी बुकिंग आपके ऑफ़लाइन सहकारी वॉल्ट में सुरक्षित रूप से संग्रहीत हो गई है। कनेक्शन वापस आते ही यह स्वतः सिंक हो जाएगी!"
     }
 };
 
