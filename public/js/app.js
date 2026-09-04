@@ -515,36 +515,36 @@ async function fetchMyBookings() {
                             <div class="coop-invoice-card paid">
                                 <div class="invoice-card-header">
                                     <div>
-                                        <span class="invoice-badge-label">OFFICIAL COOPERATIVE SETTLEMENT</span>
+                                        <span class="invoice-badge-label">${t('officialSettlement', 'OFFICIAL COOPERATIVE SETTLEMENT')}</span>
                                         <div class="invoice-number">${inv.invoice_number}</div>
                                     </div>
                                     <div class="paid-settlement-seal">
                                         ${SEAL_ICON}
-                                        <span>SETTLED & VERIFIED</span>
+                                        <span>${t('settledBadge', 'SETTLED & VERIFIED')}</span>
                                     </div>
                                 </div>
 
                                 <div class="invoice-breakdown-table">
                                     <div class="inv-row">
-                                        <span>Base Service Delivery:</span>
+                                        <span>${t('baseServiceDelivery', 'Base Service Delivery:')}</span>
                                         <span>₹${inv.base_charge}</span>
                                     </div>
                                     ${inv.is_emergency ? `
                                     <div class="inv-row emergency-row">
-                                        <span>🚨 Emergency Priority Dispatch Surcharge:</span>
+                                        <span>${t('emergencySurchargeText', '🚨 Emergency Priority Dispatch Surcharge:')}</span>
                                         <span>+₹${inv.emergency_fee}</span>
                                     </div>` : ""}
                                     <div class="inv-row divider"></div>
                                     <div class="inv-row highlight">
-                                        <span>👷 Worker Direct Earning (85%):</span>
+                                        <span>${t('workerDirectEarning', '👷 Worker Direct Earning (85%):')}</span>
                                         <span class="worker-earning-text">₹${inv.worker_earning}</span>
                                     </div>
                                     <div class="inv-row coop-share">
-                                        <span>🏛️ Cooperative Welfare & Training Fund (15%):</span>
+                                        <span>${t('coopWelfareShareText', '🏛️ Cooperative Welfare & Training Fund (15%):')}</span>
                                         <span class="coop-share-text">₹${inv.cooperative_share}</span>
                                     </div>
                                     <div class="inv-row total-row">
-                                        <strong>Total Settled:</strong>
+                                        <strong>${t('totalAmountPaid', 'Total Settled Amount:')}</strong>
                                         <strong class="total-amount">₹${inv.total_amount}</strong>
                                     </div>
                                 </div>
@@ -556,7 +556,7 @@ async function fetchMyBookings() {
                                 </div>
 
                                 <div class="invoice-actions-row">
-                                    <button class="btn-receipt" onclick="openPrintableReceipt(${booking.id})">🖨️ View & Print Official Receipt</button>
+                                    <button class="btn-receipt" onclick="openPrintableReceipt(${booking.id})">${t('btnViewReceipt', '🖨️ View & Print Official Receipt')}</button>
                                 </div>
                             </div>
                         `;
@@ -565,48 +565,48 @@ async function fetchMyBookings() {
                             <div class="coop-invoice-card unpaid" id="invoiceCard-${booking.id}">
                                 <div class="invoice-card-header">
                                     <div>
-                                        <span class="invoice-badge-label">OFFICIAL COOPERATIVE INVOICE</span>
+                                        <span class="invoice-badge-label">${t('officialInvoice', 'OFFICIAL COOPERATIVE INVOICE')}</span>
                                         <div class="invoice-number">${inv.invoice_number}</div>
                                     </div>
-                                    <span class="badge" style="background:#FFF4E5; color:#8C5300; border:1px solid #FFE0B2;">⏳ Payment Pending</span>
+                                    <span class="badge" style="background:#FFF4E5; color:#8C5300; border:1px solid #FFE0B2;">${t('paymentPendingBadge', '⏳ Payment Pending')}</span>
                                 </div>
 
                                 <div class="invoice-breakdown-table">
                                     <div class="inv-row">
-                                        <span>Base Service Delivery:</span>
+                                        <span>${t('baseServiceDelivery', 'Base Service Delivery:')}</span>
                                         <span>₹${inv.base_charge}</span>
                                     </div>
                                     ${inv.is_emergency ? `
                                     <div class="inv-row emergency-row">
-                                        <span>🚨 Emergency Priority Dispatch Surcharge:</span>
+                                        <span>${t('emergencySurchargeText', '🚨 Emergency Priority Dispatch Surcharge:')}</span>
                                         <span>+₹${inv.emergency_fee}</span>
                                     </div>` : ""}
                                     <div class="inv-row divider"></div>
                                     <div class="inv-row highlight">
-                                        <span>👷 Worker Direct Earning (85%):</span>
+                                        <span>${t('workerDirectEarning', '👷 Worker Direct Earning (85%):')}</span>
                                         <span class="worker-earning-text">₹${inv.worker_earning}</span>
                                     </div>
                                     <div class="inv-row coop-share">
-                                        <span>🏛️ Cooperative Welfare & Training Fund (15%):</span>
+                                        <span>${t('coopWelfareShareText', '🏛️ Cooperative Welfare & Training Fund (15%):')}</span>
                                         <span class="coop-share-text">₹${inv.cooperative_share}</span>
                                     </div>
                                     <div class="inv-row total-row">
-                                        <strong>Total Amount Due:</strong>
+                                        <strong>${t('totalAmountDue', 'Total Amount Due:')}</strong>
                                         <strong class="total-amount">₹${inv.total_amount}</strong>
                                     </div>
                                 </div>
 
                                 <div class="payment-selection-box">
-                                    <label class="pay-select-label">Select Payment Settlement Method:</label>
+                                    <label class="pay-select-label">${t('selectPaymentMethod', 'Select Payment Settlement Method:')}</label>
                                     <div class="pay-method-chips" id="payMethods-${booking.id}">
                                         <button type="button" class="pay-chip active" data-method="UPI" onclick="selectPaymentMethod(${booking.id}, 'UPI', ${inv.total_amount})">
-                                            📱 UPI / QR Code
+                                            ${t('payMethodUpi', '📱 UPI / QR Code')}
                                         </button>
                                         <button type="button" class="pay-chip" data-method="Cash" onclick="selectPaymentMethod(${booking.id}, 'Cash', ${inv.total_amount})">
-                                            💵 Cash on Completion
+                                            ${t('payMethodCash', '💵 Cash on Completion')}
                                         </button>
                                         <button type="button" class="pay-chip" data-method="Cooperative Account" onclick="selectPaymentMethod(${booking.id}, 'Cooperative Account', ${inv.total_amount})">
-                                            🏛️ Cooperative Credit
+                                            ${t('payMethodCredit', '🏛️ Cooperative Credit')}
                                         </button>
                                     </div>
                                     <input type="hidden" id="chosenMethod-${booking.id}" value="UPI">
@@ -631,18 +631,18 @@ async function fetchMyBookings() {
                                         </div>
                                         <div class="cash-note-wrap hidden" id="cashNote-${booking.id}">
                                             <div class="pay-method-note">
-                                                💵 <strong>Cash on Completion:</strong> Please pay the exact amount of <strong>₹${inv.total_amount}</strong> directly to your cooperative partner (${inv.worker.name || 'Worker'}) after inspecting the completed service.
+                                                ${t('cashHandoverNote', `💵 Cash on Completion: Please pay directly to your verified cooperative partner after inspecting completed service.`)}
                                             </div>
                                         </div>
                                         <div class="credit-note-wrap hidden" id="creditNote-${booking.id}">
                                             <div class="pay-method-note">
-                                                🏛️ <strong>Cooperative Society Credit:</strong> Settle directly against your verified Sahkaar member cooperative account balance (Account: COOP-MEM-${booking.customer_phone ? booking.customer_phone.slice(-4) : 'DEMO'}).
+                                                ${t('creditAccountNote', `🏛️ Cooperative Society Credit: Settle directly against your verified Sahkaar member cooperative account balance.`)}
                                             </div>
                                         </div>
                                     </div>
 
                                     <button class="cta-gold pay-execute-btn" id="payBtn-${booking.id}" onclick="executePayment(${booking.id}, ${inv.total_amount})">
-                                        💳 Settle Payment (₹${inv.total_amount})
+                                        ${t('btnSettlePayment', '💳 Settle Payment')} (₹${inv.total_amount})
                                     </button>
                                     <div id="payStatus-${booking.id}" class="pay-status-msg"></div>
                                 </div>

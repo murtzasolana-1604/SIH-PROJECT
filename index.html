@@ -12,40 +12,44 @@
 
     <!-- ===================== ROLE SELECTION ===================== -->
     <div id="roleScreen" class="screen">
-        <div class="role-brand">
-            <h1>🤝 SAHKAAR CONNECT</h1>
-            <p>One cooperative network. Trusted services. Better opportunities.</p>
+        <div style="display:flex; justify-content:flex-end; width:100%; max-width:480px; margin-bottom:12px;">
+            <button class="lang-toggle" onclick="toggleLanguage()" aria-label="Switch language">हिंदी</button>
         </div>
 
-        <div class="role-question">Who are you?</div>
+        <div class="role-brand">
+            <h1 data-i18n="appTitle">🤝 SAHKAAR CONNECT</h1>
+            <p data-i18n="roleSelectSub">One cooperative network. Trusted services. Better opportunities.</p>
+        </div>
+
+        <div class="role-question" data-i18n="roleSelectTitle">Who are you?</div>
 
         <div class="role-cards">
             <button class="role-card" onclick="selectRole('customer')">
                 <span class="role-icon">🏠</span>
                 <span class="role-text">
-                    <h3>Customer</h3>
-                    <p>Find & book trusted local services</p>
+                    <h3 data-i18n="roleCustomerTitle">Customer</h3>
+                    <p data-i18n="roleCustomerDesc">Find & book trusted local services</p>
                 </span>
             </button>
 
             <button class="role-card" onclick="selectRole('worker')">
                 <span class="role-icon">👷</span>
                 <span class="role-text">
-                    <h3>Worker</h3>
-                    <p>Provide services & earn through the cooperative</p>
+                    <h3 data-i18n="roleWorkerTitle">Worker</h3>
+                    <p data-i18n="roleWorkerDesc">Provide services & earn through the cooperative</p>
                 </span>
             </button>
 
             <button class="role-card admin" onclick="selectRole('admin')">
                 <span class="role-icon">🏢</span>
                 <span class="role-text">
-                    <h3>Admin</h3>
-                    <p>Manage cooperative workers, bookings and operations</p>
+                    <h3 data-i18n="roleAdminTitle">Admin</h3>
+                    <p data-i18n="roleAdminDesc">Manage cooperative workers, bookings and operations</p>
                 </span>
             </button>
         </div>
 
-        <p class="role-note">Customer & Worker use demo OTP · Admin requires a real credential check.</p>
+        <p class="role-note" data-i18n="demoOtpHint">Customer & Worker use demo OTP · Admin requires a real credential check.</p>
     </div>
 
 
@@ -53,29 +57,32 @@
     <div id="customerLoginScreen" class="screen hidden">
 
         <div class="login-card">
-            <h2>Welcome to Sahkaar Connect</h2>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <h2 data-i18n="loginCustomerTitle" style="margin:0;">Welcome to Sahkaar Connect</h2>
+                <button class="lang-toggle" onclick="toggleLanguage()" aria-label="Switch language">हिंदी</button>
+            </div>
 
             <div id="customerPhoneStep">
-                <label>Mobile Number</label>
+                <label data-i18n="phoneLabel">Mobile Number</label>
                 <div class="phone-input-row">
                     <span class="phone-prefix">+91</span>
-                    <input type="tel" id="customerLoginPhone" placeholder="10-digit mobile number" maxlength="10">
+                    <input type="tel" id="customerLoginPhone" placeholder="10-digit mobile number" data-i18n-placeholder="phonePlaceholder" maxlength="10">
                 </div>
-                <button class="primary" onclick="customerSendOtp()">Continue</button>
+                <button class="primary" onclick="customerSendOtp()" data-i18n="btnSendOtp">Continue</button>
                 <div id="customerPhoneError"></div>
             </div>
 
             <div id="customerOtpStep" class="hidden">
-                <p class="otp-subtext">Enter the 6-digit OTP sent to +91 <span id="customerOtpPhoneDisplay"></span></p>
+                <p class="otp-subtext" data-i18n="otpLabel">Enter the 6-digit OTP sent to +91 <span id="customerOtpPhoneDisplay"></span></p>
                 <input type="text" id="customerOtpInput" maxlength="6" inputmode="numeric" placeholder="------" class="otp-input">
-                <button class="primary" onclick="customerVerifyOtp()">Verify</button>
-                <p class="demo-note">Demo OTP: 123456 — no real SMS is sent yet.</p>
+                <button class="primary" onclick="customerVerifyOtp()" data-i18n="btnVerifyOtp">Verify</button>
+                <p class="demo-note" data-i18n="demoOtpHint">Demo OTP: 123456 — no real SMS is sent yet.</p>
                 <div id="customerOtpError"></div>
-                <button class="link-btn" onclick="customerBackToPhone()">← Change number</button>
+                <button class="link-btn" onclick="customerBackToPhone()" data-i18n="btnBack">← Change number</button>
             </div>
         </div>
 
-        <button class="link-btn" onclick="changeRole()">← Back to role selection</button>
+        <button class="link-btn" onclick="changeRole()" data-i18n="btnSwitchRole">← Back to role selection</button>
     </div>
 
 
@@ -83,29 +90,32 @@
     <div id="workerLoginScreen" class="screen hidden">
 
         <div class="login-card">
-            <h2>Worker Login</h2>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <h2 data-i18n="loginWorkerTitle" style="margin:0;">Worker Login</h2>
+                <button class="lang-toggle" onclick="toggleLanguage()" aria-label="Switch language">हिंदी</button>
+            </div>
 
             <div id="workerPhoneStep">
-                <label>Mobile Number</label>
+                <label data-i18n="phoneLabel">Mobile Number</label>
                 <div class="phone-input-row">
                     <span class="phone-prefix">+91</span>
-                    <input type="tel" id="workerLoginPhone" placeholder="10-digit mobile number" maxlength="10">
+                    <input type="tel" id="workerLoginPhone" placeholder="10-digit mobile number" data-i18n-placeholder="phonePlaceholder" maxlength="10">
                 </div>
-                <button class="primary" onclick="workerSendOtp()">Continue</button>
+                <button class="primary" onclick="workerSendOtp()" data-i18n="btnSendOtp">Continue</button>
                 <div id="workerPhoneError"></div>
             </div>
 
             <div id="workerOtpStep" class="hidden">
-                <p class="otp-subtext">Enter the 6-digit OTP sent to +91 <span id="workerOtpPhoneDisplay"></span></p>
+                <p class="otp-subtext" data-i18n="otpLabel">Enter the 6-digit OTP sent to +91 <span id="workerOtpPhoneDisplay"></span></p>
                 <input type="text" id="workerOtpInput" maxlength="6" inputmode="numeric" placeholder="------" class="otp-input">
-                <button class="primary" onclick="workerVerifyOtp()">Verify</button>
-                <p class="demo-note">Demo OTP: 123456 — no real SMS is sent yet.</p>
+                <button class="primary" onclick="workerVerifyOtp()" data-i18n="btnVerifyOtp">Verify</button>
+                <p class="demo-note" data-i18n="demoOtpHint">Demo OTP: 123456 — no real SMS is sent yet.</p>
                 <div id="workerOtpError"></div>
-                <button class="link-btn" onclick="workerBackToPhone()">← Change number</button>
+                <button class="link-btn" onclick="workerBackToPhone()" data-i18n="btnBack">← Change number</button>
             </div>
         </div>
 
-        <button class="link-btn" onclick="changeRole()">← Back to role selection</button>
+        <button class="link-btn" onclick="changeRole()" data-i18n="btnSwitchRole">← Back to role selection</button>
     </div>
 
 
@@ -113,12 +123,15 @@
     <div id="adminLoginScreen" class="screen hidden">
 
         <div class="login-card">
-            <h2>🏢 Federation Admin Login</h2>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <h2 data-i18n="loginAdminTitle" style="margin:0;">🏢 Federation Admin Login</h2>
+                <button class="lang-toggle" onclick="toggleLanguage()" aria-label="Switch language">हिंदी</button>
+            </div>
 
-            <label>Admin Mobile Number</label>
+            <label data-i18n="phoneLabel">Admin Mobile Number</label>
             <div class="phone-input-row">
                 <span class="phone-prefix">+91</span>
-                <input type="tel" id="adminLoginPhone" placeholder="Admin phone number" maxlength="10">
+                <input type="tel" id="adminLoginPhone" placeholder="Admin phone number" data-i18n-placeholder="phonePlaceholder" maxlength="10">
             </div>
 
             <div class="form-group">
@@ -133,7 +146,7 @@
             <div id="adminLoginError"></div>
         </div>
 
-        <button class="link-btn" onclick="changeRole()">← Back to role selection</button>
+        <button class="link-btn" onclick="changeRole()" data-i18n="btnSwitchRole">← Back to role selection</button>
     </div>
 
 
@@ -433,12 +446,12 @@
                 <div class="emergency-banner-left">
                     <span class="emergency-pulse">🚨</span>
                     <div>
-                        <div class="emergency-title">EMERGENCY REQUEST MODE</div>
-                        <p class="emergency-sub">Prioritizes immediate dispatch for urgent household crises (pipe bursts, power outages, leaks).</p>
+                        <div class="emergency-title" data-i18n="emergencyBannerTitle">EMERGENCY REQUEST MODE</div>
+                        <p class="emergency-sub" data-i18n="emergencyBannerSub">Prioritizes immediate dispatch for urgent household crises (pipe bursts, power outages, leaks).</p>
                     </div>
                 </div>
                 <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-                    <button type="button" class="btn-sos-trigger" onclick="openEmergencySOSModal()">🚨 1-Click SOS Call</button>
+                    <button type="button" class="btn-sos-trigger" onclick="openEmergencySOSModal()" data-i18n="btnSosCall">🚨 1-Click SOS Call</button>
                     <label class="emergency-switch" title="Toggle emergency priority dispatch">
                         <input type="checkbox" id="globalEmergencyToggle" onchange="toggleEmergencyMode(this.checked)">
                         <span class="slider round"></span>
@@ -452,35 +465,35 @@
                     <div class="sos-modal-header">
                         <div>
                             <span class="sos-badge-tag">SIH26089 • NCCT RAPID DISPATCH</span>
-                            <h3 class="sos-modal-title">🚨 1-Click Emergency SOS Call</h3>
+                            <h3 class="sos-modal-title" data-i18n="sosModalTitle">🚨 1-Click Emergency SOS Call</h3>
                         </div>
                         <button type="button" class="sos-close-btn" onclick="closeEmergencySOSModal()" aria-label="Close modal">×</button>
                     </div>
 
-                    <p class="sos-subtitle">Instant priority broadcast to verified, available cooperative tradespeople near your location with target 15-30m response.</p>
+                    <p class="sos-subtitle" data-i18n="sosModalSub">Instant priority broadcast to verified, available cooperative tradespeople near your location with target 15-30m response.</p>
 
                     <!-- Step 1: Scenario selection -->
-                    <label class="sos-label">Select Urgent Crisis Type:</label>
+                    <label class="sos-label" data-i18n="sosCrisisTitle">Select Urgent Crisis Type:</label>
                     <div class="sos-scenarios-grid">
                         <button type="button" class="sos-scenario-card active" data-service="Electrician" data-type="Total Power Outage / Sparking" data-price="249" onclick="selectSOSScenario(this)">
                             <span class="scenario-icon">⚡</span>
-                            <strong>Power Outage / Sparks</strong>
-                            <small>Electrician • Urgent</small>
+                            <strong data-i18n="sosPowerTitle">Power Outage / Sparks</strong>
+                            <small data-i18n="sosPowerSub">Electrician • Urgent</small>
                         </button>
                         <button type="button" class="sos-scenario-card" data-service="Plumber" data-type="Water Pipe Burst / Flooding" data-price="279" onclick="selectSOSScenario(this)">
                             <span class="scenario-icon">🚰</span>
-                            <strong>Pipe Burst / Flooding</strong>
-                            <small>Plumber • Urgent</small>
+                            <strong data-i18n="sosPipeTitle">Pipe Burst / Flooding</strong>
+                            <small data-i18n="sosPipeSub">Plumber • Urgent</small>
                         </button>
                         <button type="button" class="sos-scenario-card" data-service="Carpenter" data-type="Door Jam / Lockout Crisis" data-price="349" onclick="selectSOSScenario(this)">
                             <span class="scenario-icon">🚪</span>
-                            <strong>Door Jam / Lockout</strong>
-                            <small>Carpenter • Urgent</small>
+                            <strong data-i18n="sosLockoutTitle">Door Jam / Lockout</strong>
+                            <small data-i18n="sosLockoutSub">Carpenter • Urgent</small>
                         </button>
                         <button type="button" class="sos-scenario-card" data-service="Technician" data-type="Appliance Short-Circuit / Burning Smell" data-price="299" onclick="selectSOSScenario(this)">
                             <span class="scenario-icon">🔥</span>
-                            <strong>Appliance Hazard</strong>
-                            <small>Technician • Urgent</small>
+                            <strong data-i18n="sosApplianceTitle">Appliance Hazard</strong>
+                            <small data-i18n="sosApplianceSub">Technician • Urgent</small>
                         </button>
                     </div>
 
@@ -489,16 +502,16 @@
 
                     <!-- Step 2: Location and Contact -->
                     <div class="form-group" style="margin-top:14px;">
-                        <label>Contact Phone Number</label>
-                        <input type="tel" id="sosPhone" placeholder="10-digit mobile number" maxlength="10" required>
+                        <label data-i18n="customerPhoneLabel">Contact Phone Number</label>
+                        <input type="tel" id="sosPhone" placeholder="10-digit mobile number" data-i18n-placeholder="phonePlaceholder" maxlength="10" required>
                     </div>
 
                     <div class="form-group">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                            <label style="margin:0;">Emergency Service Location</label>
-                            <button type="button" class="btn-text-sm" onclick="syncSOSLocation()">📍 Auto-Lock GPS</button>
+                            <label style="margin:0;" data-i18n="customerAddressLabel">Emergency Service Location</label>
+                            <button type="button" class="btn-text-sm" onclick="syncSOSLocation()" data-i18n="btnAutoLockGps">📍 Auto-Lock GPS</button>
                         </div>
-                        <input type="text" id="sosAddress" placeholder="Street / House / Landmark address" required>
+                        <input type="text" id="sosAddress" placeholder="Street / House / Landmark address" data-i18n-placeholder="customerAddressPlaceholder" required>
                         <div id="sosLocStatus" class="loc-status-text"></div>
                         <input type="hidden" id="sosLat">
                         <input type="hidden" id="sosLng">
@@ -507,24 +520,24 @@
                     <!-- Step 3: Transparent Pricing Guarantee -->
                     <div class="sos-pricing-banner">
                         <div class="sos-pricing-row">
-                            <span>Base Cooperative Fair Wage:</span>
+                            <span data-i18n="sosBasePriceLabel">Base Cooperative Fair Wage:</span>
                             <strong id="sosBasePrice">₹249</strong>
                         </div>
                         <div class="sos-pricing-row">
-                            <span>Rapid Mobilization Surcharge:</span>
+                            <span data-i18n="sosRapidSurchargeLabel">Rapid Mobilization Surcharge:</span>
                             <strong style="color:var(--terracotta);">+₹50</strong>
                         </div>
                         <div class="sos-pricing-divider"></div>
                         <div class="sos-pricing-row total">
-                            <span>Total Emergency Bill:</span>
+                            <span data-i18n="sosTotalBillLabel">Total Emergency Bill:</span>
                             <strong id="sosTotalPrice" class="sos-total-val">₹299</strong>
                         </div>
-                        <small class="hint" style="color:var(--teal-deep); font-weight:600; margin-top:4px;">
+                        <small class="hint" style="color:var(--teal-deep); font-weight:600; margin-top:4px;" data-i18n="sosPricingGuarantee">
                             🛡️ Fixed ₹50 rapid mobilization fee • Zero surge multiplier • Target response SLA: 15–30 mins.
                         </small>
                     </div>
 
-                    <button type="button" class="cta-gold sos-dispatch-btn" id="sosSubmitBtn" onclick="submitRapidEmergencyBooking()">
+                    <button type="button" class="cta-gold sos-dispatch-btn" id="sosSubmitBtn" onclick="submitRapidEmergencyBooking()" data-i18n="btnActivateSos">
                         🚨 ACTIVATE EMERGENCY DISPATCH NOW
                     </button>
 
@@ -552,49 +565,49 @@
                 <div class="coop-pricing-box">
                     <div class="pricing-header">
                         <div>
-                            <span class="pricing-label">Fair Wage Estimate:</span>
+                            <span class="pricing-label" data-i18n="fairWageEstimate">Fair Wage Estimate:</span>
                             <span id="bookingFairWage" class="price-val">₹299</span>
                         </div>
-                        <span class="coop-badge">🤝 NCCT Cooperative Verified</span>
+                        <span class="coop-badge" data-i18n="coopVerified">🤝 NCCT Cooperative Verified</span>
                     </div>
-                    <p class="coop-note">Zero exploitative private middleman commission — platform runs on a transparent 5-8% cooperative maintenance model supporting local workers.</p>
+                    <p class="coop-note" data-i18n="coopPricingNote">Zero exploitative private middleman commission — platform runs on a transparent cooperative model: 85% to worker, 15% to NCCT welfare fund.</p>
                 </div>
 
                 <form id="bookingForm">
 
                     <div class="form-group">
-                        <label>Selected Service</label>
+                        <label data-i18n="selectedServiceLabel">Selected Service</label>
                         <input type="text" id="selectedService" readonly>
                     </div>
 
                     <div class="form-group">
-                        <label>Customer Name</label>
-                        <input type="text" id="customerName" placeholder="Enter your name" required>
+                        <label data-i18n="customerNameLabel">Customer Name</label>
+                        <input type="text" id="customerName" placeholder="Enter your name" data-i18n-placeholder="customerNamePlaceholder" required>
                     </div>
 
                     <div class="form-group">
-                        <label>Phone Number</label>
-                        <input type="tel" id="customerPhone" placeholder="10-digit mobile number" pattern="[0-9]{10}" maxlength="10" required>
+                        <label data-i18n="customerPhoneLabel">Phone Number</label>
+                        <input type="tel" id="customerPhone" placeholder="10-digit mobile number" data-i18n-placeholder="phonePlaceholder" pattern="[0-9]{10}" maxlength="10" required>
                         <small class="hint">We use this only to confirm and contact you about this booking.</small>
                     </div>
 
                     <div class="form-group">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                            <label style="margin:0;">Service Address</label>
-                            <button type="button" class="btn-text-sm" onclick="syncBookingLocation()">📍 Sync Current GPS Location</button>
+                            <label style="margin:0;" data-i18n="customerAddressLabel">Service Address</label>
+                            <button type="button" class="btn-text-sm" onclick="syncBookingLocation()" data-i18n="btnSyncGps">📍 Sync Current GPS Location</button>
                         </div>
-                        <input type="text" id="customerAddress" placeholder="Enter service address" required>
+                        <input type="text" id="customerAddress" placeholder="Enter service address" data-i18n-placeholder="customerAddressPlaceholder" required>
                         <div id="bookingLocStatus"></div>
                     </div>
 
                     <div class="form-row">
                         <div class="form-group">
-                            <label>Preferred Date</label>
+                            <label data-i18n="bookingDateLabel">Preferred Date</label>
                             <input type="date" id="bookingDate" required>
                         </div>
 
                         <div class="form-group">
-                            <label>Preferred Time</label>
+                            <label data-i18n="bookingTimeLabel">Preferred Time</label>
                             <input type="time" id="bookingTime" required>
                         </div>
                     </div>
@@ -607,7 +620,7 @@
                     <input type="hidden" id="customerLat">
                     <input type="hidden" id="customerLng">
 
-                    <button class="primary cta-gold" type="submit">🤝 Confirm Cooperative Booking</button>
+                    <button class="primary cta-gold" type="submit" data-i18n="btnConfirmBooking">🤝 Confirm Cooperative Booking</button>
                     <button type="button" class="secondary" style="margin-left: 8px;" onclick="showServices()">Cancel</button>
 
                 </form>

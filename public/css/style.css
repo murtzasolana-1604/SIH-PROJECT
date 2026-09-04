@@ -2449,3 +2449,31 @@ footer { text-align: center; padding: 26px; color: var(--muted); font-size: 12.5
     border-radius: 8px;
     margin-top: 8px;
 }
+
+/* ============================================================
+   PHASE 12: BILINGUAL SUPPORT & LANGUAGE TOGGLE
+   ============================================================ */
+
+.lang-toggle {
+    background: #FFFFFF;
+    color: var(--teal-deep);
+    border: 1.5px solid var(--teal);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 4px rgba(18, 59, 49, 0.08);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.lang-toggle:hover {
+    background: var(--teal-deep);
+    color: #FFFFFF;
+    border-color: var(--teal-deep);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(18, 59, 49, 0.16);
+}
