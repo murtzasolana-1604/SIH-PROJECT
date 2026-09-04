@@ -719,6 +719,122 @@
         </main>
 
         
+        
+        <!-- ===================== NEW SERVICE REGISTRATION MODAL ===================== -->
+        <div id="newServiceModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="newServiceModalTitle" onclick="if(event.target===this) closeNewServiceModal()">
+            <div class="modal-card" style="max-width:540px; background:white; border-radius:18px; padding:24px; border:2px solid var(--teal-deep); box-shadow:0 14px 45px rgba(0,0,0,0.25);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--line); padding-bottom:10px;">
+                    <h3 id="newServiceModalTitle" style="margin:0; font-size:18px;">🛠️ Register New Cooperative Service / Trade</h3>
+                    <button type="button" class="sos-close-btn" onclick="closeNewServiceModal()" aria-label="Close modal">×</button>
+                </div>
+
+                <form id="newServiceForm" onsubmit="submitNewService(event)">
+                    <div class="form-row">
+                        <div class="form-group" style="flex:2;">
+                            <label>Service / Trade Name</label>
+                            <input type="text" id="newServiceName" placeholder="e.g. Mason & Bricklayer, Gardener, AC Specialist" required>
+                        </div>
+                        <div class="form-group" style="flex:1;">
+                            <label>Emoji Icon</label>
+                            <input type="text" id="newServiceIcon" placeholder="e.g. 🧱" maxlength="4" value="🛠️" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Category</label>
+                            <select id="newServiceCategory" required style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--line);">
+                                <option value="Home Repair">Home Repair</option>
+                                <option value="Electrical">Electrical</option>
+                                <option value="Construction">Construction</option>
+                                <option value="Household">Household</option>
+                                <option value="Technical">Technical</option>
+                                <option value="Transport">Transport</option>
+                                <option value="Care">Care & Wellness</option>
+                                <option value="Agriculture & Horticulture">Agriculture & Horticulture</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Base Living Wage Price (₹)</label>
+                            <input type="number" id="newServiceBasePrice" placeholder="e.g. 349" min="100" max="5000" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Scope of Work / Description</label>
+                        <textarea id="newServiceDescription" rows="3" placeholder="Brief summary of service coverage and standard cooperative trade deliverable..." style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--line);"></textarea>
+                    </div>
+
+                    <button class="primary cta-gold" type="submit" style="width:100%; margin-top:10px;">
+                        ➕ Register Service in Cooperative Federation
+                    </button>
+                    <div id="newServiceResult" style="margin-top:10px;"></div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ===================== EDIT SERVICE PRICE & SCARCITY MODAL ===================== -->
+        <div id="editServicePriceModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="editPriceModalTitle" onclick="if(event.target===this) closeEditServicePriceModal()">
+            <div class="modal-card" style="max-width:540px; background:white; border-radius:18px; padding:24px; border:2px solid #1B5E20; box-shadow:0 14px 45px rgba(0,0,0,0.25);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--line); padding-bottom:10px;">
+                    <div>
+                        <h3 id="editPriceModalTitle" style="margin:0; font-size:18px; color:#1B5E20;">⚖️ Configure Fair Price & Scarcity Incentive</h3>
+                        <small id="editPriceServiceName" style="color:var(--muted); font-weight:700;">Service Name</small>
+                    </div>
+                    <button type="button" class="sos-close-btn" onclick="closeEditServicePriceModal()" aria-label="Close modal">×</button>
+                </div>
+
+                <form id="editServicePriceForm" onsubmit="submitEditServicePrice(event)">
+                    <input type="hidden" id="editPriceServiceId">
+
+                    <div class="form-group">
+                        <label>Base Living Wage Price (₹)</label>
+                        <input type="number" id="editPriceBase" min="50" max="10000" step="1" required oninput="updatePriceCalculationPreview()">
+                        <small style="color:var(--muted);">Statutory minimum fair living wage floor established by cooperative council.</small>
+                    </div>
+
+                    <div style="background:#F4FAF6; border:1.5px solid #C8E6C9; border-radius:12px; padding:14px; margin:14px 0;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <strong>🔥 Worker Scarcity / High Demand Mode</strong>
+                            <label class="switch" style="position:relative; display:inline-block; width:44px; height:24px; margin:0;">
+                                <input type="checkbox" id="editPriceHighDemandToggle" onchange="updatePriceCalculationPreview()">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                        <small style="display:block; color:var(--muted); margin-top:4px;">
+                            Enable when consumer requests outnumber available verified workers in the cluster.
+                        </small>
+
+                        <div id="scarcitySettingsArea" style="margin-top:12px; display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                            <div>
+                                <label style="font-size:12px; font-weight:600;">Demand Multiplier</label>
+                                <select id="editPriceMultiplier" style="width:100%; padding:6px 10px; border-radius:6px; border:1px solid var(--line);" onchange="updatePriceCalculationPreview()">
+                                    <option value="1.0">1.0x (Standard / Off-Peak)</option>
+                                    <option value="1.1">1.1x (+10% Living Wage)</option>
+                                    <option value="1.2" selected>1.2x (+20% High Scarcity)</option>
+                                    <option value="1.25">1.25x (+25% Peak Scarcity)</option>
+                                    <option value="1.3">1.3x (+30% Max Fair Cap)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size:12px; font-weight:600;">Fixed Scarcity Bonus (₹)</label>
+                                <input type="number" id="editPriceScarcityBonus" value="30" min="0" max="500" step="5" style="width:100%; padding:6px 10px; border-radius:6px; border:1px solid var(--line);" oninput="updatePriceCalculationPreview()">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Revenue Split Preview -->
+                    <div id="priceSplitPreviewBox" style="background:#FFF9C4; border:1px solid #FFE082; border-radius:10px; padding:12px 14px; font-size:13px; margin-bottom:14px;"></div>
+
+                    <div style="display:flex; justify-content:flex-end; gap:8px;">
+                        <button type="button" class="secondary" onclick="closeEditServicePriceModal()">Cancel</button>
+                        <button type="submit" class="primary cta-gold">💾 Save Price & Incentive Rules</button>
+                    </div>
+                    <div id="editPriceResult" style="margin-top:10px;"></div>
+                </form>
+            </div>
+        </div>
+
         <!-- ===================== HACKATHON PITCH DECK MODAL (PHASE 20) ===================== -->
         <div id="judgePitchModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="pitchDeckModalTitle" onclick="if(event.target===this) closeJudgePitchModal()">
             <div class="modal-card pitch-modal-card">
@@ -981,6 +1097,7 @@
                     <button class="admin-tab-btn" id="adminTabBtnForecast" onclick="switchAdminTab('forecast')" data-i18n="tabForecast">📈 NCCT Forecast & Fair Wage</button>
                     <button class="admin-tab-btn" id="adminTabBtnSocieties" onclick="switchAdminTab('societies')" data-i18n="tabSocieties">🏛️ Societies & PACS</button>
                     <button class="admin-tab-btn" id="adminTabBtnWelfare" onclick="switchAdminTab('welfare')" data-i18n="tabWelfare">🛡️ Welfare & PMSBY Pool</button>
+                    <button class="admin-tab-btn" id="adminTabBtnServices" onclick="switchAdminTab('services')" data-i18n="tabServices">🛠️ Services & Fair Pricing</button>
                 </div>
 
                 <!-- TAB 1: OVERVIEW & STATS -->
@@ -1175,6 +1292,33 @@
                         <div id="adminWelfareLedgerTable"></div>
                     </div>
                 </div>
+
+                <!-- TAB 8: COOPERATIVE SERVICES & FAIR SCARCITY PRICING -->
+                <div id="adminTabServices" class="admin-tab-content hidden">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
+                        <div>
+                            <h3 style="margin:0;" data-i18n="servicesHeader">🛠️ Cooperative Services & Fair Scarcity Pricing</h3>
+                            <p style="margin:2px 0 0; font-size:12.5px; color:var(--muted);" data-i18n="servicesSub">Living wage price floors, dynamic scarcity incentives during high demand/worker shortage, and new trade registry.</p>
+                        </div>
+                        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                            <button type="button" class="secondary" style="font-size:12px; padding:6px 14px;" onclick="loadAdminServices()">🔄 Refresh Services</button>
+                            <button type="button" class="primary cta-gold" style="font-size:12px; padding:6px 14px;" onclick="openNewServiceModal()" data-i18n="btnRegisterService">➕ Register New Service</button>
+                        </div>
+                    </div>
+
+                    <!-- Services KPI Stats Grid -->
+                    <div id="adminServicesStatsGrid" class="stat-grid" style="margin-bottom:20px;"></div>
+
+                    <!-- Services Management Table -->
+                    <div class="admin-table-wrap">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding:0 4px;">
+                            <h4 style="margin:0; font-size:15px; color:var(--teal-deep);">📋 Federation Trades & Living Wage Dynamic Price Registry</h4>
+                            <span id="servicesCountBadge" class="badge" style="background:#E0F2F1; color:#004D40; font-weight:700;">Loading...</span>
+                        </div>
+                        <div id="adminServicesTableContainer"></div>
+                    </div>
+                </div>
+
 
             </section>
 

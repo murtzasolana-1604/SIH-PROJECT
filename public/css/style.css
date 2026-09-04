@@ -4804,3 +4804,79 @@ body.theme-high-contrast .jury-btn.sim-btn {
     color: #FFFFFF !important;
     border: 2px solid #FFD700 !important;
 }
+
+
+/* ============================================================
+   COOPERATIVE SERVICES & DYNAMIC FAIR PRICING STYLES
+   ============================================================ */
+.scarcity-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.scarcity-badge.active {
+    background: #FFEBEE;
+    color: #C62828;
+    border: 1px solid #EF9A9A;
+    animation: pulse 1.5s infinite;
+}
+
+.scarcity-badge.normal {
+    background: #E8F5E9;
+    color: #2E7D32;
+    border: 1px solid #A5D6A7;
+}
+
+.supply-demand-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11.5px;
+}
+
+.supply-pill {
+    background: #E0F2F1;
+    color: #004D40;
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+.demand-pill {
+    background: #FFF3E0;
+    color: #E65100;
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+.service-high-demand-flag {
+    display: inline-block;
+    background: #FF3D00;
+    color: white;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 6px;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    margin-left: 6px;
+}
+
+body.theme-high-contrast #newServiceModal .modal-card,
+body.theme-high-contrast #editServicePriceModal .modal-card {
+    background: #000000 !important;
+    border: 2px solid #FFFFFF !important;
+    color: #FFFFFF !important;
+}
+
+body.theme-high-contrast .scarcity-badge.active {
+    background: #000000 !important;
+    color: #FF3333 !important;
+    border: 1.5px solid #FF3333 !important;
+}

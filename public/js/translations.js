@@ -248,7 +248,17 @@ const translations = {
         simStep5Title: "PMSBY Shield",
         btnSimReset: "🧹 Reset Data",
         btnSimStep: "Step Next ⏭",
-        btnSimAuto: "⚡ Auto-Run Complete Lifecycle"
+        btnSimAuto: "⚡ Auto-Run Complete Lifecycle",
+
+        // Cooperative Services & Dynamic Scarcity Pricing
+        tabServices: "🛠️ Services & Fair Pricing",
+        servicesHeader: "🛠️ Cooperative Services & Fair Scarcity Pricing",
+        servicesSub: "Living wage price floors, dynamic scarcity incentives during high demand/worker shortage, and new trade registry.",
+        btnRegisterService: "➕ Register New Service",
+        btnEditPrice: "✏️ Edit Price",
+        btnToggleScarcity: "⚡ Toggle Scarcity",
+        scarcityActiveLabel: "🔥 High Demand Mode Active",
+        standardDemandLabel: "Standard Off-Peak Demand"
     },
     hi: {
         appTitle: "🤝 सहकार कनेक्ट",
@@ -499,7 +509,17 @@ const translations = {
         simStep5Title: "सुरक्षा बीमा",
         btnSimReset: "🧹 डेटा रीसेट",
         btnSimStep: "अगला चरण ⏭",
-        btnSimAuto: "⚡ 1-क्लिक पूर्ण सिमुलेशन चलाएं"
+        btnSimAuto: "⚡ 1-क्लिक पूर्ण सिमुलेशन चलाएं",
+
+        // Cooperative Services & Dynamic Scarcity Pricing
+        tabServices: "🛠️ सेवाएं एवं उचित मूल्य निर्धारण",
+        servicesHeader: "🛠️ सहकारी सेवाएं एवं मांग अनुसार उचित मूल्य निर्धारण",
+        servicesSub: "कामगारों की न्यूनतम जीवनयापन मजदूरी, मांग अधिक व कामगार कम होने पर पारदर्शी प्रोत्साहन, और नई ट्रेड पंजीकरण।",
+        btnRegisterService: "➕ नई सेवा पंजीकृत करें",
+        btnEditPrice: "✏️ मूल्य बदलें",
+        btnToggleScarcity: "⚡ मांग प्रोत्साहन बदलें",
+        scarcityActiveLabel: "🔥 उच्च मांग मोड सक्रिय",
+        standardDemandLabel: "सामान्य मांग"
     }
 };
 

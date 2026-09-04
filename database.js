@@ -473,6 +473,49 @@ if (claimCount === 0) {
     `).run(w6Id);
 }
 
+// ============================================================
+// COOPERATIVE SERVICES & DYNAMIC PRICING
+// ============================================================
+db.exec(`
+    CREATE TABLE IF NOT EXISTS services (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT UNIQUE NOT NULL,
+        category TEXT NOT NULL,
+        icon TEXT NOT NULL DEFAULT '🛠️',
+        description TEXT,
+        base_price REAL NOT NULL,
+        demand_multiplier REAL DEFAULT 1.0,
+        is_high_demand INTEGER DEFAULT 0,
+        scarcity_bonus REAL DEFAULT 0,
+        status TEXT DEFAULT 'Active',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+`);
+
+const serviceCount = db.prepare("SELECT COUNT(*) as count FROM services").get().count;
+if (serviceCount === 0) {
+    const initialServices = [
+        { name: "Electrician", category: "Electrical", icon: "⚡", description: "Fan repair, switchboard replacement, short-circuit troubleshooting & appliance wiring.", price: 249 },
+        { name: "Plumber", category: "Home Repair", icon: "🔧", description: "Pipe leakage fix, tap/cistern repair, drain clearing & bathroom fittings installation.", price: 279 },
+        { name: "Carpenter", category: "Home Repair", icon: "🪚", description: "Door lock repair, furniture assembly, hinges fix & custom woodwork modifications.", price: 349 },
+        { name: "Painter", category: "Home Improvement", icon: "🎨", description: "Wall touch-ups, moisture damp treatment, single-room repainting & exterior whitewash.", price: 319 },
+        { name: "Cleaner", category: "Household", icon: "🧹", description: "Deep home sanitation, kitchen/bathroom scrub, sofa shampooing & floor polishing.", price: 249 },
+        { name: "Driver", category: "Transport", icon: "🚗", description: "Verified on-demand personal and commercial chauffeur for local and outstation trips.", price: 449 },
+        { name: "Caregiver", category: "Care", icon: "❤️", description: "Compassionate elderly assistance, patient escorting, vital monitoring & daily companion care.", price: 399 },
+        { name: "Technician", category: "Technical", icon: "🛠️", description: "RO water purifier service, AC filter cleaning, microwave repair & electronic diagnostics.", price: 299 }
+    ];
+
+    const insertService = db.prepare(`
+        INSERT INTO services (name, category, icon, description, base_price, demand_multiplier, is_high_demand, scarcity_bonus, status)
+        VALUES (?, ?, ?, ?, ?, 1.0, 0, 0, 'Active')
+    `);
+
+    for (const s of initialServices) {
+        insertService.run(s.name, s.category, s.icon, s.description, s.price);
+    }
+    console.log("Seeded default 8 cooperative services into services table!");
+}
+
 db.generateInsuranceCertHash = generateInsuranceCertHash;
 
 console.log("Database connected successfully!");

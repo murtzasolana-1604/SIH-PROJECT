@@ -188,7 +188,19 @@ function completeBooking(req, res) {
     let invoice = db.prepare("SELECT * FROM invoices WHERE booking_id = ?").get(bookingId);
 
     if (!invoice) {
-        const basePrice = SERVICE_PRICES[booking.service] || DEFAULT_PRICE;
+        // Dynamic price lookup from services table (supports demand multiplier & scarcity bonus)
+        let basePrice = SERVICE_PRICES[booking.service] || DEFAULT_PRICE;
+        try {
+            const serviceRow = db.prepare("SELECT * FROM services WHERE name = ? COLLATE NOCASE").get(booking.service);
+            if (serviceRow) {
+                const mult = Number(serviceRow.demand_multiplier) || 1.0;
+                const bonus = serviceRow.is_high_demand ? (Number(serviceRow.scarcity_bonus) || 0) : 0;
+                basePrice = Math.round((Number(serviceRow.base_price) * mult) + bonus);
+            }
+        } catch (e) {
+            console.warn("Service price dynamic lookup fallback:", e.message);
+        }
+
         const emergencySurcharge = (booking.is_emergency == 1) ? 50 : 0;
         const serviceCharge = basePrice + emergencySurcharge;
         const cooperativeShare = Math.round(serviceCharge * 0.15 * 100) / 100;

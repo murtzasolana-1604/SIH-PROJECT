@@ -1633,7 +1633,7 @@ async function markComplete(bookingId) {
 
 // Tab switching
 function switchAdminTab(tabName) {
-    const tabs = ["overview", "workers", "bookings", "emergency", "forecast", "societies", "welfare"];
+    const tabs = ["overview", "workers", "bookings", "emergency", "forecast", "societies", "welfare", "services"];
     tabs.forEach(t => {
         const btn = document.getElementById(`adminTabBtn${t.charAt(0).toUpperCase() + t.slice(1)}`);
         const content = document.getElementById(`adminTab${t.charAt(0).toUpperCase() + t.slice(1)}`);
@@ -3740,6 +3740,305 @@ async function triggerBatchPmsbyRenewal() {
         }
     } catch (err) {
         console.error(err);
+        alert("Server request failed.");
+    }
+}
+
+// ============================================================
+// COOPERATIVE SERVICES & FAIR DYNAMIC PRICING ENGINE
+// ============================================================
+
+let CACHED_ADMIN_SERVICES = [];
+
+/**
+ * Loads all services with supply/demand analytics and renders the admin table
+ */
+async function loadAdminServices() {
+    const statsGrid = document.getElementById("adminServicesStatsGrid");
+    const container = document.getElementById("adminServicesTableContainer");
+    const countBadge = document.getElementById("servicesCountBadge");
+
+    if (!container) return;
+
+    if (statsGrid) {
+        statsGrid.innerHTML = `
+            <div class="skeleton" style="height:75px;"></div>
+            <div class="skeleton" style="height:75px;"></div>
+            <div class="skeleton" style="height:75px;"></div>
+            <div class="skeleton" style="height:75px;"></div>
+        `;
+    }
+    container.innerHTML = '<div class="skeleton" style="height:240px; border-radius:12px;"></div>';
+
+    try {
+        const res = await adminFetch("/api/services/analytics");
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+            throw new Error(data.message || "Failed to load services analytics.");
+        }
+
+        CACHED_ADMIN_SERVICES = data.services || [];
+        const summary = data.summary || {};
+
+        if (countBadge) {
+            countBadge.textContent = `${CACHED_ADMIN_SERVICES.length} Registered Trades`;
+        }
+
+        // 1. Render KPI cards
+        if (statsGrid) {
+            statsGrid.innerHTML = `
+                <div class="stat-card">
+                    <div class="lbl">Registered Trades</div>
+                    <strong>${summary.totalServices || CACHED_ADMIN_SERVICES.length}</strong>
+                    <small class="subtext">Active cooperative categories</small>
+                </div>
+                <div class="stat-card highlight-green">
+                    <div class="lbl">Avg Fair Living Wage</div>
+                    <strong>₹${summary.avgBasePrice || 0}</strong>
+                    <small class="subtext">Baseline standard floor</small>
+                </div>
+                <div class="stat-card ${summary.highDemandCount > 0 ? 'highlight-amber' : ''}">
+                    <div class="lbl">High Demand Surge Active</div>
+                    <strong>${summary.highDemandCount || 0}</strong>
+                    <small class="subtext">Dynamic worker scarcity mode</small>
+                </div>
+                <div class="stat-card ${summary.scarcityAlertCount > 0 ? 'highlight-amber' : ''}">
+                    <div class="lbl">Worker Scarcity Alerts</div>
+                    <strong>${summary.scarcityAlertCount || 0}</strong>
+                    <small class="subtext">Demand > Available Workers</small>
+                </div>
+            `;
+        }
+
+        // 2. Render Services Table
+        if (CACHED_ADMIN_SERVICES.length === 0) {
+            container.innerHTML = '<div style="padding:24px; text-align:center; color:var(--muted);">No services registered yet. Click "Register New Service" to add one.</div>';
+            return;
+        }
+
+        container.innerHTML = `
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Trade & Category</th>
+                        <th>Base Price</th>
+                        <th>Supply vs Demand</th>
+                        <th>Scarcity Status</th>
+                        <th>Effective Bill & 85% Earning</th>
+                        <th style="text-align:right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${CACHED_ADMIN_SERVICES.map(s => {
+                        const scarcityClass = s.isHighDemand ? 'active' : 'normal';
+                        const scarcityLabel = s.isHighDemand 
+                            ? `🔥 High Demand (+${Math.round((s.demandMultiplier - 1.0)*100)}% + ₹${s.scarcityBonus})` 
+                            : 'Standard (1.0x)';
+
+                        return `
+                            <tr>
+                                <td>
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <span style="font-size:20px;">${s.icon || '🛠️'}</span>
+                                        <div>
+                                            <strong>${s.name}</strong><br>
+                                            <small style="color:var(--muted);">${s.category}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <strong style="font-size:15px; color:var(--teal-deep);">₹${s.basePrice}</strong><br>
+                                    <small style="color:var(--muted);">Base Floor</small>
+                                </td>
+                                <td>
+                                    <div class="supply-demand-bar">
+                                        <span class="supply-pill" title="Verified Available Workers">${s.availableWorkers} Avail</span>
+                                        <span>vs</span>
+                                        <span class="demand-pill" title="Active Pending/Assigned Bookings">${s.activeBookings} Active</span>
+                                    </div>
+                                    ${s.isScarcityAlert ? '<small style="color:#C62828; font-weight:700; display:block; margin-top:2px;">⚠️ Scarcity Risk</small>' : ''}
+                                </td>
+                                <td>
+                                    <span class="scarcity-badge ${scarcityClass}">${scarcityLabel}</span>
+                                </td>
+                                <td>
+                                    <strong style="font-size:15px; color:#1B5E20;">₹${s.effectivePrice}</strong><br>
+                                    <small style="color:#2E7D32;">Worker 85%: ₹${s.workerEarning85}</small>
+                                </td>
+                                <td style="text-align:right; white-space:nowrap;">
+                                    <button type="button" class="secondary btn-sm" onclick="openEditServicePriceModal(${s.id})" title="Change Base Price & Demand Multiplier">✏️ Edit Price</button>
+                                    <button type="button" class="${s.isHighDemand ? 'secondary' : 'primary cta-gold'} btn-sm" onclick="toggleServiceHighDemand(${s.id})" title="1-Click Scarcity Surge Toggle">
+                                        ${s.isHighDemand ? 'Standardize' : '⚡ High Demand'}
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            </table>
+        `;
+    } catch (err) {
+        console.error("loadAdminServices error:", err);
+        container.innerHTML = `<div class="error" style="padding:16px;">Failed to load services: ${err.message}</div>`;
+    }
+}
+
+// ==========================================
+// NEW SERVICE MODAL CONTROLS
+// ==========================================
+function openNewServiceModal() {
+    const m = document.getElementById("newServiceModal");
+    if (m) {
+        m.classList.remove("hidden");
+        document.getElementById("newServiceForm")?.reset();
+        document.getElementById("newServiceResult").innerHTML = "";
+    }
+}
+
+function closeNewServiceModal() {
+    const m = document.getElementById("newServiceModal");
+    if (m) m.classList.add("hidden");
+}
+
+async function submitNewService(e) {
+    e.preventDefault();
+    const resEl = document.getElementById("newServiceResult");
+    resEl.innerHTML = '<div style="color:var(--muted); font-size:12px;">Registering service...</div>';
+
+    const payload = {
+        name: document.getElementById("newServiceName").value,
+        category: document.getElementById("newServiceCategory").value,
+        icon: document.getElementById("newServiceIcon").value || "🛠️",
+        basePrice: document.getElementById("newServiceBasePrice").value,
+        description: document.getElementById("newServiceDescription").value
+    };
+
+    try {
+        const res = await adminFetch("/api/services", {
+            method: "POST",
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+            resEl.innerHTML = `<div style="color:#2E7D32; font-weight:700; margin-top:8px;">✅ ${data.message}</div>`;
+            setTimeout(() => {
+                closeNewServiceModal();
+                loadAdminServices();
+                if (typeof loadServices === "function") loadServices();
+            }, 900);
+        } else {
+            resEl.innerHTML = `<div style="color:#C62828; font-weight:700; margin-top:8px;">❌ ${data.message || "Failed to register service."}</div>`;
+        }
+    } catch (err) {
+        resEl.innerHTML = `<div style="color:#C62828; font-weight:700; margin-top:8px;">❌ Server error: ${err.message}</div>`;
+    }
+}
+
+// ==========================================
+// EDIT SERVICE PRICE & SCARCITY MODAL
+// ==========================================
+function openEditServicePriceModal(serviceId) {
+    const s = CACHED_ADMIN_SERVICES.find(item => item.id === serviceId);
+    if (!s) return;
+
+    document.getElementById("editPriceServiceId").value = s.id;
+    document.getElementById("editPriceServiceName").textContent = `${s.icon} ${s.name} (${s.category})`;
+    document.getElementById("editPriceBase").value = s.basePrice;
+    document.getElementById("editPriceHighDemandToggle").checked = s.isHighDemand;
+    document.getElementById("editPriceMultiplier").value = String(s.demandMultiplier || "1.0");
+    document.getElementById("editPriceScarcityBonus").value = s.scarcityBonus || 0;
+    document.getElementById("editPriceResult").innerHTML = "";
+
+    updatePriceCalculationPreview();
+
+    const m = document.getElementById("editServicePriceModal");
+    if (m) m.classList.remove("hidden");
+}
+
+function closeEditServicePriceModal() {
+    const m = document.getElementById("editServicePriceModal");
+    if (m) m.classList.add("hidden");
+}
+
+function updatePriceCalculationPreview() {
+    const base = Number(document.getElementById("editPriceBase")?.value) || 0;
+    const isHighDemand = document.getElementById("editPriceHighDemandToggle")?.checked;
+    const mult = isHighDemand ? (Number(document.getElementById("editPriceMultiplier")?.value) || 1.0) : 1.0;
+    const bonus = isHighDemand ? (Number(document.getElementById("editPriceScarcityBonus")?.value) || 0) : 0;
+
+    const total = Math.round((base * mult) + bonus);
+    const workerEarning = Math.round(total * 0.85 * 100) / 100;
+    const coopWelfare = Math.round(total * 0.15 * 100) / 100;
+
+    const preview = document.getElementById("priceSplitPreviewBox");
+    if (preview) {
+        preview.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <strong>Effective Consumer Bill:</strong>
+                <span style="font-size:16px; font-weight:800; color:#1B5E20;">₹${total}</span>
+            </div>
+            <div style="font-size:12px; color:var(--text); line-height:1.4;">
+                • Worker Living Wage (85%): <strong>₹${workerEarning}</strong><br>
+                • Cooperative Welfare Reserve (15%): <strong>₹${coopWelfare}</strong><br>
+                • Scarcity Premium: ${isHighDemand ? `<strong>+${Math.round((mult - 1)*100)}% + ₹${bonus} allowance</strong>` : '<em>None (Normal off-peak rate)</em>'}
+            </div>
+        `;
+    }
+}
+
+async function submitEditServicePrice(e) {
+    e.preventDefault();
+    const serviceId = document.getElementById("editPriceServiceId").value;
+    const resEl = document.getElementById("editPriceResult");
+    resEl.innerHTML = '<div style="color:var(--muted); font-size:12px;">Saving price rules...</div>';
+
+    const payload = {
+        basePrice: Number(document.getElementById("editPriceBase").value),
+        isHighDemand: document.getElementById("editPriceHighDemandToggle").checked,
+        demandMultiplier: Number(document.getElementById("editPriceMultiplier").value),
+        scarcityBonus: Number(document.getElementById("editPriceScarcityBonus").value)
+    };
+
+    try {
+        const res = await adminFetch(`/api/services/${serviceId}`, {
+            method: "PUT",
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+            resEl.innerHTML = `<div style="color:#2E7D32; font-weight:700; margin-top:8px;">✅ ${data.message}</div>`;
+            setTimeout(() => {
+                closeEditServicePriceModal();
+                loadAdminServices();
+                if (typeof loadServices === "function") loadServices();
+            }, 800);
+        } else {
+            resEl.innerHTML = `<div style="color:#C62828; font-weight:700; margin-top:8px;">❌ ${data.message || "Failed to update price."}</div>`;
+        }
+    } catch (err) {
+        resEl.innerHTML = `<div style="color:#C62828; font-weight:700; margin-top:8px;">❌ Server error: ${err.message}</div>`;
+    }
+}
+
+async function toggleServiceHighDemand(serviceId) {
+    try {
+        const res = await adminFetch(`/api/services/${serviceId}/toggle-demand`, {
+            method: "POST",
+            body: JSON.stringify({})
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+            loadAdminServices();
+            if (typeof loadServices === "function") loadServices();
+        } else {
+            alert(data.message || "Failed to toggle demand mode.");
+        }
+    } catch (err) {
+        console.error("toggleServiceHighDemand error:", err);
         alert("Server request failed.");
     }
 }

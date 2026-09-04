@@ -154,6 +154,12 @@ function closeModalById(id) {
         case "simulatorModal":
             if (typeof closeSimulatorModal === "function") closeSimulatorModal();
             break;
+        case "newServiceModal":
+            if (typeof closeNewServiceModal === "function") closeNewServiceModal();
+            break;
+        case "editServicePriceModal":
+            if (typeof closeEditServicePriceModal === "function") closeEditServicePriceModal();
+            break;
         default:
             const m = document.getElementById(id);
             if (m) m.classList.add("hidden");

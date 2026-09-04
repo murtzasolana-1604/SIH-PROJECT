@@ -50,7 +50,7 @@ app.get("/index.html", (req, res) => {
 app.get("/api/status", statusRoute);
 
 // Services
-app.get("/api/services", servicesRoute);
+app.use("/api/services", servicesRoute);
 
 // Customer Profile & Location
 app.get("/api/customer/profile", customerRoute.getProfile);
