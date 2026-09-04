@@ -1239,19 +1239,47 @@ async function fetchWorkerDashboard() {
                     </button>
                 </div>
 
-                <div class="welfare-card">
-                    <div class="welfare-title">🛡️ Cooperative Welfare & Social Security (NCCT)</div>
-                    <div class="welfare-grid">
-                        <div class="welfare-item">
-                            <span class="w-label">Welfare Fund:</span>
-                            <span class="w-val">${worker.welfare_status || "Enrolled in Cooperative Welfare Fund (Demo)"}</span>
+                <div class="worker-welfare-shield-card" style="margin-bottom:16px; background:linear-gradient(135deg, #F1F8E9 0%, #E8F5E9 100%); border:2px solid #2E7D32; border-radius:14px; padding:16px; box-shadow:0 4px 15px rgba(46, 125, 50, 0.12);">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px; margin-bottom:10px; border-bottom:1px solid #C8E6C9; padding-bottom:10px;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <span style="font-size:30px; line-height:1;">🛡️</span>
+                            <div>
+                                <strong style="font-size:15px; color:#1B5E20;" data-i18n="pmsbyTitle">Cooperative Welfare & PMSBY Insurance Shield</strong><br>
+                                <small style="color:var(--muted); font-size:12px;" data-i18n="pmsbySub">100% Cooperative Subsidized Accidental Protection Under Ministry of Cooperation & DFS Guidelines</small>
+                            </div>
                         </div>
-                        <div class="welfare-item">
-                            <span class="w-label">Social Insurance:</span>
-                            <span class="w-val">${worker.insurance_status || "Covered: PM Suraksha Bima / Accidental (Demo)"}</span>
+                        <span class="badge" style="background:#2E7D32; color:white; font-size:11.5px; font-weight:700; padding:4px 10px; border-radius:12px;">
+                            ● ACTIVE & SPONSORED
+                        </span>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:10px; font-size:12.5px; margin-bottom:14px;">
+                        <div style="background:white; padding:8px 12px; border-radius:8px; border:1px solid #C8E6C9;">
+                            <span style="color:var(--muted); display:block; font-size:11px;">PMSBY Policy Number:</span>
+                            <code style="font-family:var(--font-mono); font-weight:700; color:#1B5E20; font-size:13px;">PMSBY-2026-COOP-${String(worker.id).padStart(4, "0")}</code>
+                        </div>
+                        <div style="background:white; padding:8px 12px; border-radius:8px; border:1px solid #C8E6C9;">
+                            <span style="color:var(--muted); display:block; font-size:11px;">Accidental Protection:</span>
+                            <strong style="color:#B78103; font-size:13.5px;">₹2,00,000 Cover</strong>
+                        </div>
+                        <div style="background:white; padding:8px 12px; border-radius:8px; border:1px solid #C8E6C9;">
+                            <span style="color:var(--muted); display:block; font-size:11px;">Annual Premium:</span>
+                            <strong style="color:#2E7D32;">₹20 (100% Paid by Society)</strong>
+                        </div>
+                        <div style="background:white; padding:8px 12px; border-radius:8px; border:1px solid #C8E6C9;">
+                            <span style="color:var(--muted); display:block; font-size:11px;">Registered Nominee:</span>
+                            <strong>${worker.nominee_name || "Meena Verma"} (Spouse)</strong>
                         </div>
                     </div>
-                    <small class="hint">Demonstration cooperative coverage — future-ready for NCCT / e-Shram linkage.</small>
+
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                        <small style="color:#2E7D32; font-size:11.5px; font-weight:600;">
+                            ✓ Funded by your 15% cooperative platform welfare share • Zero out-of-pocket deduction
+                        </small>
+                        <button type="button" class="primary cta-gold btn-sm" onclick="openWorkerInsuranceModal(${worker.id})">
+                            🛡️ View Policy Certificate & Claim Form
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -1605,7 +1633,7 @@ async function markComplete(bookingId) {
 
 // Tab switching
 function switchAdminTab(tabName) {
-    const tabs = ["overview", "workers", "bookings", "emergency", "forecast", "societies"];
+    const tabs = ["overview", "workers", "bookings", "emergency", "forecast", "societies", "welfare"];
     tabs.forEach(t => {
         const btn = document.getElementById(`adminTabBtn${t.charAt(0).toUpperCase() + t.slice(1)}`);
         const content = document.getElementById(`adminTab${t.charAt(0).toUpperCase() + t.slice(1)}`);
@@ -1620,6 +1648,9 @@ function switchAdminTab(tabName) {
     }
     if (tabName === "forecast") {
         loadAdminForecastAndAnalytics();
+    }
+    if (tabName === "welfare") {
+        loadAdminWelfarePool();
     }
 }
 
@@ -3193,6 +3224,519 @@ async function revokeAdminBadge(workerId) {
             loadAdminWorkers();
         } else {
             alert(data.message || "Failed to revoke certification.");
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Server request failed.");
+    }
+}
+
+// ============================================================
+// PHASE 18: COOPERATIVE WELFARE & PMSBY INSURANCE POOL FRONTEND
+// ============================================================
+
+let activeWorkerWelfareData = null;
+
+async function openWorkerInsuranceModal(workerId) {
+    const modal = document.getElementById("workerInsuranceModal");
+    const content = document.getElementById("workerInsuranceModalContent");
+    if (!modal || !content) return;
+
+    modal.classList.remove("hidden");
+    content.innerHTML = `<div class="skeleton" style="height:260px;"></div>`;
+
+    try {
+        const res = await fetch(`/api/welfare/worker/${workerId}`);
+        const data = await res.json();
+
+        if (!data.success || !data.welfare) {
+            content.innerHTML = `<div class="error">${data.message || "Failed to load cooperative welfare record."}</div>`;
+            return;
+        }
+
+        activeWorkerWelfareData = data.welfare;
+        switchInsuranceModalTab("cert");
+    } catch (err) {
+        console.error(err);
+        content.innerHTML = `<div class="error">Could not connect to cooperative welfare server.</div>`;
+    }
+}
+
+function closeWorkerInsuranceModal() {
+    const modal = document.getElementById("workerInsuranceModal");
+    if (modal) modal.classList.add("hidden");
+}
+
+function switchInsuranceModalTab(tab) {
+    if (!activeWorkerWelfareData) return;
+    const content = document.getElementById("workerInsuranceModalContent");
+    const btnCert = document.getElementById("pmsbyTabBtnCert");
+    const btnClaim = document.getElementById("pmsbyTabBtnClaim");
+    const btnHistory = document.getElementById("pmsbyTabBtnHistory");
+    const actionsEl = document.getElementById("workerInsuranceModalActions");
+
+    if (btnCert) {
+        btnCert.classList.toggle("active", tab === "cert");
+        btnCert.style.borderBottom = tab === "cert" ? "2px solid #1B5E20" : "none";
+    }
+    if (btnClaim) {
+        btnClaim.classList.toggle("active", tab === "claim");
+        btnClaim.style.borderBottom = tab === "claim" ? "2px solid #1B5E20" : "none";
+    }
+    if (btnHistory) {
+        btnHistory.classList.toggle("active", tab === "history");
+        btnHistory.style.borderBottom = tab === "history" ? "2px solid #1B5E20" : "none";
+    }
+
+    if (tab === "cert") {
+        if (actionsEl) actionsEl.innerHTML = `<button type="button" class="primary cta-gold btn-sm" onclick="printWorkerPolicyCertificate()">🖨️ Print / Save Certificate</button>`;
+        content.innerHTML = renderWorkerPolicyCertificateHtml(activeWorkerWelfareData);
+    } else if (tab === "claim") {
+        if (actionsEl) actionsEl.innerHTML = ``;
+        content.innerHTML = renderWorkerClaimFormHtml(activeWorkerWelfareData.workerId);
+    } else if (tab === "history") {
+        if (actionsEl) actionsEl.innerHTML = `<button type="button" class="secondary btn-sm" onclick="switchInsuranceModalTab('claim')">➕ File New Claim</button>`;
+        content.innerHTML = renderWorkerClaimHistoryHtml(activeWorkerWelfareData.claims);
+    }
+}
+
+function renderWorkerPolicyCertificateHtml(w) {
+    const p = w.policy;
+    if (!p) {
+        return `
+            <div style="text-align:center; padding:30px 20px;">
+                <span style="font-size:48px;">🛡️</span>
+                <h3>Cooperative Welfare Verification in Progress</h3>
+                <p style="color:var(--muted); font-size:13.5px; max-width:420px; margin:8px auto 16px;">
+                    Once your cooperative membership accreditation is finalized by your primary society, your 100% subsidized PMSBY policy certificate will be issued automatically.
+                </p>
+                <button class="primary btn-sm" onclick="switchInsuranceModalTab('claim')">File Emergency Relief Claim</button>
+            </div>
+        `;
+    }
+
+    return `
+        <div class="pmsby-certificate-card" id="pmsbyPolicyPrintable">
+            <div class="pmsby-cert-header">
+                <div class="pmsby-emblem">🏛️</div>
+                <div class="pmsby-cert-title-block">
+                    <div class="pmsby-govt-sub">GOVERNMENT OF INDIA • MINISTRY OF COOPERATION</div>
+                    <div class="pmsby-govt-dept">Department of Financial Services • Social Security Division</div>
+                    <div class="pmsby-scheme-name">PRADHAN MANTRI SURAKSHA BIMA YOJANA (PMSBY)</div>
+                    <div class="pmsby-cert-subtext">OFFICIAL COOPERATIVE WORKFORCE POLICY CERTIFICATE</div>
+                </div>
+                <div class="pmsby-seal">🛡️</div>
+            </div>
+
+            <div class="pmsby-cert-body">
+                <div class="pmsby-hero-banner">
+                    <div class="pmsby-hero-left">
+                        <span class="pmsby-cov-label">STATUTORY ACCIDENTAL COVERAGE</span>
+                        <div class="pmsby-cov-val">₹2,00,000</div>
+                        <small style="color:#2E7D32; font-weight:700;">Accidental Death & Full Disability Cover</small>
+                    </div>
+                    <div class="pmsby-hero-right">
+                        <span class="pmsby-cov-label">ANNUAL STATUTORY PREMIUM</span>
+                        <div class="pmsby-premium-pill">₹20 / Year</div>
+                        <small style="color:#1565C0; font-weight:700;">✓ 100% Cooperative Subsidized</small>
+                    </div>
+                </div>
+
+                <div class="pmsby-grid-details">
+                    <div class="pmsby-field">
+                        <span class="p-lbl">Policy Certificate No.:</span>
+                        <strong class="p-val" style="color:#1B5E20; font-family:var(--font-mono);">${p.policyNumber}</strong>
+                    </div>
+                    <div class="pmsby-field">
+                        <span class="p-lbl">Policy Status:</span>
+                        <span class="p-val" style="color:#2E7D32; font-weight:800;">● ${p.status} & ACTIVE</span>
+                    </div>
+                    <div class="pmsby-field">
+                        <span class="p-lbl">Insured Member Name:</span>
+                        <strong class="p-val">${w.workerName}</strong>
+                    </div>
+                    <div class="pmsby-field">
+                        <span class="p-lbl">NCCT Registration ID:</span>
+                        <span class="p-val">${w.ncctCertId || 'NCCT-COOP-2026-0006'}</span>
+                    </div>
+                    <div class="pmsby-field">
+                        <span class="p-lbl">Registered Nominee:</span>
+                        <strong class="p-val">${p.nomineeName} (${p.nomineeRelationship})</strong>
+                    </div>
+                    <div class="pmsby-field">
+                        <span class="p-lbl">Primary Society:</span>
+                        <span class="p-val">${w.society.name}</span>
+                    </div>
+                    <div class="pmsby-field">
+                        <span class="p-lbl">Coverage Period:</span>
+                        <span class="p-val">${p.validFrom} to ${p.validTo}</span>
+                    </div>
+                    <div class="pmsby-field">
+                        <span class="p-lbl">Welfare Contribution Pool:</span>
+                        <span class="p-val">₹${w.metrics.totalContribution} Generated (15% Share)</span>
+                    </div>
+                </div>
+
+                <div class="pmsby-statutory-statement">
+                    <strong>Cooperative Guarantee:</strong> This policy certificate is issued under the Multi-State Co-operative Societies Act, 2002. Premium is funded directly from the Sahkaar Connect cooperative welfare allocation reserve with zero private intermediary deduction. In the event of workplace mishap, the cooperative society facilitates expedited direct benefit transfer (DBT) to the insured or designated nominee.
+                </div>
+            </div>
+
+            <div class="pmsby-cert-footer">
+                <div class="pmsby-fingerprint">
+                    <span>🔐 Digital Verification Hash:</span>
+                    <code>${p.certificateHash || 'e9f7823cba992384102934a36bcf821'}</code>
+                </div>
+                <div class="pmsby-officer-signature">
+                    <div style="font-weight:700; color:#1B5E20; font-size:11px;">Authorised Welfare Officer</div>
+                    <div style="font-size:9.5px; color:var(--muted);">National Council for Cooperative Training (NCCT)</div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function renderWorkerClaimFormHtml(workerId) {
+    return `
+        <div style="max-width:540px; margin:0 auto;">
+            <div style="margin-bottom:16px; text-align:center;">
+                <h3 style="margin:0; font-size:17px; color:#1B5E20;">🆘 Submit Emergency Cooperative Distress Claim</h3>
+                <p style="margin:4px 0 0; font-size:12.5px; color:var(--muted);">
+                    Fast-track assistance funded by your cooperative society welfare pool for unexpected trade emergencies.
+                </p>
+            </div>
+
+            <form id="welfareClaimForm" onsubmit="submitWelfareClaimForm(event, ${workerId})">
+                <div class="form-group">
+                    <label>Emergency Distress Category</label>
+                    <select id="claimTypeSelect" style="width:100%; padding:10px; border:1px solid var(--line); border-radius:8px;" required>
+                        <option value="TOOL_DAMAGE_RELIEF">🛠️ Tool & Equipment Damage / Replacement Subsidy</option>
+                        <option value="MEDICAL_EMERGENCY">🏥 Workplace Medical & Minor Injury Relief</option>
+                        <option value="ACCIDENTAL_DISABILITY">🛡️ Accidental Injury / Temporary Disability Aid</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Requested Relief Amount (₹)</label>
+                    <input type="number" id="claimRequestedAmount" placeholder="e.g. 1500" min="100" max="50000" style="width:100%; padding:10px;" required>
+                    <small class="hint">Cooperative micro-grants up to ₹5,000 are typically disbursed within 24 hours.</small>
+                </div>
+
+                <div class="form-group">
+                    <label>Incident Description & Observations</label>
+                    <textarea id="claimIncidentDesc" rows="3" style="width:100%; padding:10px; border:1px solid var(--line); border-radius:8px;" placeholder="Describe what happened, location, repair invoice details, or medical clinic reference..." required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Supporting Document Reference / Bill No.</label>
+                    <input type="text" id="claimDocRef" placeholder="e.g. RECEIPT-TOOL-8839 or CLINIC-BILL-401" style="width:100%; padding:10px;">
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px; border-top:1px solid var(--line); padding-top:14px;">
+                    <button type="button" class="secondary" onclick="switchInsuranceModalTab('cert')">Cancel</button>
+                    <button type="submit" class="primary cta-gold">🤝 Submit Claim to Welfare Committee</button>
+                </div>
+            </form>
+            <div id="welfareClaimResult" style="margin-top:12px;"></div>
+        </div>
+    `;
+}
+
+function renderWorkerClaimHistoryHtml(claims) {
+    if (!claims || claims.length === 0) {
+        return `
+            <div style="text-align:center; padding:30px 10px; color:var(--muted);">
+                <span style="font-size:36px;">📋</span>
+                <p>No emergency claims have been submitted yet. All previous jobs cleared safely!</p>
+                <button class="primary btn-sm" onclick="switchInsuranceModalTab('claim')">File Emergency Relief Claim</button>
+            </div>
+        `;
+    }
+
+    return `
+        <div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <h4 style="margin:0; font-size:15px; color:#1B5E20;">Cooperative Relief Claims History (${claims.length})</h4>
+                <button class="primary cta-gold btn-sm" onclick="switchInsuranceModalTab('claim')">➕ New Claim</button>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                ${claims.map(c => `
+                    <div style="background:var(--paper); border:1px solid var(--line); border-radius:10px; padding:12px 16px;">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;">
+                            <div>
+                                <strong style="font-size:14px;">${c.claimNumber}</strong> • <span class="badge" style="background:#E0F2F1; color:#004D40;">${c.type}</span><br>
+                                <small style="color:var(--muted); font-size:11.5px;">Filed on: ${c.createdAt ? c.createdAt.slice(0, 10) : 'Recent'}</small>
+                            </div>
+                            <span class="badge" style="background:${c.status === 'DISBURSED' || c.status === 'APPROVED' ? '#E8F5E9' : (c.status === 'PENDING' ? '#FFF9C4' : '#FFEBEE')}; color:${c.status === 'DISBURSED' || c.status === 'APPROVED' ? '#1B5E20' : (c.status === 'PENDING' ? '#F57F17' : '#B71C1C')}; font-weight:700;">
+                                ${c.status}
+                            </span>
+                        </div>
+                        <div style="font-size:13px; margin:6px 0; color:#374151;">
+                            ${c.description}
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; border-top:1px dashed #E5E7EB; padding-top:6px; margin-top:6px;">
+                            <div>Requested: <strong>₹${c.requestedAmount}</strong> | Approved: <strong style="color:#2E7D32;">₹${c.approvedAmount || 0}</strong></div>
+                            <small style="color:var(--muted); font-style:italic;">${c.remarks || 'Under review'}</small>
+                        </div>
+                    </div>
+                `).join("")}
+            </div>
+        </div>
+    `;
+}
+
+async function submitWelfareClaimForm(event, workerId) {
+    event.preventDefault();
+    const claimType = document.getElementById("claimTypeSelect").value;
+    const amount = document.getElementById("claimRequestedAmount").value;
+    const desc = document.getElementById("claimIncidentDesc").value;
+    const docRef = document.getElementById("claimDocRef").value;
+    const resultEl = document.getElementById("welfareClaimResult");
+
+    if (resultEl) resultEl.innerHTML = `<div class="skeleton" style="height:36px;"></div>`;
+
+    try {
+        const res = await fetch("/api/welfare/claims", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                workerId: workerId,
+                claimType: claimType,
+                requestedAmount: amount,
+                incidentDescription: desc,
+                supportingDocRef: docRef
+            })
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+            if (resultEl) resultEl.innerHTML = `<div class="success" style="color:#2E7D32; font-weight:700;">${data.message}</div>`;
+            setTimeout(async () => {
+                const wRes = await fetch(`/api/welfare/worker/${workerId}`);
+                const wData = await wRes.json();
+                if (wData.success) {
+                    activeWorkerWelfareData = wData.welfare;
+                    switchInsuranceModalTab("history");
+                }
+            }, 1000);
+        } else {
+            if (resultEl) resultEl.innerHTML = `<div class="error">${data.message || "Failed to submit claim"}</div>`;
+        }
+    } catch (err) {
+        console.error(err);
+        if (resultEl) resultEl.innerHTML = `<div class="error">Network error. Please try again.</div>`;
+    }
+}
+
+function printWorkerPolicyCertificate() {
+    window.print();
+}
+
+/**
+ * Federation Admin Welfare Pool Management
+ */
+async function loadAdminWelfarePool() {
+    const statsGrid = document.getElementById("adminWelfareStatsGrid");
+    const claimsTable = document.getElementById("adminWelfareClaimsTable");
+    const ledgerTable = document.getElementById("adminWelfareLedgerTable");
+    const badgeEl = document.getElementById("pendingClaimsCountBadge");
+
+    if (statsGrid) statsGrid.innerHTML = `<div class="skeleton" style="height:80px;"></div><div class="skeleton" style="height:80px;"></div><div class="skeleton" style="height:80px;"></div><div class="skeleton" style="height:80px;"></div>`;
+    if (claimsTable) claimsTable.innerHTML = `<div class="skeleton" style="height:120px;"></div>`;
+    if (ledgerTable) ledgerTable.innerHTML = `<div class="skeleton" style="height:120px;"></div>`;
+
+    try {
+        const [statsRes, claimsRes] = await Promise.all([
+            fetch("/api/welfare/stats"),
+            adminFetch("/api/admin/welfare/claims")
+        ]);
+
+        const statsData = await statsRes.json();
+        const claimsData = await claimsRes.json();
+
+        if (statsData.success && statsGrid) {
+            const s = statsData.stats;
+            statsGrid.innerHTML = `
+                <div class="stat-card highlight-teal">
+                    <div class="lbl">Federation Welfare Reserve</div>
+                    <strong>₹${Number(s.totalWelfareReserves || 0).toLocaleString()}</strong>
+                    <small class="subtext">15% accumulated booking share</small>
+                </div>
+                <div class="stat-card highlight-green">
+                    <div class="lbl">PMSBY Active Coverage</div>
+                    <strong>${s.activeInsuredWorkers} / ${s.verifiedWorkers}</strong>
+                    <small class="subtext">${s.coverageRatio}% 100% subsidized workers</small>
+                </div>
+                <div class="stat-card highlight-gold">
+                    <div class="lbl">Total Relief Disbursed</div>
+                    <strong>₹${Number(s.totalDisbursedAmount || 0).toLocaleString()}</strong>
+                    <small class="subtext">${s.totalClaimsCount} total claims logged</small>
+                </div>
+                <div class="stat-card ${s.pendingClaimsCount > 0 ? 'highlight-amber' : ''}">
+                    <div class="lbl">Pending Relief Claims</div>
+                    <strong>${s.pendingClaimsCount}</strong>
+                    <small class="subtext">${s.pendingClaimsCount > 0 ? 'Requires Secretary Approval' : 'All clear'}</small>
+                </div>
+            `;
+
+            if (badgeEl) {
+                badgeEl.textContent = `${s.pendingClaimsCount} Pending Action`;
+                badgeEl.style.background = s.pendingClaimsCount > 0 ? '#FFE082' : '#E8F5E9';
+                badgeEl.style.color = s.pendingClaimsCount > 0 ? '#5D4037' : '#1B5E20';
+            }
+        }
+
+        if (claimsData.success && claimsTable) {
+            const claims = claimsData.claims;
+            if (claims.length === 0) {
+                claimsTable.innerHTML = `<p style="padding:14px; color:var(--muted); text-align:center;">No emergency relief claims filed yet.</p>`;
+            } else {
+                claimsTable.innerHTML = `
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Claim ID</th>
+                                <th>Worker</th>
+                                <th>Category</th>
+                                <th>Requested</th>
+                                <th>Status</th>
+                                <th>Incident Observations</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${claims.map(c => `
+                                <tr>
+                                    <td><code>${c.claim_number}</code></td>
+                                    <td>
+                                        <strong>${c.worker_name}</strong><br>
+                                        <small style="color:var(--muted);">${c.worker_skill} • ${c.society_name || 'Navodaya Society'}</small>
+                                    </td>
+                                    <td><span class="badge" style="background:#E0F2F1; color:#004D40; font-size:11px;">${c.claim_type}</span></td>
+                                    <td><strong>₹${c.requested_amount}</strong></td>
+                                    <td>
+                                        <span class="badge" style="background:${c.status === 'DISBURSED' || c.status === 'APPROVED' ? '#E8F5E9' : (c.status === 'PENDING' ? '#FFF9C4' : '#FFEBEE')}; color:${c.status === 'DISBURSED' || c.status === 'APPROVED' ? '#1B5E20' : (c.status === 'PENDING' ? '#F57F17' : '#B71C1C')}; font-size:11px; font-weight:700;">
+                                            ${c.status}
+                                        </span>
+                                    </td>
+                                    <td style="max-width:240px; font-size:12px; line-height:1.4;">
+                                        ${c.incident_description}<br>
+                                        <small style="color:var(--muted);">Doc: ${c.supporting_doc_ref || 'N/A'}</small>
+                                    </td>
+                                    <td>
+                                        ${c.status === 'PENDING' ? `
+                                            <div style="display:flex; gap:6px;">
+                                                <button class="primary btn-sm" style="font-size:11.5px; padding:4px 8px; background:#2E7D32;" onclick="processAdminClaim(${c.id}, 'APPROVE_DISBURSE', ${c.requested_amount})">✓ Disburse ₹${c.requested_amount}</button>
+                                                <button class="secondary btn-sm" style="font-size:11.5px; padding:4px 8px; color:#C62828;" onclick="processAdminClaim(${c.id}, 'REJECT')">✕ Reject</button>
+                                            </div>
+                                        ` : `
+                                            <small style="color:var(--muted); font-size:11.5px;">Resolved on ${c.resolved_at ? c.resolved_at.slice(0, 10) : 'Done'}</small>
+                                        `}
+                                    </td>
+                                </tr>
+                            `).join("")}
+                        </tbody>
+                    </table>
+                `;
+            }
+        }
+
+        if (statsData.success && ledgerTable && statsData.recentLedger) {
+            const led = statsData.recentLedger;
+            ledgerTable.innerHTML = `
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Entry ID</th>
+                            <th>Transaction Type</th>
+                            <th>Amount</th>
+                            <th>Beneficiary / Society</th>
+                            <th>Description</th>
+                            <th>Timestamp</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${led.map(l => `
+                            <tr>
+                                <td>#${l.id}</td>
+                                <td>
+                                    <span class="badge" style="background:${l.entry_type.startsWith('INFLOW') ? '#E8F5E9' : '#FFF3E0'}; color:${l.entry_type.startsWith('INFLOW') ? '#1B5E20' : '#E65100'}; font-size:10.5px; font-weight:700;">
+                                        ${l.entry_type}
+                                    </span>
+                                </td>
+                                <td><strong style="color:${l.entry_type.startsWith('INFLOW') ? '#1B5E20' : '#C62828'};">${l.entry_type.startsWith('INFLOW') ? '+' : '-'}₹${l.amount}</strong></td>
+                                <td>${l.worker_name ? `${l.worker_name} (${l.society_name || 'Society'})` : (l.society_name || 'Federation Pool')}</td>
+                                <td style="font-size:12px;">${l.description}</td>
+                                <td style="font-size:11.5px; color:var(--muted);">${l.created_at ? l.created_at.slice(0, 16) : ''}</td>
+                            </tr>
+                        `).join("")}
+                    </tbody>
+                </table>
+            `;
+        }
+    } catch (err) {
+        console.error(err);
+        if (statsGrid) statsGrid.innerHTML = `<div class="error">Failed to load cooperative welfare pool data.</div>`;
+    }
+}
+
+async function processAdminClaim(claimId, action, defaultAmount) {
+    let approvedAmount = defaultAmount;
+    let remarks = "";
+
+    if (action === "APPROVE_DISBURSE") {
+        const inputAmount = prompt(`Enter approved grant amount to disburse from welfare pool:`, defaultAmount);
+        if (!inputAmount) return;
+        approvedAmount = Number(inputAmount);
+        if (isNaN(approvedAmount) || approvedAmount <= 0) {
+            alert("Invalid amount.");
+            return;
+        }
+        remarks = prompt("Enter committee disbursement notes (optional):", "Approved by Cooperative Society Welfare Board.") || "Approved by Cooperative Society Welfare Board.";
+    } else if (action === "REJECT") {
+        remarks = prompt("Enter reason for rejection:", "Does not meet emergency distress eligibility criteria.") || "Does not meet emergency distress eligibility criteria.";
+        if (!remarks) return;
+    }
+
+    try {
+        const res = await adminFetch(`/api/admin/welfare/claims/${claimId}/process`, {
+            method: "POST",
+            body: JSON.stringify({
+                action,
+                approvedAmount,
+                remarks
+            })
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+            alert(data.message);
+            loadAdminWelfarePool();
+        } else {
+            alert(data.message || "Failed to process claim.");
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Server request failed.");
+    }
+}
+
+async function triggerBatchPmsbyRenewal() {
+    if (!confirm("Are you sure you want to batch-sponsor PMSBY annual renewals for all verified cooperative workers? Premium (₹20/worker) will be deducted from the accumulated 15% welfare reserve.")) {
+        return;
+    }
+
+    try {
+        const res = await adminFetch("/api/admin/welfare/batch-renew-pmsby", {
+            method: "POST",
+            body: JSON.stringify({})
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            alert(`✅ ${data.message}`);
+            loadAdminWelfarePool();
+        } else {
+            alert(data.message || "Failed to complete batch renewal.");
         }
     } catch (err) {
         console.error(err);

@@ -208,7 +208,23 @@ const translations = {
         statutoryCardNotice: "Statutory cooperative credential under MSCS Act 2002. Any fraudulent alteration is a punishable legal offence.",
         citizenTrustHeading: "NCCT Verified Cooperative Member",
         citizenTrustSub: "Government Cooperative Accreditation • Zero Middleman Platform",
-        badgeCopiedToast: "📋 Tamper-proof verification URL copied to clipboard!"
+        badgeCopiedToast: "📋 Tamper-proof verification URL copied to clipboard!",
+
+        // Cooperative Welfare & PMSBY Insurance Pool (Phase 18)
+        tabWelfare: "🛡️ Welfare & PMSBY Pool",
+        welfareHeader: "🛡️ Cooperative Welfare & PMSBY Insurance Pool",
+        welfareSub: "15% booking welfare reserve allocations, PMSBY policy subsidies, and emergency member relief claims.",
+        pmsbyTitle: "Cooperative Welfare & PMSBY Insurance Shield",
+        pmsbySub: "100% Cooperative Subsidized Accidental Protection Under Ministry of Cooperation & DFS Guidelines",
+        pmsbyCertTitle: "PM Suraksha Bima Yojana (PMSBY) Certificate",
+        btnViewPolicyClaim: "🛡️ View Policy Certificate & Claim Form",
+        btnFileEmergencyClaim: "🆘 File Emergency Claim",
+        btnBatchRenewPmsby: "⚡ Batch Sponsor PMSBY Renewals",
+        claimTypeToolDamage: "Tool & Equipment Damage Relief",
+        claimTypeMedical: "Workplace Medical Relief",
+        claimTypeAccident: "Accidental Injury / Disability Aid",
+        welfarePoolReserveLabel: "Federation Welfare Reserve",
+        pmsbyCoverageRatioLabel: "PMSBY Active Coverage"
     },
     hi: {
         appTitle: "🤝 सहकार कनेक्ट",
@@ -419,7 +435,23 @@ const translations = {
         statutoryCardNotice: "MSCS अधिनियम 2002 के तहत वैधानिक सहकारी साख पत्र। कोई भी अनधिकृत फेरबदल कानूनी रूप से दंडनीय अपराध है।",
         citizenTrustHeading: "NCCT सत्यापित सहकारी सदस्य",
         citizenTrustSub: "सरकारी सहकारी प्रमाणन • शून्य बिचौलिया मंच",
-        badgeCopiedToast: "📋 डिजिटल सत्यापन लिंक क्लिपबोर्ड पर कॉपी हो गया!"
+        badgeCopiedToast: "📋 डिजिटल सत्यापन लिंक क्लिपबोर्ड पर कॉपी हो गया!",
+
+        // Cooperative Welfare & PMSBY Insurance Pool (Phase 18)
+        tabWelfare: "🛡️ कल्याण एवं पीएम सुरक्षा बीमा",
+        welfareHeader: "🛡️ सहकारी कल्याण एवं पीएम सुरक्षा बीमा कोष",
+        welfareSub: "15% बुकिंग कल्याण आरक्षित निधि आवंटन, पीएमएसबीवाई बीमा सब्सिडी, और आपातकालीन सदस्य राहत दावे।",
+        pmsbyTitle: "सहकारी कल्याण एवं पीएम सुरक्षा बीमा शील्ड",
+        pmsbySub: "सहकारिता मंत्रालय और वित्तीय सेवा विभाग के दिशानिर्देशों के तहत 100% सहकारी अनुदानित दुर्घटना सुरक्षा",
+        pmsbyCertTitle: "प्रधानमंत्री सुरक्षा बीमा योजना (PMSBY) प्रमाण पत्र",
+        btnViewPolicyClaim: "🛡️ बीमा प्रमाण पत्र व राहत दावा फॉर्म देखें",
+        btnFileEmergencyClaim: "🆘 आपातकालीन राहत दावा दर्ज करें",
+        btnBatchRenewPmsby: "⚡ सभी सदस्यों का पीएमएसबीवाई स्वतः नवीनीकरण करें",
+        claimTypeToolDamage: "उपकरण एवं औजार क्षति राहत",
+        claimTypeMedical: "कार्यस्थल चिकित्सा एवं प्राथमिक उपचार राहत",
+        claimTypeAccident: "दुर्घटना चोट / विकलांगता सहायता",
+        welfarePoolReserveLabel: "फेडरेशन कल्याण आरक्षित निधि",
+        pmsbyCoverageRatioLabel: "सक्रिय पीएमएसबीवाई कवरेज"
     }
 };
 

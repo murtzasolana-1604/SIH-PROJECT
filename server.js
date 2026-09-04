@@ -17,6 +17,7 @@ const emergencyRoute = require("./routes/emergency");
 const chatbotRoute = require("./routes/chatbot");
 const societiesRoute = require("./routes/societies");
 const analyticsRoute = require("./routes/analytics");
+const welfareRoute = require("./routes/welfare");
 
 const app = express();
 const PORT = 3000;
@@ -117,6 +118,17 @@ app.use("/api/societies", societiesRoute);
 
 // Predictive Demand & Fair Wage Analytics Engine (Phase 15)
 app.use("/api/analytics", analyticsRoute);
+
+// Cooperative Welfare & PMSBY Insurance Pool (Phase 18)
+app.get("/api/welfare/worker/:id", welfareRoute.getWorkerWelfare);
+app.post("/api/welfare/claims", welfareRoute.submitWelfareClaim);
+app.get("/api/welfare/stats", welfareRoute.getWelfareStats);
+
+// Admin Welfare Management (Phase 18)
+app.get("/api/admin/welfare/claims", adminAuth.requireAdminAuth, admin.getAdminClaims);
+app.post("/api/admin/welfare/claims/:id/process", adminAuth.requireAdminAuth, admin.processAdminClaim);
+app.post("/api/admin/welfare/batch-renew-pmsby", adminAuth.requireAdminAuth, admin.batchRenewPmsby);
+app.get("/api/admin/welfare/ledger", adminAuth.requireAdminAuth, admin.getWelfareLedger);
 
 // 404
 app.use((req, res) => {

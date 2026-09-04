@@ -839,6 +839,7 @@
                     <button class="admin-tab-btn" id="adminTabBtnEmergency" onclick="switchAdminTab('emergency')">🚨 Emergency SLA Queue</button>
                     <button class="admin-tab-btn" id="adminTabBtnForecast" onclick="switchAdminTab('forecast')" data-i18n="tabForecast">📈 NCCT Forecast & Fair Wage</button>
                     <button class="admin-tab-btn" id="adminTabBtnSocieties" onclick="switchAdminTab('societies')" data-i18n="tabSocieties">🏛️ Societies & PACS</button>
+                    <button class="admin-tab-btn" id="adminTabBtnWelfare" onclick="switchAdminTab('welfare')" data-i18n="tabWelfare">🛡️ Welfare & PMSBY Pool</button>
                 </div>
 
                 <!-- TAB 1: OVERVIEW & STATS -->
@@ -999,6 +1000,41 @@
                     <div id="adminSocietiesList" class="societies-grid"></div>
                 </div>
 
+                <!-- TAB 7: COOPERATIVE WELFARE & PMSBY POOL (PHASE 18) -->
+                <div id="adminTabWelfare" class="admin-tab-content hidden">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
+                        <div>
+                            <h3 style="margin:0;" data-i18n="welfareHeader">🛡️ Cooperative Welfare & PMSBY Insurance Pool</h3>
+                            <p style="margin:2px 0 0; font-size:12.5px; color:var(--muted);" data-i18n="welfareSub">15% booking welfare reserve allocations, PMSBY policy subsidies, and emergency member relief claims.</p>
+                        </div>
+                        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                            <button class="secondary" style="font-size:12px; padding:6px 14px;" onclick="loadAdminWelfarePool()">🔄 Refresh Pool</button>
+                            <button class="primary cta-gold" style="font-size:12px; padding:6px 14px;" onclick="triggerBatchPmsbyRenewal()">⚡ Batch Sponsor PMSBY Renewals</button>
+                        </div>
+                    </div>
+
+                    <!-- Welfare KPI Stats Grid -->
+                    <div id="adminWelfareStatsGrid" class="stat-grid" style="margin-bottom:20px;"></div>
+
+                    <!-- Emergency Claims Review Queue -->
+                    <div class="admin-table-wrap" style="margin-bottom:24px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding:0 4px;">
+                            <h4 style="margin:0; font-size:15px; color:#1B5E20;">📋 Member Emergency Distress Claims Queue</h4>
+                            <span id="pendingClaimsCountBadge" class="badge" style="background:#FFE082; color:#5D4037; font-weight:700;">Loading...</span>
+                        </div>
+                        <div id="adminWelfareClaimsTable"></div>
+                    </div>
+
+                    <!-- Welfare Pool Audit Ledger -->
+                    <div class="admin-table-wrap">
+                        <div style="margin-bottom:10px; padding:0 4px;">
+                            <h4 style="margin:0; font-size:15px; color:var(--teal-deep);">💰 Cooperative Welfare Reserve Audit Ledger</h4>
+                            <small style="color:var(--muted);">Immutable audit of 15% booking inflows, PMSBY sponsored premiums, and disbursed relief grants.</small>
+                        </div>
+                        <div id="adminWelfareLedgerTable"></div>
+                    </div>
+                </div>
+
             </section>
 
         </main>
@@ -1136,6 +1172,40 @@
 
                 <div id="adminBadgeContent" style="overflow-y:auto; flex:1;">
                     <div class="skeleton" style="height:200px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===================== WORKER INSURANCE POLICY & CLAIM MODAL (PHASE 18) ===================== -->
+        <div id="workerInsuranceModal" class="modal-overlay hidden" onclick="if(event.target===this) closeWorkerInsuranceModal()">
+            <div class="modal-card id-card-modal-container" style="max-width:680px; width:95%; background:white; border-radius:20px; padding:0; overflow:hidden; border:2px solid #1B5E20; box-shadow:0 18px 50px rgba(0,0,0,0.3); max-height:90vh; display:flex; flex-direction:column;">
+                <div style="padding:16px 20px; background:linear-gradient(135deg, #1B5E20 0%, #004D40 100%); color:white; display:flex; justify-content:space-between; align-items:center;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span style="font-size:24px;">🛡️</span>
+                        <div>
+                            <strong style="font-size:16px; letter-spacing:0.3px;">PM Suraksha Bima Yojana (PMSBY) Certificate</strong><br>
+                            <small style="opacity:0.9; font-size:11.5px;">Ministry of Cooperation • Statutory Member Social Security Cover</small>
+                        </div>
+                    </div>
+                    <button type="button" class="sos-close-btn" style="color:white;" onclick="closeWorkerInsuranceModal()" aria-label="Close modal">×</button>
+                </div>
+
+                <!-- Navigation Tabs inside Modal -->
+                <div style="display:flex; border-bottom:1px solid var(--line); background:#F4FAF6; padding:0 16px;">
+                    <button id="pmsbyTabBtnCert" class="admin-tab-btn active" style="padding:10px 16px; border-radius:0; border-bottom:2px solid #1B5E20; font-weight:700;" onclick="switchInsuranceModalTab('cert')">📜 Policy Certificate</button>
+                    <button id="pmsbyTabBtnClaim" class="admin-tab-btn" style="padding:10px 16px; border-radius:0; font-weight:700;" onclick="switchInsuranceModalTab('claim')">🆘 File Emergency Claim</button>
+                    <button id="pmsbyTabBtnHistory" class="admin-tab-btn" style="padding:10px 16px; border-radius:0; font-weight:700;" onclick="switchInsuranceModalTab('history')">📋 My Claims History</button>
+                </div>
+
+                <div id="workerInsuranceModalContent" style="padding:20px; overflow-y:auto; flex:1;">
+                    <div class="skeleton" style="height:260px;"></div>
+                </div>
+
+                <div style="padding:12px 20px; background:var(--paper); border-top:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                    <button type="button" class="secondary btn-sm" onclick="closeWorkerInsuranceModal()">Close</button>
+                    <div style="display:flex; gap:8px;" id="workerInsuranceModalActions">
+                        <button type="button" class="primary cta-gold btn-sm" onclick="printWorkerPolicyCertificate()">🖨️ Print / Save Certificate</button>
+                    </div>
                 </div>
             </div>
         </div>

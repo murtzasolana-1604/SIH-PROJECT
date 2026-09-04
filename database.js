@@ -358,7 +358,122 @@ for (const w of verifiedWithoutCert) {
     `).run(w.id, badgeLevel, admin);
 }
 
-db.generateWorkerVerificationHash = generateWorkerVerificationHash;
+// ============================================================
+// PHASE 18: COOPERATIVE WELFARE & PMSBY INSURANCE POOL
+// ============================================================
+db.exec(`
+    CREATE TABLE IF NOT EXISTS welfare_pool_ledger (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        society_id INTEGER,
+        entry_type TEXT NOT NULL,
+        amount REAL NOT NULL,
+        worker_id INTEGER,
+        reference_id TEXT,
+        description TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+`);
+
+db.exec(`
+    CREATE TABLE IF NOT EXISTS worker_insurance_policies (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        worker_id INTEGER NOT NULL,
+        policy_number TEXT UNIQUE NOT NULL,
+        scheme_name TEXT DEFAULT 'Pradhan Mantri Suraksha Bima Yojana (PMSBY)',
+        coverage_amount REAL DEFAULT 200000,
+        premium_amount REAL DEFAULT 20,
+        valid_from DATE NOT NULL,
+        valid_to DATE NOT NULL,
+        policy_status TEXT DEFAULT 'ACTIVE',
+        nominee_name TEXT DEFAULT 'Dependent Family Member',
+        nominee_relationship TEXT DEFAULT 'Spouse',
+        certificate_hash TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+`);
+
+db.exec(`
+    CREATE TABLE IF NOT EXISTS welfare_claims (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        claim_number TEXT UNIQUE NOT NULL,
+        worker_id INTEGER NOT NULL,
+        claim_type TEXT NOT NULL,
+        requested_amount REAL NOT NULL,
+        approved_amount REAL DEFAULT 0,
+        status TEXT DEFAULT 'PENDING',
+        incident_description TEXT,
+        supporting_doc_ref TEXT,
+        admin_remarks TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        resolved_at DATETIME
+    )
+`);
+
+function generateInsuranceCertHash(policyNumber, workerId, coverageAmount, validFrom, secret = "SAHKAAR_PMSBY_2026_COOP") {
+    return crypto.createHash("sha256")
+        .update(`${policyNumber}:${workerId}:${coverageAmount}:${validFrom}:${secret}`)
+        .digest("hex");
+}
+
+// Ensure all verified workers have an active PMSBY policy
+const verifiedWorkersList = db.prepare("SELECT * FROM workers WHERE verified = 1").all();
+for (const w of verifiedWorkersList) {
+    const existingPolicy = db.prepare("SELECT * FROM worker_insurance_policies WHERE worker_id = ?").get(w.id);
+    if (!existingPolicy) {
+        const policyNumber = `PMSBY-2026-COOP-${String(w.id).padStart(4, "0")}`;
+        const validFrom = "2026-06-01";
+        const validTo = "2027-05-31";
+        const certHash = generateInsuranceCertHash(policyNumber, w.id, 200000, validFrom);
+        const nominee = (w.phone === "9876543210" || w.id === 6) ? "Meena Verma" : "Dependent Family Member";
+        const rel = "Spouse";
+
+        db.prepare(`
+            INSERT INTO worker_insurance_policies 
+            (worker_id, policy_number, scheme_name, coverage_amount, premium_amount, valid_from, valid_to, policy_status, nominee_name, nominee_relationship, certificate_hash)
+            VALUES (?, ?, 'Pradhan Mantri Suraksha Bima Yojana (PMSBY)', 200000, 20, ?, ?, 'ACTIVE', ?, ?, ?)
+        `).run(w.id, policyNumber, validFrom, validTo, nominee, rel, certHash);
+
+        // Record in welfare pool ledger as sponsored premium outflow
+        const societyId = w.society_id || 1;
+        db.prepare(`
+            INSERT INTO welfare_pool_ledger (society_id, entry_type, amount, worker_id, reference_id, description)
+            VALUES (?, 'OUTFLOW_PMSBY_PREMIUM', 20.0, ?, ?, '100% Cooperative Subsidized Annual PMSBY Policy Premium (₹2 Lakh accidental cover)')
+        `).run(societyId, w.id, policyNumber);
+    }
+}
+
+// Seed demo welfare claim if table empty
+const claimCount = db.prepare("SELECT COUNT(*) as count FROM welfare_claims").get().count;
+if (claimCount === 0) {
+    const worker6 = db.prepare("SELECT id FROM workers WHERE id = 6 OR phone = '9876543210'").get();
+    const w6Id = worker6 ? worker6.id : 6;
+
+    db.prepare(`
+        INSERT INTO welfare_claims 
+        (claim_number, worker_id, claim_type, requested_amount, approved_amount, status, incident_description, supporting_doc_ref, admin_remarks)
+        VALUES 
+        ('CLM-2026-0001', ?, 'TOOL_DAMAGE_RELIEF', 1500, 0, 'PENDING', 
+         'Heavy-duty diagnostic clamp meter damaged while repairing high-voltage commercial phase burnout during emergency SOS call.', 
+         'BILL-REPAIR-2026-88.pdf', 'Pending society secretary on-site verification.')
+    `).run(w6Id);
+
+    db.prepare(`
+        INSERT INTO welfare_claims 
+        (claim_number, worker_id, claim_type, requested_amount, approved_amount, status, incident_description, supporting_doc_ref, admin_remarks, resolved_at)
+        VALUES 
+        ('CLM-2026-0002', ?, 'MEDICAL_EMERGENCY', 2500, 2500, 'DISBURSED', 
+         'Minor on-site laceration needing tetanus shot and wound dressing after handling rusted water main pipe.', 
+         'CLINIC-RECEIPT-9921.pdf', 'Approved and disbursed immediately under Cooperative Welfare Emergency Relief Scheme.', 
+         datetime('now', '-2 days'))
+    `).run(w6Id);
+
+    db.prepare(`
+        INSERT INTO welfare_pool_ledger (society_id, entry_type, amount, worker_id, reference_id, description)
+        VALUES (1, 'OUTFLOW_EMERGENCY_GRANT', 2500.0, ?, 'CLM-2026-0002', 'Disbursed Emergency Medical Welfare Grant')
+    `).run(w6Id);
+}
+
+db.generateInsuranceCertHash = generateInsuranceCertHash;
 
 console.log("Database connected successfully!");
 

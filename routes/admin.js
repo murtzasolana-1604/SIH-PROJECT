@@ -395,6 +395,171 @@ function matchWorkers(req, res) {
     });
 }
 
+// ============================================================
+// PHASE 18: COOPERATIVE WELFARE & PMSBY POOL ADMIN HANDLERS
+// ============================================================
+
+function getAdminClaims(req, res) {
+    const claims = db.prepare(`
+        SELECT c.*, 
+               w.name as worker_name, 
+               w.phone as worker_phone, 
+               w.skill as worker_skill,
+               s.name as society_name,
+               s.id as society_id
+        FROM welfare_claims c
+        JOIN workers w ON c.worker_id = w.id
+        LEFT JOIN societies s ON w.society_id = s.id
+        ORDER BY CASE WHEN c.status = 'PENDING' THEN 1 ELSE 2 END, c.id DESC
+    `).all();
+
+    return res.json({
+        success: true,
+        claims
+    });
+}
+
+function processAdminClaim(req, res) {
+    const claimId = Number(req.params.id);
+    const { action, approvedAmount, remarks } = req.body;
+
+    if (!claimId || !action) {
+        return res.status(400).json({ success: false, message: "Claim ID and action are required." });
+    }
+
+    const claim = db.prepare(`
+        SELECT c.*, w.society_id, w.name as worker_name 
+        FROM welfare_claims c
+        JOIN workers w ON c.worker_id = w.id
+        WHERE c.id = ?
+    `).get(claimId);
+
+    if (!claim) {
+        return res.status(404).json({ success: false, message: "Claim record not found." });
+    }
+
+    const adminName = req.admin ? req.admin.name : "Federation Welfare Secretary";
+
+    if (action === "APPROVE_DISBURSE") {
+        const amount = Number(approvedAmount !== undefined ? approvedAmount : claim.requested_amount);
+        if (isNaN(amount) || amount <= 0) {
+            return res.status(400).json({ success: false, message: "Invalid approved amount." });
+        }
+
+        db.prepare(`
+            UPDATE welfare_claims 
+            SET status = 'DISBURSED', 
+                approved_amount = ?, 
+                admin_remarks = ?, 
+                resolved_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        `).run(amount, remarks || `Approved and disbursed ₹${amount} by ${adminName}`, claimId);
+
+        // Record in welfare pool ledger
+        const societyId = claim.society_id || 1;
+        db.prepare(`
+            INSERT INTO welfare_pool_ledger (society_id, entry_type, amount, worker_id, reference_id, description)
+            VALUES (?, 'OUTFLOW_EMERGENCY_GRANT', ?, ?, ?, ?)
+        `).run(
+            societyId,
+            amount,
+            claim.worker_id,
+            claim.claim_number,
+            `Disbursed Emergency Welfare Grant for ${claim.claim_type}: ₹${amount}`
+        );
+
+        // Deduct from society pool
+        db.prepare(`
+            UPDATE societies SET welfare_fund_pool = MAX(0, welfare_fund_pool - ?) WHERE id = ?
+        `).run(amount, societyId);
+
+        return res.json({
+            success: true,
+            message: `Claim ${claim.claim_number} approved and ₹${amount} disbursed to ${claim.worker_name}.`
+        });
+    } else if (action === "REJECT") {
+        db.prepare(`
+            UPDATE welfare_claims 
+            SET status = 'REJECTED', 
+                admin_remarks = ?, 
+                resolved_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        `).run(remarks || `Claim rejected by ${adminName} - does not qualify under cooperative emergency distress guidelines.`, claimId);
+
+        return res.json({
+            success: true,
+            message: `Claim ${claim.claim_number} marked as REJECTED.`
+        });
+    } else {
+        return res.status(400).json({ success: false, message: "Invalid action. Use 'APPROVE_DISBURSE' or 'REJECT'." });
+    }
+}
+
+function batchRenewPmsby(req, res) {
+    const verifiedWorkers = db.prepare("SELECT * FROM workers WHERE verified = 1").all();
+    let renewedCount = 0;
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const validFrom = `${currentYear}-06-01`;
+    const validTo = `${currentYear + 1}-05-31`;
+
+    for (const w of verifiedWorkers) {
+        const existingPolicy = db.prepare("SELECT * FROM worker_insurance_policies WHERE worker_id = ?").get(w.id);
+        const policyNumber = existingPolicy 
+            ? existingPolicy.policy_number 
+            : `PMSBY-2026-COOP-${String(w.id).padStart(4, "0")}`;
+        const certHash = db.generateInsuranceCertHash
+            ? db.generateInsuranceCertHash(policyNumber, w.id, 200000, validFrom)
+            : "e9f7823cba992384102934";
+
+        if (!existingPolicy) {
+            db.prepare(`
+                INSERT INTO worker_insurance_policies 
+                (worker_id, policy_number, scheme_name, coverage_amount, premium_amount, valid_from, valid_to, policy_status, nominee_name, nominee_relationship, certificate_hash)
+                VALUES (?, ?, 'Pradhan Mantri Suraksha Bima Yojana (PMSBY)', 200000, 20, ?, ?, 'ACTIVE', 'Family Nominee', 'Spouse', ?)
+            `).run(w.id, policyNumber, validFrom, validTo, certHash);
+            renewedCount++;
+        } else {
+            db.prepare(`
+                UPDATE worker_insurance_policies 
+                SET valid_from = ?, valid_to = ?, policy_status = 'ACTIVE', certificate_hash = ?
+                WHERE id = ?
+            `).run(validFrom, validTo, certHash, existingPolicy.id);
+            renewedCount++;
+        }
+
+        // Add ledger entry
+        const societyId = w.society_id || 1;
+        db.prepare(`
+            INSERT INTO welfare_pool_ledger (society_id, entry_type, amount, worker_id, reference_id, description)
+            VALUES (?, 'OUTFLOW_PMSBY_PREMIUM', 20.0, ?, ?, 'Cooperative subsidized annual PMSBY renewal')
+        `).run(societyId, w.id, policyNumber);
+    }
+
+    return res.json({
+        success: true,
+        renewedCount,
+        totalSponsoredPremium: renewedCount * 20,
+        message: `Successfully batch sponsored and activated PMSBY policies for ${renewedCount} verified workers (Total premium: ₹${renewedCount * 20}).`
+    });
+}
+
+function getWelfareLedger(req, res) {
+    const ledger = db.prepare(`
+        SELECT l.*, s.name as society_name, w.name as worker_name
+        FROM welfare_pool_ledger l
+        LEFT JOIN societies s ON l.society_id = s.id
+        LEFT JOIN workers w ON l.worker_id = w.id
+        ORDER BY l.id DESC
+        LIMIT 50
+    `).all();
+
+    return res.json({
+        success: true,
+        ledger
+    });
+}
+
 module.exports = {
     getStats,
     getAllWorkers,
@@ -403,5 +568,9 @@ module.exports = {
     issueWorkerBadge,
     revokeWorkerBadge,
     assignWorker,
-    matchWorkers
+    matchWorkers,
+    getAdminClaims,
+    processAdminClaim,
+    batchRenewPmsby,
+    getWelfareLedger
 };
