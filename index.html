@@ -875,6 +875,61 @@
             <p data-i18n="footer">SIH26089 • Smart Automation • HacNova</p>
         </footer>
 
+    <!-- ============================================================
+         PHASE 13: SAHKAAR SAATHI (सहकार साथी) AI CHATBOT WIDGET
+         ============================================================ -->
+    <div id="sahkaarSaathiContainer">
+        <!-- Floating Action Button (FAB) -->
+        <button id="sahkaarSaathiFab" onclick="toggleSahkaarSaathi()" aria-label="Open Sahkaar Saathi AI Assistant" title="Sahkaar Saathi AI • सहकार साथी">
+            <span class="saathi-fab-icon">🤖</span>
+            <span class="saathi-fab-text" data-i18n="chatbotFabTitle">सहकार साथी</span>
+            <span id="sahkaarSaathiPing" class="saathi-fab-ping"></span>
+        </button>
+
+        <!-- Chat Drawer / Window -->
+        <div id="sahkaarSaathiDrawer" class="saathi-drawer">
+            <!-- Header -->
+            <div class="saathi-header">
+                <div class="saathi-header-info">
+                    <div class="saathi-header-avatar">🤖</div>
+                    <div>
+                        <div class="saathi-header-title" data-i18n="chatbotHeaderTitle">Sahkaar Saathi • सहकार साथी</div>
+                        <div class="saathi-header-status" data-i18n="chatbotHeaderSub">24/7 Cooperative AI Assistant</div>
+                    </div>
+                </div>
+                <div class="saathi-header-controls">
+                    <button id="sahkaarSaathiTtsToggle" class="saathi-ctrl-btn" onclick="toggleChatbotTts()" title="Toggle voice readout" aria-label="Toggle voice readout">🔇</button>
+                    <button class="saathi-ctrl-btn lang" onclick="toggleLanguage()" title="Switch Language" aria-label="Switch Language">🌐</button>
+                    <button id="sahkaarSaathiCloseBtn" class="saathi-ctrl-btn close" onclick="toggleSahkaarSaathi()" title="Minimize Chat" aria-label="Close">✕</button>
+                </div>
+            </div>
+
+            <!-- Messages Stream -->
+            <div id="sahkaarSaathiMessages" class="saathi-messages">
+                <div class="saathi-message bot">
+                    <div class="saathi-bubble">
+                        <div class="saathi-text" data-i18n="chatbotWelcomeMessage">
+                            Hello! 🙏 I am <strong>Sahkaar Saathi</strong>, your 24/7 Cooperative AI Assistant. Ask me about finding the right tradesperson, fair cooperative wages, or instant emergency SOS dispatch!
+                        </div>
+                        <div class="saathi-time">Now</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Suggestions Row -->
+            <div id="sahkaarSaathiSuggestions" class="saathi-suggestions"></div>
+
+            <!-- Input Bar -->
+            <div class="saathi-input-bar">
+                <button type="button" id="sahkaarSaathiMicBtn" class="saathi-input-btn mic" onclick="startChatbotVoiceInput()" title="Voice input / बोलकर पूछें" aria-label="Speak">
+                    🎤
+                </button>
+                <input type="text" id="sahkaarSaathiInput" placeholder="Ask Sahkaar Saathi or describe an issue..." data-i18n-placeholder="chatbotInputPlaceholder" autocomplete="off">
+                <button type="button" id="sahkaarSaathiSendBtn" class="saathi-input-btn send" onclick="sendChatbotMessage()" title="Send Message" aria-label="Send">
+                    ➤
+                </button>
+            </div>
+        </div>
     </div>
 
 
@@ -885,6 +940,7 @@
     <script src="/js/adminAuth.js"></script>
     <script src="/js/role.js"></script>
     <script src="/js/app.js"></script>
+    <script src="/js/chatbot.js"></script>
 
 </body>
 

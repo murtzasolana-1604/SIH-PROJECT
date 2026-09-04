@@ -2477,3 +2477,386 @@ footer { text-align: center; padding: 26px; color: var(--muted); font-size: 12.5
     transform: translateY(-1px);
     box-shadow: 0 3px 8px rgba(18, 59, 49, 0.16);
 }
+
+/* ============================================================
+   PHASE 13: SAHKAAR SAATHI (सहकार साथी) AI CHATBOT WIDGET
+   ============================================================ */
+
+#sahkaarSaathiContainer {
+    position: fixed;
+    bottom: 22px;
+    right: 22px;
+    z-index: 9998;
+}
+
+/* Floating Action Button (FAB) */
+#sahkaarSaathiFab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, var(--teal-deep) 0%, #1a4d3f 100%);
+    color: #FFFFFF;
+    border: 2px solid #3fa386;
+    border-radius: 30px;
+    padding: 10px 18px;
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(18, 59, 49, 0.35);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+#sahkaarSaathiFab:hover {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 8px 25px rgba(18, 59, 49, 0.45);
+    background: linear-gradient(135deg, #184c3e 0%, var(--teal-deep) 100%);
+}
+
+.saathi-fab-icon {
+    font-size: 20px;
+    line-height: 1;
+}
+
+.saathi-fab-text {
+    letter-spacing: 0.3px;
+}
+
+.saathi-fab-ping {
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    width: 12px;
+    height: 12px;
+    background: #FF5722;
+    border: 2px solid white;
+    border-radius: 50%;
+    animation: saathiPingAnim 2s infinite ease-in-out;
+}
+
+@keyframes saathiPingAnim {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.4); opacity: 0.6; }
+}
+
+/* Chat Drawer / Window */
+.saathi-drawer {
+    display: none;
+    position: absolute;
+    bottom: 60px;
+    right: 0;
+    width: 380px;
+    height: 540px;
+    max-height: calc(100vh - 100px);
+    background: #FFFFFF;
+    border: 1.5px solid var(--line);
+    border-radius: 18px;
+    box-shadow: 0 16px 45px rgba(18, 59, 49, 0.28);
+    flex-direction: column;
+    overflow: hidden;
+    animation: saathiPopIn 0.22s ease-out;
+}
+
+.saathi-drawer.open {
+    display: flex !important;
+}
+
+@keyframes saathiPopIn {
+    from {
+        opacity: 0;
+        transform: translateY(18px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@media (max-width: 480px) {
+    .saathi-drawer {
+        width: calc(100vw - 32px);
+        right: -6px;
+        bottom: 56px;
+        height: 500px;
+    }
+}
+
+/* Header */
+.saathi-header {
+    background: var(--teal-deep);
+    color: #FFFFFF;
+    padding: 12px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.saathi-header-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.saathi-header-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+}
+
+.saathi-header-title {
+    font-size: 13.5px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.saathi-header-status {
+    font-size: 11px;
+    color: #A3D9C9;
+    margin-top: 1px;
+}
+
+.saathi-header-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.saathi-ctrl-btn {
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.15s ease;
+}
+
+.saathi-ctrl-btn:hover {
+    background: rgba(255, 255, 255, 0.28);
+}
+
+.saathi-ctrl-btn.active {
+    background: #E65100;
+}
+
+.saathi-ctrl-btn.close {
+    font-size: 14px;
+    font-weight: 700;
+}
+
+/* Messages */
+.saathi-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: #F8FAF9;
+}
+
+.saathi-message {
+    display: flex;
+    flex-direction: column;
+    max-width: 88%;
+}
+
+.saathi-message.bot {
+    align-self: flex-start;
+}
+
+.saathi-message.user {
+    align-self: flex-end;
+}
+
+.saathi-bubble {
+    border-radius: 14px;
+    padding: 10px 13px;
+    font-size: 13px;
+    line-height: 1.5;
+    word-break: break-word;
+}
+
+.saathi-message.bot .saathi-bubble {
+    background: #FFFFFF;
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-bottom-left-radius: 3px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.saathi-message.user .saathi-bubble {
+    background: var(--teal-deep);
+    color: #FFFFFF;
+    border-bottom-right-radius: 3px;
+}
+
+.saathi-time {
+    font-size: 10px;
+    margin-top: 4px;
+    color: var(--muted);
+    text-align: right;
+    font-family: var(--font-mono);
+}
+
+.saathi-message.user .saathi-time {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* Action Button inside bot response */
+.saathi-action-container {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--line);
+}
+
+.saathi-action-btn {
+    width: 100%;
+    background: var(--terracotta);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+    transition: background 0.15s ease, transform 0.15s ease;
+    box-shadow: 0 2px 6px rgba(193, 89, 43, 0.25);
+}
+
+.saathi-action-btn:hover {
+    background: #A8481E;
+    transform: translateY(-1px);
+}
+
+/* Typing Indicator */
+.saathi-typing-dots {
+    display: flex;
+    gap: 4px;
+    padding: 4px 0;
+}
+
+.saathi-typing-dots span {
+    width: 6px;
+    height: 6px;
+    background: var(--teal);
+    border-radius: 50%;
+    animation: saathiDotBounce 1.2s infinite ease-in-out;
+}
+
+.saathi-typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.saathi-typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes saathiDotBounce {
+    0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+    40% { transform: translateY(-5px); opacity: 1; }
+}
+
+/* Suggestions Row */
+.saathi-suggestions {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 8px 12px;
+    background: #FFFFFF;
+    border-top: 1px solid var(--line);
+    white-space: nowrap;
+    scrollbar-width: thin;
+}
+
+.saathi-suggestion-chip {
+    background: #F0F5F2;
+    border: 1px solid #C8DDD4;
+    color: var(--teal-deep);
+    border-radius: 14px;
+    padding: 5px 11px;
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+}
+
+.saathi-suggestion-chip:hover {
+    background: var(--teal-deep);
+    color: #FFFFFF;
+    border-color: var(--teal-deep);
+}
+
+/* Input Bar */
+.saathi-input-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 12px;
+    background: #FFFFFF;
+    border-top: 1.5px solid var(--line);
+}
+
+#sahkaarSaathiInput {
+    flex: 1;
+    border: 1.5px solid var(--line);
+    border-radius: 20px;
+    padding: 8px 14px;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.15s ease;
+}
+
+#sahkaarSaathiInput:focus {
+    border-color: var(--teal);
+}
+
+.saathi-input-btn {
+    border: none;
+    border-radius: 50%;
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.15s ease;
+}
+
+.saathi-input-btn.mic {
+    background: #F0F4F2;
+    color: var(--teal-deep);
+}
+
+.saathi-input-btn.mic:hover {
+    background: #E0EAE5;
+}
+
+.saathi-input-btn.mic.recording {
+    background: #FFEBEE;
+    color: #D32F2F;
+    animation: saathiMicPulse 1s infinite ease-in-out;
+}
+
+@keyframes saathiMicPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+}
+
+.saathi-input-btn.send {
+    background: var(--teal-deep);
+    color: white;
+}
+
+.saathi-input-btn.send:hover {
+    background: var(--teal);
+}

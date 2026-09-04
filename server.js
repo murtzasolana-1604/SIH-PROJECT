@@ -14,6 +14,7 @@ const forecastRoute = require("./routes/forecast");
 const auth = require("./routes/auth");
 const customerRoute = require("./routes/customer");
 const emergencyRoute = require("./routes/emergency");
+const chatbotRoute = require("./routes/chatbot");
 
 const app = express();
 const PORT = 3000;
@@ -85,6 +86,9 @@ app.post("/api/payments/mock", paymentsRoute.mockPay);
 
 // AI-style forecast (rule-based)
 app.get("/api/forecast", forecastRoute.getForecast);
+
+// AI Chatbot "Sahkaar Saathi" (Phase 13)
+app.use("/api/chatbot", chatbotRoute);
 
 // 404
 app.use((req, res) => {

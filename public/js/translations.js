@@ -153,7 +153,14 @@ const translations = {
         tabForecast: "📈 NCCT Demand Forecast",
         metricsHeading: "Key Cooperative Metrics & Performance",
         emergencyQueueHeading: "🚨 Emergency Rapid Dispatch & Response SLA Monitor",
-        btnRefreshQueue: "🔄 Refresh Queue"
+        btnRefreshQueue: "🔄 Refresh Queue",
+
+        // Sahkaar Saathi AI Chatbot (Phase 13)
+        chatbotFabTitle: "Sahkaar Saathi",
+        chatbotHeaderTitle: "Sahkaar Saathi • सहकार साथी",
+        chatbotHeaderSub: "24/7 Cooperative AI Assistant",
+        chatbotWelcomeMessage: "Hello! 🙏 I am Sahkaar Saathi, your 24/7 Cooperative AI Assistant. Ask me about finding the right tradesperson, fair cooperative wages, or instant emergency SOS dispatch!",
+        chatbotInputPlaceholder: "Ask Sahkaar Saathi or describe an issue..."
     },
     hi: {
         appTitle: "🤝 सहकार कनेक्ट",
@@ -309,7 +316,14 @@ const translations = {
         tabForecast: "📈 NCCT मांग पूर्वानुमान",
         metricsHeading: "प्रमुख सहकारी मेट्रिक्स और प्रदर्शन",
         emergencyQueueHeading: "🚨 आपातकालीन प्रेषण और प्रतिक्रिया SLA मॉनिटर",
-        btnRefreshQueue: "🔄 कतार रीफ्रेश करें"
+        btnRefreshQueue: "🔄 कतार रीफ्रेश करें",
+
+        // Sahkaar Saathi AI Chatbot (Phase 13)
+        chatbotFabTitle: "सहकार साथी",
+        chatbotHeaderTitle: "सहकार साथी • AI सहायक",
+        chatbotHeaderSub: "24/7 सहकारी एआई सहायक",
+        chatbotWelcomeMessage: "नमस्ते! 🙏 मैं सहकार साथी हूँ, आपका 24/7 सहकारी एआई सहायक। मुझसे सही कामगार खोजने, उचित मजदूरी समझने, या त्वरित आपातकालीन एसओएस के बारे में पूछें!",
+        chatbotInputPlaceholder: "समस्या बताएं या कोई सवाल पूछें..."
     }
 };
 
