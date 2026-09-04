@@ -170,7 +170,15 @@ const translations = {
         btnRegisterSociety: "➕ Register New Society",
         totalSocietiesLabel: "Registered Societies",
         activeClustersLabel: "Active Clusters",
-        welfareReservesLabel: "Federation Welfare Reserve"
+        welfareReservesLabel: "Federation Welfare Reserve",
+
+        // Predictive Demand & Fair Wage Analytics (Phase 15)
+        forecastHeader: "📈 NCCT Demand Forecasting & Fair Wage Analytics",
+        forecastSub: "Diurnal/seasonal predictive demand modeling, fair living wage compliance, and NCCT upskilling pipelines.",
+        btnExportAudit: "📥 Export Audit Report",
+        demandVsCapacityTitle: "📊 7-Day Projected Demand vs Worker Capacity",
+        fairWageTitle: "⚖️ Fair Wage & Aggregator Elimination Matrix",
+        ncctUpskillingHeader: "🎓 NCCT Capacity Building & Skill Upskilling Cohorts"
     },
     hi: {
         appTitle: "🤝 सहकार कनेक्ट",
@@ -343,7 +351,15 @@ const translations = {
         btnRegisterSociety: "➕ नई समिति पंजीकृत करें",
         totalSocietiesLabel: "पंजीकृत समितियां",
         activeClustersLabel: "सक्रिय क्लस्टर",
-        welfareReservesLabel: "फेडरेशन कल्याण आरक्षित निधि"
+        welfareReservesLabel: "फेडरेशन कल्याण आरक्षित निधि",
+
+        // Predictive Demand & Fair Wage Analytics (Phase 15)
+        forecastHeader: "📈 NCCT मांग पूर्वानुमान एवं उचित मजदूरी विश्लेषण",
+        forecastSub: "दैनिक/मौसमी मांग पूर्वानुमान, न्यूनतम आजीविका मजदूरी अनुपालन, और NCCT कौशल उन्नयन कार्यक्रम।",
+        btnExportAudit: "📥 ऑडिट रिपोर्ट निर्यात करें",
+        demandVsCapacityTitle: "📊 7-दिवसीय अनुमानित मांग बनाम कामगार क्षमता",
+        fairWageTitle: "⚖️ उचित मजदूरी एवं निजी बिचौलिया उन्मूलन तालिका",
+        ncctUpskillingHeader: "🎓 NCCT क्षमता निर्माण एवं कौशल उन्नयन समूह"
     }
 };
 

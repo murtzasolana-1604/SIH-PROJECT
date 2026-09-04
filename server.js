@@ -16,6 +16,7 @@ const customerRoute = require("./routes/customer");
 const emergencyRoute = require("./routes/emergency");
 const chatbotRoute = require("./routes/chatbot");
 const societiesRoute = require("./routes/societies");
+const analyticsRoute = require("./routes/analytics");
 
 const app = express();
 const PORT = 3000;
@@ -93,6 +94,9 @@ app.use("/api/chatbot", chatbotRoute);
 
 // Cooperative Societies & PACS Clusters (Phase 14)
 app.use("/api/societies", societiesRoute);
+
+// Predictive Demand & Fair Wage Analytics Engine (Phase 15)
+app.use("/api/analytics", analyticsRoute);
 
 // 404
 app.use((req, res) => {

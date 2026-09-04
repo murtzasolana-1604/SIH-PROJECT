@@ -202,6 +202,78 @@ if (societyCount === 0) {
     console.log("Seeded default certified Cooperative Societies & PACS clusters!");
 }
 
+// ============================================================
+// PHASE 15: NCCT UPSKILLING & CAPACITY BUILDING PROGRAMS
+// ============================================================
+db.exec(`
+    CREATE TABLE IF NOT EXISTS ncct_upskilling_programs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        trade TEXT NOT NULL,
+        title TEXT NOT NULL,
+        society_id INTEGER NOT NULL,
+        target_capacity INTEGER NOT NULL,
+        enrolled_count INTEGER DEFAULT 0,
+        duration_days INTEGER DEFAULT 14,
+        projected_wage_lift REAL DEFAULT 25.0,
+        status TEXT DEFAULT 'Recommended',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+`);
+
+const programCount = db.prepare("SELECT COUNT(*) as count FROM ncct_upskilling_programs").get().count;
+if (programCount === 0) {
+    const insertProgram = db.prepare(`
+        INSERT INTO ncct_upskilling_programs (trade, title, society_id, target_capacity, enrolled_count, duration_days, projected_wage_lift, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    insertProgram.run(
+        "Technician",
+        "Solar Rooftop & Inverter Cooperative Maintenance Certification",
+        1,
+        15,
+        6,
+        14,
+        35.0,
+        "Published"
+    );
+
+    insertProgram.run(
+        "Caregiver",
+        "NCCT Certified Geriatric & Palliative Home Care Assistant",
+        2,
+        20,
+        0,
+        21,
+        40.0,
+        "Recommended"
+    );
+
+    insertProgram.run(
+        "Plumber",
+        "Advanced Rainwater Harvesting & Sanitary Leak Diagnostics",
+        3,
+        12,
+        0,
+        10,
+        28.0,
+        "Recommended"
+    );
+
+    insertProgram.run(
+        "Electrician",
+        "Smart Energy Metering & Three-Phase Commercial Wiring",
+        1,
+        18,
+        12,
+        15,
+        30.0,
+        "Active"
+    );
+
+    console.log("Seeded default NCCT Upskilling & Capacity Building Programs!");
+}
+
 // Ensure all workers are affiliated with a cooperative society
 const firstSociety = db.prepare("SELECT id FROM societies ORDER BY id ASC LIMIT 1").get();
 if (firstSociety) {

@@ -2991,3 +2991,458 @@ footer { text-align: center; padding: 26px; color: var(--muted); font-size: 12.5
 .society-metric-chip.highlight .metric-num {
     color: var(--terracotta);
 }
+
+/* ============================================================
+   PHASE 15: PREDICTIVE DEMAND & FAIR WAGE ANALYTICS STYLES
+   ============================================================ */
+
+.forecast-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.forecast-control-strip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.filter-select {
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--ink);
+    cursor: pointer;
+    outline: none;
+}
+
+.filter-select:focus {
+    border-color: var(--teal-deep);
+}
+
+.btn-sm {
+    font-size: 12px !important;
+    padding: 6px 12px !important;
+}
+
+/* Cluster Mobilization Alert Banner */
+.mobilization-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: #FFF8E1;
+    border: 2px solid #FFB300;
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 14px rgba(255, 179, 0, 0.2);
+    animation: pulseBorder 2s infinite ease-in-out;
+}
+
+@keyframes pulseBorder {
+    0%, 100% { border-color: #FFB300; }
+    50% { border-color: #E65100; }
+}
+
+.mobilization-banner .banner-icon {
+    font-size: 26px;
+    line-height: 1;
+}
+
+.mobilization-banner .banner-title {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: #B78103;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.mobilization-banner .banner-sub {
+    font-size: 13px;
+    line-height: 1.5;
+    color: #4E342E;
+}
+
+/* Analytics KPI Ribbon */
+.analytics-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.kpi-card {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.kpi-card.highlight-gold {
+    background: #FFFDF0;
+    border-color: #FFE082;
+}
+
+.kpi-card.highlight-teal {
+    background: #F0FDF4;
+    border-color: #A7F3D0;
+}
+
+.kpi-lbl {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.kpi-val {
+    font-size: 24px;
+    font-weight: 900;
+    color: var(--teal-deep);
+    font-family: var(--font-mono);
+}
+
+.kpi-card.highlight-gold .kpi-val {
+    color: var(--terracotta);
+}
+
+.kpi-sub {
+    font-size: 11.5px;
+    color: var(--muted);
+    margin-top: 3px;
+}
+
+/* Side-by-side Analytics Panels */
+.analytics-panels-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+@media (max-width: 900px) {
+    .analytics-panels-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.analytics-panel-card {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+}
+
+.panel-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 10px;
+    gap: 10px;
+}
+
+/* Forecast Bars List */
+.forecast-bars-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.forecast-trade-row {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 12px;
+}
+
+.forecast-trade-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.trade-name {
+    font-size: 15px;
+    color: var(--ink);
+    margin-right: 6px;
+}
+
+.trade-stats {
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.dual-bar-track {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 8px 0;
+}
+
+.bar-line {
+    height: 18px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    padding-left: 8px;
+    transition: width 0.4s ease;
+    min-width: 80px;
+}
+
+.bar-line.demand-line {
+    background: linear-gradient(90deg, #FFB300, #E65100);
+}
+
+.bar-line.supply-line {
+    background: linear-gradient(90deg, #26A69A, #004D40);
+}
+
+.bar-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: white;
+    white-space: nowrap;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+.forecast-advisory {
+    font-size: 11.5px;
+    color: var(--ink);
+    line-height: 1.4;
+    margin-top: 6px;
+    background: rgba(255, 255, 255, 0.7);
+    padding: 4px 8px;
+    border-radius: 6px;
+    border-left: 3px solid var(--teal-deep);
+}
+
+/* Status Badges */
+.badge-balanced {
+    background: #E8F5E9;
+    color: #1B5E20;
+    border: 1px solid #A5D6A7;
+}
+
+.badge-deficit {
+    background: #FFEBEE;
+    color: #B71C1C;
+    border: 1px solid #EF9A9A;
+}
+
+.badge-tight {
+    background: #FFF8E1;
+    color: #F57F17;
+    border: 1px solid #FFE082;
+}
+
+.badge-surplus {
+    background: #E1F5FE;
+    color: #01579B;
+    border: 1px solid #81D4FA;
+}
+
+/* Table Responsive & Coop Table */
+.table-responsive {
+    overflow-x: auto;
+}
+
+.coop-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+}
+
+.coop-table th {
+    background: var(--paper);
+    padding: 10px 8px;
+    text-align: left;
+    font-weight: 700;
+    color: var(--muted);
+    border-bottom: 2px solid var(--line);
+    white-space: nowrap;
+}
+
+.coop-table td {
+    padding: 10px 8px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+}
+
+.surplus-tag {
+    background: #E8F5E9;
+    color: #1B5E20;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    border: 1px solid #C8E6C9;
+    display: inline-block;
+}
+
+/* NCCT Upskilling Cards */
+.ncct-programs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 14px;
+}
+
+.ncct-program-card {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+}
+
+.program-meta-row {
+    margin-top: 10px;
+    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    color: var(--ink);
+}
+
+/* Worker Portal Fair Wage Advantage Card */
+.fair-wage-advantage-card {
+    background: linear-gradient(135deg, #F0FDF4 0%, #E8F5E9 100%);
+    border: 1.5px solid #81C784;
+    border-radius: 14px;
+    padding: 16px 20px;
+    margin-top: 16px;
+    box-shadow: 0 4px 12px rgba(46, 125, 50, 0.08);
+}
+
+.fair-wage-advantage-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.fwa-badge {
+    font-size: 10px;
+    font-weight: 800;
+    color: #1B5E20;
+    background: #C8E6C9;
+    padding: 2px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+    display: inline-block;
+}
+
+.fwa-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: #1B5E20;
+    margin-top: 3px;
+}
+
+.fwa-metric-box {
+    text-align: right;
+}
+
+.fwa-metric-label {
+    font-size: 11px;
+    color: #2E7D32;
+    display: block;
+}
+
+.fwa-surplus-val {
+    font-size: 22px;
+    font-weight: 900;
+    color: #1B5E20;
+    font-family: var(--font-mono);
+}
+
+.fwa-desc {
+    font-size: 13px;
+    line-height: 1.6;
+    color: #1C2D27;
+    margin: 0 0 10px;
+}
+
+.fwa-pills {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.fwa-pill {
+    background: white;
+    border: 1px solid #A5D6A7;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #1B5E20;
+}
+
+/* Cooperative Audit Modal Document */
+.audit-doc-paper {
+    background: #FFFDF9;
+    border: 1px solid #E2D7C3;
+    border-radius: 10px;
+    padding: 20px;
+    font-family: var(--font-body);
+}
+
+.audit-doc-header {
+    text-align: center;
+    border-bottom: 2px solid var(--teal-deep);
+    padding-bottom: 12px;
+    margin-bottom: 14px;
+}
+
+.audit-stamp {
+    display: inline-block;
+    background: #E0F2F1;
+    color: var(--teal-deep);
+    font-size: 11px;
+    font-weight: 800;
+    padding: 3px 10px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+}
+
+.audit-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 16px;
+    font-size: 13px;
+    line-height: 1.6;
+    margin-top: 6px;
+}
+
+@media (max-width: 600px) {
+    .audit-grid-2 {
+        grid-template-columns: 1fr;
+    }
+}

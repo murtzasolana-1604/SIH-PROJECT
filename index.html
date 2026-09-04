@@ -797,7 +797,7 @@
                     <button class="admin-tab-btn" id="adminTabBtnWorkers" onclick="switchAdminTab('workers')">👷 Worker Verification & Roster</button>
                     <button class="admin-tab-btn" id="adminTabBtnBookings" onclick="switchAdminTab('bookings')">📋 Booking Allocations & Dispatch</button>
                     <button class="admin-tab-btn" id="adminTabBtnEmergency" onclick="switchAdminTab('emergency')">🚨 Emergency SLA Queue</button>
-                    <button class="admin-tab-btn" id="adminTabBtnForecast" onclick="switchAdminTab('forecast')">📈 NCCT Demand Forecast</button>
+                    <button class="admin-tab-btn" id="adminTabBtnForecast" onclick="switchAdminTab('forecast')" data-i18n="tabForecast">📈 NCCT Forecast & Fair Wage</button>
                     <button class="admin-tab-btn" id="adminTabBtnSocieties" onclick="switchAdminTab('societies')" data-i18n="tabSocieties">🏛️ Societies & PACS</button>
                 </div>
 
@@ -854,14 +854,76 @@
                     <div id="adminBookings"></div>
                 </div>
 
-                <!-- TAB 4: DEMAND FORECAST -->
+                <!-- TAB 4: DEMAND FORECAST & FAIR WAGE ANALYTICS (PHASE 15) -->
                 <div id="adminTabForecast" class="admin-tab-content hidden">
-                    <div style="margin-bottom:14px;">
-                        <h3 style="margin:0;">📈 NCCT Demand Forecasting & Workforce Mobilization</h3>
-                        <p style="margin:2px 0 0; font-size:12.5px; color:var(--muted);">Statistical ratio analysis comparing booking request volume against certified worker supply.</p>
+                    <div class="forecast-header-row">
+                        <div>
+                            <h3 style="margin:0;" data-i18n="forecastHeader">📈 NCCT Demand Forecasting & Fair Wage Analytics</h3>
+                            <p style="margin:2px 0 0; font-size:12.5px; color:var(--muted);" data-i18n="forecastSub">Diurnal/seasonal predictive demand modeling, fair living wage compliance, and NCCT upskilling pipelines.</p>
+                        </div>
+                        <div class="forecast-control-strip">
+                            <select id="forecastClusterSelect" class="filter-select" onchange="loadAdminForecastAndAnalytics()">
+                                <option value="">🌐 All Clusters & PACS</option>
+                                <option value="1">Cluster 1 - North District</option>
+                                <option value="2">Cluster 2 - South District</option>
+                                <option value="3">Cluster 3 - East Rural PACS</option>
+                            </select>
+                            <select id="forecastSeasonSelect" class="filter-select" onchange="loadAdminForecastAndAnalytics()">
+                                <option value="">Auto Season</option>
+                                <option value="Monsoon">Monsoon Peak</option>
+                                <option value="Festive">Festive Demand</option>
+                                <option value="Winter">Winter Season</option>
+                                <option value="Summer">Summer Surge</option>
+                            </select>
+                            <button class="secondary btn-sm" onclick="loadAdminForecastAndAnalytics()">🔄 Refresh</button>
+                            <button class="primary btn-sm cta-gold" onclick="openCooperativeAuditModal()" data-i18n="btnExportAudit">📥 Export Audit Report</button>
+                        </div>
                     </div>
 
-                    <div id="adminForecast"></div>
+                    <!-- Cluster Mobilization Alert (surfaces when demand ratio >= 1.5) -->
+                    <div id="clusterMobilizationBanner" class="mobilization-banner hidden"></div>
+
+                    <!-- Analytics KPI Ribbon -->
+                    <div id="analyticsKpiRibbon" class="analytics-kpi-grid"></div>
+
+                    <!-- Side-by-side or Stacked Analytics Panels -->
+                    <div class="analytics-panels-grid">
+                        <!-- Panel 1: Demand Forecast Heatmap & Projections -->
+                        <div class="analytics-panel-card">
+                            <div class="panel-card-header">
+                                <div>
+                                    <h4 style="margin:0;" data-i18n="demandVsCapacityTitle">📊 7-Day Projected Demand vs Worker Capacity</h4>
+                                    <small style="color:var(--muted);">Multi-factor rolling model incorporating diurnal peaks and seasonal weighting.</small>
+                                </div>
+                                <span class="badge" style="background:#E0F2F1; color:var(--teal-deep); border:1px solid #B2DFDB;">100% Price Stability Guarantee</span>
+                            </div>
+                            <div id="adminForecast" class="forecast-chart-container"></div>
+                        </div>
+
+                        <!-- Panel 2: Fair Living Wage & Middleman Commission Comparison -->
+                        <div class="analytics-panel-card">
+                            <div class="panel-card-header">
+                                <div>
+                                    <h4 style="margin:0;" data-i18n="fairWageTitle">⚖️ Fair Wage & Aggregator Elimination Matrix</h4>
+                                    <small style="color:var(--muted);">Sahkaar Connect (85% worker share) vs Commercial Aggregators vs Statutory Minimum Wage.</small>
+                                </div>
+                                <span class="badge verified">🛡️ 0% Middleman Cut</span>
+                            </div>
+                            <div id="adminFairWageMatrix" class="fair-wage-matrix-container"></div>
+                        </div>
+                    </div>
+
+                    <!-- NCCT Upskilling & Trade Capacity Building -->
+                    <div class="ncct-upskilling-section" style="margin-top:24px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+                            <div>
+                                <h4 style="margin:0; font-size:16px;" data-i18n="ncctUpskillingHeader">🎓 NCCT Capacity Building & Skill Upskilling Cohorts</h4>
+                                <p style="margin:2px 0 0; font-size:12.5px; color:var(--muted);">Automated trade deficit identification with 1-click cooperative upskilling deployment.</p>
+                            </div>
+                            <button class="secondary btn-sm" onclick="loadNcctPrograms()">🔄 Refresh Cohorts</button>
+                        </div>
+                        <div id="ncctProgramsGrid" class="ncct-programs-grid"></div>
+                    </div>
                 </div>
 
                 <!-- TAB 5: EMERGENCY SLA QUEUE (PHASE 11) -->
@@ -947,6 +1009,28 @@
                     </button>
                     <div id="newSocietyResult" style="margin-top:10px;"></div>
                 </form>
+            </div>
+        </div>
+
+        <!-- ===================== COOPERATIVE IMPACT AUDIT MODAL (PHASE 15) ===================== -->
+        <div id="cooperativeAuditModal" class="modal-overlay hidden" onclick="if(event.target===this) closeCooperativeAuditModal()">
+            <div class="modal-card" style="max-width:720px; width:95%; background:white; border-radius:16px; padding:24px; border:2px solid var(--teal-deep); box-shadow:0 14px 40px rgba(0,0,0,0.25); max-height:85vh; display:flex; flex-direction:column;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid var(--line); padding-bottom:10px;">
+                    <div>
+                        <h3 style="margin:0; font-size:18px;">🏛️ Official Cooperative Economic Audit Statement</h3>
+                        <small style="color:var(--muted);">Statutory Multi-State Co-operative Societies (MSCS) Act • NCCT SIH26089</small>
+                    </div>
+                    <button type="button" class="sos-close-btn" onclick="closeCooperativeAuditModal()" aria-label="Close modal">×</button>
+                </div>
+
+                <div id="cooperativeAuditContent" class="audit-statement-body" style="overflow-y:auto; flex:1; padding-right:6px;">
+                    <div class="skeleton" style="height:120px;"></div>
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px; border-top:1px solid var(--line); padding-top:12px;">
+                    <button type="button" class="secondary" onclick="closeCooperativeAuditModal()">Close</button>
+                    <button type="button" class="primary cta-gold" onclick="printCooperativeAuditStatement()">🖨️ Print / Save Audit Statement</button>
+                </div>
             </div>
         </div>
 

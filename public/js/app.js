@@ -1175,6 +1175,28 @@ async function fetchWorkerDashboard() {
                 </div>
                 <small class="hint">Transparent cooperative ledger: zero private middleman commission — 85% directly to you, 15% to NCCT welfare fund.</small>
             </div>
+
+            <!-- Cooperative Fair Wage Advantage Card (Phase 15) -->
+            <div class="fair-wage-advantage-card">
+                <div class="fair-wage-advantage-header">
+                    <div>
+                        <span class="fwa-badge">⚖️ FAIR LIVING WAGE ADVANTAGE</span>
+                        <div class="fwa-title">Cooperative Member Surplus Protection</div>
+                    </div>
+                    <div class="fwa-metric-box">
+                        <span class="fwa-metric-label">Estimated App Fees Saved</span>
+                        <strong class="fwa-surplus-val">+₹${Math.round(earnings.total * 0.28 + (earnings.completedJobsCount * 40))}</strong>
+                    </div>
+                </div>
+                <p class="fwa-desc">
+                    Unlike private gig platforms deducting 25–35% middleman commission plus customer booking fees, <strong>Sahkaar Connect</strong> guarantees you keep <strong>85% net take-home</strong>, with the remaining 15% funding your own accidental social security.
+                </p>
+                <div class="fwa-pills">
+                    <span class="fwa-pill">🛡️ 1.5x Above Statutory Min Wage</span>
+                    <span class="fwa-pill">🚫 Zero Middleman Exploitation</span>
+                    <span class="fwa-pill">☂️ PM Suraksha Bima Covered</span>
+                </div>
+            </div>
         `;
 
         // Active Jobs
@@ -1489,6 +1511,9 @@ function switchAdminTab(tabName) {
     }
     if (tabName === "societies") {
         loadAdminSocieties();
+    }
+    if (tabName === "forecast") {
+        loadAdminForecastAndAnalytics();
     }
 }
 
@@ -1839,50 +1864,353 @@ async function assignWorker(bookingId, workerId) {
     }
 }
 
-// 5. NCCT Demand Forecast
-async function loadForecast() {
-    const el = document.getElementById("adminForecast");
-    if (!el) return;
-    el.innerHTML = `<div class="skeleton" style="height:60px;"></div>`;
-    try {
-        const res = await fetch("/api/forecast");
-        const data = await res.json();
+// =====================================
+// PHASE 15: PREDICTIVE DEMAND & FAIR WAGE ANALYTICS
+// =====================================
 
-        if (data.forecast.length === 0) {
-            el.innerHTML = `<div class="empty-state"><span class="icon">📊</span>Not enough booking data yet to forecast.</div>`;
+async function loadAdminForecastAndAnalytics() {
+    const clusterSelect = document.getElementById("forecastClusterSelect");
+    const seasonSelect = document.getElementById("forecastSeasonSelect");
+    const clusterId = clusterSelect ? clusterSelect.value : "";
+    const season = seasonSelect ? seasonSelect.value : "";
+
+    const bannerEl = document.getElementById("clusterMobilizationBanner");
+    const kpiRibbon = document.getElementById("analyticsKpiRibbon");
+    const forecastEl = document.getElementById("adminForecast");
+    const fairWageEl = document.getElementById("adminFairWageMatrix");
+
+    if (forecastEl) forecastEl.innerHTML = `<div class="skeleton" style="height:100px;"></div><div class="skeleton" style="height:100px;"></div>`;
+    if (fairWageEl) fairWageEl.innerHTML = `<div class="skeleton" style="height:120px;"></div>`;
+
+    try {
+        let forecastUrl = `/api/analytics/forecast?`;
+        if (clusterId) forecastUrl += `cluster_id=${encodeURIComponent(clusterId)}&`;
+        if (season) forecastUrl += `season=${encodeURIComponent(season)}&`;
+
+        const [forecastRes, fairWageRes] = await Promise.all([
+            fetch(forecastUrl),
+            fetch("/api/analytics/fair-wage")
+        ]);
+
+        const forecastData = await forecastRes.json();
+        const fwData = await fairWageRes.json();
+
+        // 1. Cluster Mobilization Alert Banner (Surge Protection Alert)
+        if (bannerEl) {
+            if (forecastData.clusterMobilizationActive) {
+                bannerEl.classList.remove("hidden");
+                const clusterName = clusterSelect && clusterSelect.selectedIndex > 0
+                    ? clusterSelect.options[clusterSelect.selectedIndex].text
+                    : "Federation Clusters";
+                bannerEl.innerHTML = `
+                    <div class="banner-icon">⚡</div>
+                    <div class="banner-body">
+                        <div class="banner-title">COOPERATIVE DISPATCH MOBILIZATION ALERT • ${clusterName.toUpperCase()}</div>
+                        <div class="banner-sub">
+                            High booking velocity detected (${forecastData.summary.tradesInDeficit} trades under surge). 
+                            Standby cooperative members mobilized with <strong>+₹50 overtime honorarium</strong> funded directly by federation welfare reserves.
+                            <strong>100% Zero-Surge Guarantee: Citizens are never overcharged.</strong>
+                        </div>
+                    </div>
+                `;
+            } else {
+                bannerEl.classList.add("hidden");
+            }
+        }
+
+        // 2. Analytics KPI Ribbon
+        if (kpiRibbon && fwData.success && fwData.summary) {
+            const sum = fwData.summary;
+            kpiRibbon.innerHTML = `
+                <div class="kpi-card">
+                    <div class="kpi-lbl">Living Wage Multiplier</div>
+                    <div class="kpi-val">${sum.averageLivingWageMultiplier}x</div>
+                    <div class="kpi-sub">Above Statutory Minimum Wage (Delhi)</div>
+                </div>
+                <div class="kpi-card highlight-gold">
+                    <div class="kpi-lbl">Worker Commission Saved</div>
+                    <div class="kpi-val">₹${Math.round(sum.cumulativeWorkerSurplus).toLocaleString()}</div>
+                    <div class="kpi-sub">Retained vs Commercial Aggregators</div>
+                </div>
+                <div class="kpi-card highlight-teal">
+                    <div class="kpi-lbl">Guaranteed Worker Share</div>
+                    <div class="kpi-val">85%</div>
+                    <div class="kpi-sub">15% Social Security • 0% Middleman Profit</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-lbl">Demand Forecast Season</div>
+                    <div class="kpi-val">${forecastData.currentSeason || 'Monsoon'}</div>
+                    <div class="kpi-sub">Diurnal Multiplier: ${forecastData.diurnalMultiplier || 1.0}x</div>
+                </div>
+            `;
+        }
+
+        // 3. Demand Forecast Chart
+        if (forecastEl && forecastData.success && forecastData.forecast) {
+            let chartHtml = `<div class="forecast-bars-list">`;
+            forecastData.forecast.forEach(item => {
+                const maxVal = Math.max(10, item.rolling7DayDemand, item.verifiedWorkers * 3);
+                const demandPct = Math.min(100, Math.round((item.rolling7DayDemand / maxVal) * 100));
+                const supplyPct = Math.min(100, Math.round(((item.verifiedWorkers * 3) / maxVal) * 100));
+
+                let badgeClass = "badge-balanced";
+                if (item.status === "DEFICIT_ALERT") badgeClass = "badge-deficit";
+                else if (item.status === "TIGHT") badgeClass = "badge-tight";
+                else if (item.status === "SURPLUS") badgeClass = "badge-surplus";
+
+                chartHtml += `
+                    <div class="forecast-trade-row">
+                        <div class="forecast-trade-meta">
+                            <div>
+                                <strong class="trade-name">${item.trade}</strong>
+                                <span class="badge ${badgeClass}">${item.statusBadge}</span>
+                            </div>
+                            <div class="trade-stats">
+                                <span>7-Day Proj. Demand: <strong>${item.rolling7DayDemand} jobs</strong></span>
+                                <span>Verified Capacity: <strong>${item.verifiedWorkers} workers</strong> (${item.liveAvailableWorkers} online)</span>
+                                <span>Demand Ratio: <strong>${item.ratio}x</strong></span>
+                            </div>
+                        </div>
+
+                        <div class="dual-bar-track">
+                            <div class="bar-line demand-line" style="width:${demandPct}%;" title="Projected Demand: ${item.rolling7DayDemand}">
+                                <span class="bar-label">Proj. Demand (${item.rolling7DayDemand})</span>
+                            </div>
+                            <div class="bar-line supply-line" style="width:${supplyPct}%;" title="Worker Capacity: ${item.verifiedWorkers}">
+                                <span class="bar-label">Verified Supply (${item.verifiedWorkers})</span>
+                            </div>
+                        </div>
+
+                        <div class="forecast-advisory">
+                            💡 <strong>NCCT Advisory:</strong> ${item.recommendation}
+                        </div>
+                    </div>
+                `;
+            });
+            chartHtml += `</div>`;
+            forecastEl.innerHTML = chartHtml;
+        }
+
+        // 4. Fair Living Wage & Middleman Matrix
+        if (fairWageEl && fwData.success && fwData.benchmarks) {
+            let tableHtml = `
+                <div class="table-responsive">
+                    <table class="coop-table">
+                        <thead>
+                            <tr>
+                                <th>Trade Service</th>
+                                <th>Sahkaar 85% Take-Home</th>
+                                <th>Commercial Net (68%)</th>
+                                <th>Statutory Min Wage</th>
+                                <th>Member Surplus (+₹)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            fwData.benchmarks.forEach(bm => {
+                tableHtml += `
+                    <tr>
+                        <td>
+                            <strong>${bm.trade}</strong><br>
+                            <small style="color:var(--muted);">${bm.skillCategory} • ${bm.avgDurationHours} hrs</small>
+                        </td>
+                        <td>
+                            <strong style="color:var(--teal-deep); font-size:14.5px;">₹${bm.sahkaar.workerTakeHome}</strong><br>
+                            <small style="color:var(--muted);">₹${bm.sahkaar.hourlyYield}/hr (85%)</small>
+                        </td>
+                        <td>
+                            <span style="color:#C62828; text-decoration:line-through;">₹${bm.commercialAggregator.workerTakeHome}</span><br>
+                            <small style="color:#D32F2F;">-28% app fee -₹${bm.commercialAggregator.bookingFeeDeduction}</small>
+                        </td>
+                        <td>
+                            <span>₹${bm.statutoryBenchmark.statutoryJobEquivalent}</span><br>
+                            <small style="color:var(--muted);">₹${bm.statutoryBenchmark.statutoryMinHourlyWage}/hr</small>
+                        </td>
+                        <td>
+                            <span class="surplus-tag">+₹${bm.workerSurplusPerJob}</span><br>
+                            <small style="color:#2E7D32; font-weight:700;">+${bm.premiumOverAggregatorPct}% more</small>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tableHtml += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            fairWageEl.innerHTML = tableHtml;
+        }
+
+        // Load NCCT upskilling programs
+        loadNcctPrograms();
+
+    } catch (err) {
+        console.error("Failed to load forecast & analytics:", err);
+        if (forecastEl) forecastEl.innerHTML = `<div class="error">Failed to calculate predictive demand analytics.</div>`;
+    }
+}
+
+// Backward compatibility alias
+function loadForecast() {
+    loadAdminForecastAndAnalytics();
+}
+
+// NCCT Capacity Building Programs
+async function loadNcctPrograms() {
+    const grid = document.getElementById("ncctProgramsGrid");
+    if (!grid) return;
+    grid.innerHTML = `<div class="skeleton" style="height:90px;"></div><div class="skeleton" style="height:90px;"></div>`;
+
+    try {
+        const res = await fetch("/api/analytics/upskilling");
+        const data = await res.json();
+        const programs = data.programs || [];
+
+        if (programs.length === 0) {
+            grid.innerHTML = `<div class="empty-state">No NCCT upskilling cohorts found.</div>`;
             return;
         }
 
-        let html = `
-            <div class="forecast-banner">
-                💡 ${data.note}
-            </div>
-            <div class="forecast-grid">
-        `;
+        grid.innerHTML = programs.map(p => {
+            const isRec = p.status === "Recommended";
+            const isActive = p.status === "Active";
+            const statusClass = isActive ? "verified" : (isRec ? "unverified" : "badge-tight");
 
-        data.forecast.forEach(row => {
-            html += `
-                <div class="booking-item forecast-card">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                        <strong style="font-size:16px;">${row.service}</strong>
-                        <span class="badge" style="background:var(--paper); border:1px solid var(--line);">
-                            ${row.bookingCount} Bookings • ${row.verifiedWorkers} Verified Workers
-                        </span>
+            return `
+                <div class="ncct-program-card">
+                    <div class="program-header">
+                        <div>
+                            <span class="role-badge worker" style="font-size:11px;">${p.trade}</span>
+                            <h4 style="margin:6px 0 3px; font-size:15px;">${p.title}</h4>
+                            <small style="color:var(--muted);">📍 ${p.society_name} • ${p.cluster_zone}</small>
+                        </div>
+                        <span class="badge ${statusClass}">${p.status}</span>
                     </div>
-                    <div class="forecast-rec-box">
-                        <strong>NCCT Recommendation:</strong> ${row.recommendation}
+
+                    <div class="program-meta-row">
+                        <div><strong>Duration:</strong> ${p.duration_days} Days (NCCT)</div>
+                        <div><strong>Projected Wage Uplift:</strong> <strong style="color:var(--teal-deep);">+${p.projected_wage_lift}%</strong></div>
+                        <div><strong>Enrollment:</strong> ${p.enrolled_count} / ${p.target_capacity} Members</div>
+                    </div>
+
+                    <div class="program-action-row" style="margin-top:12px;">
+                        ${isRec ? `
+                            <button class="primary cta-gold btn-sm" onclick="publishUpskillingCohort(${p.id})">
+                                📢 Publish & Mobilize NCCT Cohort
+                            </button>
+                        ` : `
+                            <button class="secondary btn-sm" disabled style="opacity:0.8; cursor:default;">
+                                ✓ Cohort Active in Cluster
+                            </button>
+                        `}
                     </div>
                 </div>
             `;
-        });
-
-        html += `</div>`;
-        el.innerHTML = html;
-    } catch (error) {
-        console.error(error);
-        el.innerHTML = `<div class="error">Could not load demand forecast.</div>`;
+        }).join("");
+    } catch (err) {
+        console.error("Failed to load NCCT programs:", err);
+        grid.innerHTML = `<div class="error">Failed to load NCCT programs.</div>`;
     }
 }
+
+async function publishUpskillingCohort(programId) {
+    try {
+        const res = await adminFetch("/api/analytics/upskilling/publish", {
+            method: "POST",
+            body: JSON.stringify({ programId })
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert(data.message);
+            loadNcctPrograms();
+        } else {
+            alert(data.message || "Could not publish cohort.");
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Server request failed.");
+    }
+}
+
+// Cooperative Impact Audit Report Modal
+async function openCooperativeAuditModal() {
+    const modal = document.getElementById("cooperativeAuditModal");
+    const content = document.getElementById("cooperativeAuditContent");
+    if (!modal) return;
+    modal.classList.remove("hidden");
+    if (content) content.innerHTML = `<div class="skeleton" style="height:120px;"></div>`;
+
+    try {
+        const res = await fetch("/api/analytics/export");
+        const data = await res.json();
+        const audit = data.audit;
+
+        if (content && audit) {
+            content.innerHTML = `
+                <div class="audit-doc-paper">
+                    <div class="audit-doc-header">
+                        <h2 style="margin:0; font-size:18px;">🏛️ ${audit.title}</h2>
+                        <p class="audit-framework" style="margin:4px 0; color:var(--muted); font-size:12.5px;">${audit.statutoryFramework}</p>
+                        <div class="audit-stamp">OFFICIAL COOPERATIVE FEDERATION AUDIT • ${audit.reportingPeriod}</div>
+                    </div>
+
+                    <div class="audit-section-block">
+                        <h4 style="margin:12px 0 6px; font-size:14px; border-bottom:1px solid var(--line); padding-bottom:4px;">1. Cooperative Federation Governance Roster</h4>
+                        <div class="audit-grid-2">
+                            <div><strong>Registered Primary Societies:</strong> ${audit.cooperativeGovernance.registeredSocieties} Certified Entities</div>
+                            <div><strong>Affiliated Worker Members:</strong> ${audit.cooperativeGovernance.affiliatedWorkers} Members</div>
+                            <div><strong>NCCT Certified Tradespeople:</strong> ${audit.cooperativeGovernance.certifiedTradespeople} Verified</div>
+                            <div><strong>Community Bookings Completed:</strong> ${audit.cooperativeGovernance.completedCommunityBookings} Jobs</div>
+                            <div><strong>Emergency Rapid Dispatches:</strong> ${audit.cooperativeGovernance.emergencyRapidDispatches} High Priority</div>
+                        </div>
+                    </div>
+
+                    <div class="audit-section-block">
+                        <h4 style="margin:12px 0 6px; font-size:14px; border-bottom:1px solid var(--line); padding-bottom:4px;">2. Transparent Economic Value Distribution</h4>
+                        <div class="audit-grid-2">
+                            <div><strong>Gross Service Volume (GMV):</strong> ₹${audit.economicMetrics.grossMerchandiseValue.toLocaleString()}</div>
+                            <div><strong>Direct Worker Payout (85%):</strong> <strong style="color:var(--teal-deep);">₹${audit.economicMetrics.directWorkerEarningsPaid.toLocaleString()}</strong></div>
+                            <div><strong>Cooperative Welfare Reserves (15%):</strong> ₹${audit.economicMetrics.cooperativeWelfarePoolAccrued.toLocaleString()}</div>
+                            <div><strong>Private Middleman Commissions:</strong> <span style="color:#2E7D32; font-weight:700;">${audit.economicMetrics.privateMiddlemanExtraction}</span></div>
+                        </div>
+                    </div>
+
+                    <div class="audit-section-block">
+                        <h4 style="margin:12px 0 6px; font-size:14px; border-bottom:1px solid var(--line); padding-bottom:4px;">3. Fair Living Wage & Citizen Protection Guarantee</h4>
+                        <div class="audit-grid-2">
+                            <div><strong>Cumulative Worker Surplus Saved:</strong> <strong style="color:#2E7D32;">₹${audit.fairWageAdvantage.cumulativeWorkerSurplusRetained.toLocaleString()}</strong></div>
+                            <div><strong>Statutory Living Wage Multiplier:</strong> ${audit.fairWageAdvantage.statutoryLivingWageMultiplier}</div>
+                            <div style="grid-column: 1 / -1;"><strong>Price Stability Policy:</strong> ${audit.fairWageAdvantage.zeroSurgePricingGuarantee}</div>
+                        </div>
+                    </div>
+
+                    <div class="audit-seal-box" style="margin-top:16px; padding:12px; background:var(--paper); border:1px solid var(--line); border-radius:8px; display:flex; align-items:center; gap:12px;">
+                        <div class="seal-icon" style="font-size:28px;">🤝</div>
+                        <div style="font-size:12px; line-height:1.5;">
+                            <strong>${audit.complianceCertification}</strong><br>
+                            <span style="color:var(--muted);">Generated: ${new Date(audit.auditTimestamp).toLocaleString()} • Hash Verification: SHA256-NCCT-GOV-2026</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+    } catch (err) {
+        console.error(err);
+        if (content) content.innerHTML = `<div class="error">Failed to generate cooperative audit report.</div>`;
+    }
+}
+
+function closeCooperativeAuditModal() {
+    const modal = document.getElementById("cooperativeAuditModal");
+    if (modal) modal.classList.add("hidden");
+}
+
+function printCooperativeAuditStatement() {
+    window.print();
+}
+
 
 
 // =====================================
