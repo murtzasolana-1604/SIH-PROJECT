@@ -13,9 +13,85 @@ function hideCustomerSubsections() {
     if (m) m.classList.add("hidden");
 }
 
-function showCustomerDashboard() {
+async function showCustomerDashboard() {
     showScreen("customerDashboardScreen");
     showServices();
+    await fetchCustomerProfile();
+}
+
+async function fetchCustomerProfile() {
+    const phone = localStorage.getItem("sahkaar_customer_phone");
+    if (!phone) return;
+
+    try {
+        const res = await fetch(`/api/customer/profile?phone=${encodeURIComponent(phone)}`);
+        const data = await res.json();
+        if (data.success && data.customer) {
+            const c = data.customer;
+            const nameEl = document.getElementById("customerWelcomeName");
+            const locEl = document.getElementById("customerWelcomeLoc");
+            if (nameEl && c.name) nameEl.textContent = c.name;
+            if (locEl) {
+                if (c.city && c.state) locEl.textContent = `${c.city}, ${c.state}`;
+                else if (c.address) locEl.textContent = c.address;
+            }
+            // Auto-fill booking inputs
+            const nameInput = document.getElementById("customerName");
+            const phoneInput = document.getElementById("customerPhone");
+            const addrInput = document.getElementById("customerAddress");
+            const latInput = document.getElementById("customerLat");
+            const lngInput = document.getElementById("customerLng");
+            if (nameInput && !nameInput.value) nameInput.value = c.name || "";
+            if (phoneInput && !phoneInput.value) phoneInput.value = c.phone || "";
+            if (addrInput && !addrInput.value) addrInput.value = c.address || "";
+            if (latInput && c.latitude) latInput.value = c.latitude;
+            if (lngInput && c.longitude) lngInput.value = c.longitude;
+        }
+    } catch (err) {
+        console.error("Failed to fetch customer profile:", err);
+    }
+}
+
+async function refreshCustomerLocation() {
+    const btn = document.querySelector(".loc-refresh-btn");
+    const phone = localStorage.getItem("sahkaar_customer_phone");
+    if (!phone) return;
+
+    if (!navigator.geolocation) {
+        alert("Geolocation is not supported by your browser.");
+        return;
+    }
+
+    if (btn) btn.textContent = "📍 Detecting...";
+
+    navigator.geolocation.getCurrentPosition(
+        async position => {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            try {
+                const res = await fetch("/api/customer/location", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ phone, latitude: lat, longitude: lng })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    const locEl = document.getElementById("customerWelcomeLoc");
+                    if (locEl) locEl.textContent = `GPS: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+                    if (btn) btn.textContent = "✓ Location Updated";
+                    setTimeout(() => { if (btn) btn.textContent = "📍 Update Location"; }, 3000);
+                }
+            } catch (err) {
+                console.error(err);
+                if (btn) btn.textContent = "📍 Update Location";
+            }
+        },
+        error => {
+            alert(`Location access not granted: ${error.message}`);
+            if (btn) btn.textContent = "📍 Update Location";
+        },
+        { timeout: 10000, enableHighAccuracy: true }
+    );
 }
 
 async function showServices() {
@@ -404,8 +480,8 @@ async function fetchWorkerDashboard() {
         const ratingData = await ratingRes.json();
 
         const verifiedBadge = worker.verified
-            ? `<span class="badge verified">${SEAL_ICON}Verified</span>`
-            : `<span class="badge unverified">Not verified yet</span>`;
+            ? `<span class="badge verified">${SEAL_ICON}Verified Member</span>`
+            : `<span class="badge unverified">🟡 Pending Review</span>`;
 
         const ratingText = ratingData.average
             ? `⭐ ${ratingData.average} (${ratingData.count} ratings)`
@@ -413,11 +489,35 @@ async function fetchWorkerDashboard() {
 
         let html = `
             <div class="worker-profile">
-                <strong>${worker.name}</strong> ${verifiedBadge}<br>
-                Skill: ${worker.skill}<br>
-                Location: ${worker.location}<br>
-                Availability: ${worker.availability}<br>
-                Rating: ${ratingText}
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                    <div>
+                        <strong style="font-size:18px;">${worker.name}</strong><br>
+                        <span class="role-badge worker" style="margin-top:4px;">${worker.skill}</span>
+                    </div>
+                    ${verifiedBadge}
+                </div>
+                <div style="font-size:13.5px; line-height:1.7; color:var(--ink); margin-bottom:12px;">
+                    <strong>Experience:</strong> ${worker.experience || "1 year"}<br>
+                    <strong>Certification:</strong> ${worker.certification || "Cooperative / NCCT Certified"}<br>
+                    <strong>Service Area:</strong> ${worker.location || "Greater Noida"}<br>
+                    <strong>Availability:</strong> ${worker.availability || "Full Day"}<br>
+                    <strong>Rating:</strong> ${ratingText}
+                </div>
+
+                <div class="welfare-card">
+                    <div class="welfare-title">🛡️ Cooperative Welfare & Social Security (NCCT)</div>
+                    <div class="welfare-grid">
+                        <div class="welfare-item">
+                            <span class="w-label">Welfare Fund:</span>
+                            <span class="w-val">${worker.welfare_status || "Enrolled in Cooperative Welfare Fund (Demo)"}</span>
+                        </div>
+                        <div class="welfare-item">
+                            <span class="w-label">Social Insurance:</span>
+                            <span class="w-val">${worker.insurance_status || "Covered: PM Suraksha Bima / Accidental (Demo)"}</span>
+                        </div>
+                    </div>
+                    <small class="hint">Demonstration cooperative coverage — future-ready for NCCT / e-Shram linkage.</small>
+                </div>
             </div>
         `;
 

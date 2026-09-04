@@ -62,6 +62,18 @@ addColumnIfMissing("bookings", "is_emergency INTEGER DEFAULT 0");
 addColumnIfMissing("bookings", "customer_lat REAL");
 addColumnIfMissing("bookings", "customer_lng REAL");
 
+addColumnIfMissing("workers", "address TEXT");
+addColumnIfMissing("workers", "village_town TEXT");
+addColumnIfMissing("workers", "city TEXT");
+addColumnIfMissing("workers", "state TEXT");
+addColumnIfMissing("workers", "pincode TEXT");
+addColumnIfMissing("workers", "latitude REAL");
+addColumnIfMissing("workers", "longitude REAL");
+addColumnIfMissing("workers", "certification TEXT DEFAULT 'Self-Trained'");
+addColumnIfMissing("workers", "additional_skills TEXT");
+addColumnIfMissing("workers", "welfare_status TEXT DEFAULT 'Enrolled in Cooperative Welfare Fund (Demo)'");
+addColumnIfMissing("workers", "insurance_status TEXT DEFAULT 'Covered: PM Suraksha Bima / Accidental (Demo)'");
+
 // RATINGS TABLE
 db.exec(`
     CREATE TABLE IF NOT EXISTS ratings (

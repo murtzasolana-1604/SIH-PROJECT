@@ -745,3 +745,85 @@ footer { text-align: center; padding: 26px; color: var(--muted); font-size: 12.5
     padding: 14px 20px;
     font-size: 16px;
 }
+
+/* Customer Welcome Bar */
+.welcome-bar {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 14px 18px;
+    margin-bottom: 22px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+.welcome-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.welcome-greeting {
+    font-size: 16px;
+    color: var(--teal-deep);
+}
+.welcome-loc {
+    font-size: 13px;
+    color: var(--muted);
+}
+.loc-refresh-btn {
+    background: var(--teal-tint);
+    color: var(--teal-deep);
+    border: 1px solid var(--teal);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all .15s ease;
+}
+.loc-refresh-btn:hover {
+    background: var(--teal);
+    color: white;
+}
+
+/* Worker Welfare & Social Security Card */
+.welfare-card {
+    background: #F4F8F6;
+    border: 1px solid #D2E7DC;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-top: 14px;
+}
+.welfare-title {
+    font-weight: 700;
+    font-size: 13.5px;
+    color: #125E3B;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.welfare-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 10px;
+    margin-bottom: 8px;
+}
+.welfare-item {
+    font-size: 12.5px;
+    line-height: 1.5;
+}
+.w-label {
+    display: block;
+    color: var(--muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.w-val {
+    font-weight: 600;
+    color: var(--ink);
+}

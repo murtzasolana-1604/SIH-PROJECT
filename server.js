@@ -12,6 +12,7 @@ const invoicesRoute = require("./routes/invoices");
 const paymentsRoute = require("./routes/payments");
 const forecastRoute = require("./routes/forecast");
 const auth = require("./routes/auth");
+const customerRoute = require("./routes/customer");
 
 const app = express();
 const PORT = 3000;
@@ -28,6 +29,11 @@ app.get("/api/status", statusRoute);
 
 // Services
 app.get("/api/services", servicesRoute);
+
+// Customer Profile & Location
+app.get("/api/customer/profile", customerRoute.getProfile);
+app.post("/api/customer/profile", customerRoute.saveProfile);
+app.post("/api/customer/location", customerRoute.updateLocation);
 
 // Workers
 app.get("/api/workers", workersRoute);

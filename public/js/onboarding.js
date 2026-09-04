@@ -140,17 +140,44 @@ function captureCustomerLocation() {
     );
 }
 
-function finishCustomerOnboarding() {
-    // Save customer profile data to localStorage
-    localStorage.setItem("sahkaar_customer_name", customerOnboardingState.name);
-    localStorage.setItem("sahkaar_customer_address", `${customerOnboardingState.address}, ${customerOnboardingState.city}, ${customerOnboardingState.state} - ${customerOnboardingState.pincode}`);
-    localStorage.setItem("sahkaar_customer_city", customerOnboardingState.city);
-    localStorage.setItem("sahkaar_customer_state", customerOnboardingState.state);
-    localStorage.setItem("sahkaar_customer_pincode", customerOnboardingState.pincode);
-
-    if (customerOnboardingState.lat && customerOnboardingState.lng) {
-        localStorage.setItem("sahkaar_customer_lat", customerOnboardingState.lat);
-        localStorage.setItem("sahkaar_customer_lng", customerOnboardingState.lng);
+async function finishCustomerOnboarding() {
+    try {
+        const res = await fetch("/api/customer/profile", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                phone: customerOnboardingState.phone,
+                name: customerOnboardingState.name,
+                address: customerOnboardingState.address,
+                villageTown: customerOnboardingState.villageTown,
+                city: customerOnboardingState.city,
+                state: customerOnboardingState.state,
+                pincode: customerOnboardingState.pincode,
+                latitude: customerOnboardingState.lat,
+                longitude: customerOnboardingState.lng
+            })
+        });
+        const data = await res.json();
+        if (data.success && data.customer) {
+            localStorage.setItem("sahkaar_customer_name", data.customer.name);
+            localStorage.setItem("sahkaar_customer_address", data.customer.address || "");
+            localStorage.setItem("sahkaar_customer_city", data.customer.city || "");
+            localStorage.setItem("sahkaar_customer_state", data.customer.state || "");
+            localStorage.setItem("sahkaar_customer_pincode", data.customer.pincode || "");
+            if (data.customer.latitude) localStorage.setItem("sahkaar_customer_lat", data.customer.latitude);
+            if (data.customer.longitude) localStorage.setItem("sahkaar_customer_lng", data.customer.longitude);
+        }
+    } catch (err) {
+        console.error("Profile API save failed, using local state:", err);
+        localStorage.setItem("sahkaar_customer_name", customerOnboardingState.name);
+        localStorage.setItem("sahkaar_customer_address", `${customerOnboardingState.address}, ${customerOnboardingState.city}, ${customerOnboardingState.state} - ${customerOnboardingState.pincode}`);
+        localStorage.setItem("sahkaar_customer_city", customerOnboardingState.city);
+        localStorage.setItem("sahkaar_customer_state", customerOnboardingState.state);
+        localStorage.setItem("sahkaar_customer_pincode", customerOnboardingState.pincode);
+        if (customerOnboardingState.lat && customerOnboardingState.lng) {
+            localStorage.setItem("sahkaar_customer_lat", customerOnboardingState.lat);
+            localStorage.setItem("sahkaar_customer_lng", customerOnboardingState.lng);
+        }
     }
 
     localStorage.setItem("sahkaar_customer_is_new", "false");
@@ -365,7 +392,40 @@ function captureWorkerLocation() {
     );
 }
 
-function submitWorkerOnboardingProfile() {
+async function submitWorkerOnboardingProfile() {
+    try {
+        const res = await fetch("/api/workers", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                phone: workerOnboardingState.phone,
+                name: workerOnboardingState.name,
+                skill: workerOnboardingState.skill,
+                experience: workerOnboardingState.experience,
+                certification: workerOnboardingState.certification,
+                additionalSkills: workerOnboardingState.additionalSkills,
+                address: workerOnboardingState.address,
+                villageTown: workerOnboardingState.villageTown,
+                city: workerOnboardingState.city,
+                state: workerOnboardingState.state,
+                pincode: workerOnboardingState.pincode,
+                latitude: workerOnboardingState.lat,
+                longitude: workerOnboardingState.lng,
+                availability: workerOnboardingState.availability.join(", ")
+            })
+        });
+        const data = await res.json();
+        if (data.success && data.worker) {
+            workerOnboardingState.workerId = data.worker.id;
+            localStorage.setItem("sahkaar_worker_id", data.worker.id);
+            localStorage.setItem("sahkaar_worker_name", data.worker.name);
+            localStorage.setItem("sahkaar_worker_skill", data.worker.skill);
+            localStorage.setItem("sahkaar_worker_verified", data.worker.verified ? "1" : "0");
+        }
+    } catch (err) {
+        console.error("Worker register API error, using local state:", err);
+    }
+
     // Fill review card on Step 5
     document.getElementById("reviewWrkName").textContent = workerOnboardingState.name;
     document.getElementById("reviewWrkSkill").textContent = workerOnboardingState.skill;
