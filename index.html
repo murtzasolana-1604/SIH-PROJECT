@@ -428,6 +428,21 @@
                 </div>
             </section>
 
+            <!-- Emergency Request Mode Banner -->
+            <div class="emergency-banner-card">
+                <div class="emergency-banner-left">
+                    <span class="emergency-pulse">🚨</span>
+                    <div>
+                        <div class="emergency-title">EMERGENCY REQUEST MODE</div>
+                        <p class="emergency-sub">Prioritizes immediate dispatch for urgent household crises (pipe bursts, power outages, leaks).</p>
+                    </div>
+                </div>
+                <label class="emergency-switch" title="Toggle emergency priority dispatch">
+                    <input type="checkbox" id="globalEmergencyToggle" onchange="toggleEmergencyMode(this.checked)">
+                    <span class="slider round"></span>
+                </label>
+            </div>
+
             <!-- Services -->
             <section id="servicesSection" class="section hidden">
                 <h2 data-i18n="chooseService">Choose a Service</h2>
@@ -443,6 +458,18 @@
             <!-- Booking -->
             <section id="bookingSection" class="section hidden">
                 <h2 data-i18n="bookService">📅 Book Service</h2>
+
+                <!-- Cooperative Transparent Pricing Box -->
+                <div class="coop-pricing-box">
+                    <div class="pricing-header">
+                        <div>
+                            <span class="pricing-label">Fair Wage Estimate:</span>
+                            <span id="bookingFairWage" class="price-val">₹299</span>
+                        </div>
+                        <span class="coop-badge">🤝 NCCT Cooperative Verified</span>
+                    </div>
+                    <p class="coop-note">Zero exploitative private middleman commission — platform runs on a transparent 5-8% cooperative maintenance model supporting local workers.</p>
+                </div>
 
                 <form id="bookingForm">
 
@@ -463,29 +490,35 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Address</label>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                            <label style="margin:0;">Service Address</label>
+                            <button type="button" class="btn-text-sm" onclick="syncBookingLocation()">📍 Sync Current GPS Location</button>
+                        </div>
                         <input type="text" id="customerAddress" placeholder="Enter service address" required>
+                        <div id="bookingLocStatus"></div>
                     </div>
 
-                    <div class="form-group">
-                        <label>Preferred Date</label>
-                        <input type="date" id="bookingDate" required>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Preferred Date</label>
+                            <input type="date" id="bookingDate" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Preferred Time</label>
+                            <input type="time" id="bookingTime" required>
+                        </div>
                     </div>
 
-                    <div class="form-group">
-                        <label>Preferred Time</label>
-                        <input type="time" id="bookingTime" required>
-                    </div>
-
-                    <div class="checkbox-row">
-                        <input type="checkbox" id="isEmergency">
-                        <label style="margin:0;">🚨 This is an emergency (same-day, urgent)</label>
+                    <div class="checkbox-row" style="margin: 12px 0 20px;">
+                        <input type="checkbox" id="isEmergency" onchange="syncEmergencyCheckbox(this.checked)">
+                        <label for="isEmergency" style="margin:0; cursor:pointer;">🚨 Mark as Emergency Dispatch (immediate prioritized assignment)</label>
                     </div>
 
                     <input type="hidden" id="customerLat">
                     <input type="hidden" id="customerLng">
 
-                    <button class="primary" type="submit">🚀 Book Service</button>
+                    <button class="primary cta-gold" type="submit">🤝 Confirm Cooperative Booking</button>
                     <button type="button" class="secondary" style="margin-left: 8px;" onclick="showServices()">Cancel</button>
 
                 </form>

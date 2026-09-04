@@ -827,3 +827,234 @@ footer { text-align: center; padding: 26px; color: var(--muted); font-size: 12.5
     font-weight: 600;
     color: var(--ink);
 }
+
+/* ================= PHASE 6: BOOKING FLOW & EMERGENCY STYLES ================= */
+
+/* Emergency Banner Card */
+.emergency-banner-card {
+    background: #FFF8F6;
+    border: 1.5px solid rgba(193, 89, 43, 0.35);
+    border-radius: 14px;
+    padding: 14px 18px;
+    margin-bottom: 22px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    transition: all .2s ease;
+}
+.emergency-banner-card.active {
+    background: #FFEBE6;
+    border-color: var(--terracotta);
+    box-shadow: 0 4px 16px rgba(193, 89, 43, 0.2);
+}
+.emergency-banner-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.emergency-pulse {
+    font-size: 26px;
+    animation: pulse 1.5s infinite;
+}
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+    100% { transform: scale(1); }
+}
+.emergency-title {
+    font-weight: 800;
+    font-size: 13.5px;
+    letter-spacing: 0.05em;
+    color: var(--terracotta);
+}
+.emergency-sub {
+    font-size: 12.5px;
+    color: var(--muted);
+    margin: 2px 0 0;
+    line-height: 1.4;
+}
+
+/* Toggle switch */
+.emergency-switch {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 26px;
+    flex-shrink: 0;
+}
+.emergency-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #CCC;
+    transition: .3s;
+    border-radius: 26px;
+}
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .3s;
+    border-radius: 50%;
+}
+.emergency-switch input:checked + .slider {
+    background-color: var(--terracotta);
+}
+.emergency-switch input:checked + .slider:before {
+    transform: translateX(22px);
+}
+
+/* Service Card Additions */
+.service-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    text-align: left !important;
+}
+.service-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+.service-price-chip {
+    font-size: 11px;
+    font-weight: 700;
+    background: var(--gold-tint);
+    color: #7A5800;
+    border: 1px solid rgba(212, 160, 23, 0.4);
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-family: var(--font-mono);
+}
+.service-desc {
+    font-size: 12.5px;
+    color: var(--muted);
+    line-height: 1.45;
+    margin: 6px 0 12px;
+    flex-grow: 1;
+}
+.service-coop-note {
+    background: var(--paper);
+    padding: 6px 10px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    border: 1px solid var(--line);
+    color: var(--teal);
+    font-size: 11.5px;
+}
+.service-book-btn {
+    width: 100%;
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+}
+
+/* Cooperative Transparent Pricing Box */
+.coop-pricing-box {
+    background: var(--teal-tint);
+    border: 1.5px solid var(--teal);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 18px;
+}
+.pricing-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+.pricing-label {
+    font-size: 13px;
+    color: var(--teal-deep);
+    font-weight: 600;
+}
+.price-val {
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--teal-deep);
+    font-family: var(--font-mono);
+    margin-left: 6px;
+}
+.coop-badge {
+    font-size: 11px;
+    font-weight: 700;
+    background: var(--teal-deep);
+    color: white;
+    padding: 3px 8px;
+    border-radius: 6px;
+}
+.coop-note {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.45;
+    margin: 0;
+}
+
+.btn-text-sm {
+    background: transparent;
+    border: none;
+    color: var(--teal);
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
+}
+.btn-text-sm:hover {
+    color: var(--teal-deep);
+}
+
+/* Assigned Worker Card in My Bookings */
+.assigned-worker-card {
+    background: var(--paper);
+    border: 1.5px solid var(--teal);
+    border-radius: 10px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 10px 0;
+}
+.worker-avatar {
+    font-size: 26px;
+}
+.worker-details {
+    font-size: 13px;
+    line-height: 1.4;
+}
+.worker-sub {
+    font-size: 11.5px;
+    color: var(--muted);
+}
+.worker-phone {
+    font-weight: 700;
+    color: var(--teal-deep);
+    margin-top: 2px;
+}
+
+/* Cancel Button */
+.btn-cancel {
+    background: var(--paper);
+    border: 1px solid var(--terracotta);
+    color: var(--terracotta);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all .15s ease;
+}
+.btn-cancel:hover {
+    background: var(--terracotta);
+    color: white;
+}

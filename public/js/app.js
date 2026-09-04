@@ -102,6 +102,41 @@ async function showServices() {
     await loadServices();
 }
 
+const SERVICE_PRICE_MAP = {
+    Electrician: "₹249 Fair Wage Estimate",
+    Plumber: "₹279 Fair Wage Estimate",
+    Carpenter: "₹349 Fair Wage Estimate",
+    Painter: "₹319 Fair Wage Estimate",
+    Cleaner: "₹249 Fair Wage Estimate",
+    Driver: "₹449 Fair Wage Estimate",
+    Caregiver: "₹399 Fair Wage Estimate",
+    Technician: "₹299 Fair Wage Estimate"
+};
+
+let isGlobalEmergency = false;
+
+function toggleEmergencyMode(enabled) {
+    isGlobalEmergency = enabled;
+    const card = document.querySelector(".emergency-banner-card");
+    if (card) {
+        if (enabled) card.classList.add("active");
+        else card.classList.remove("active");
+    }
+    const formEmergency = document.getElementById("isEmergency");
+    if (formEmergency) formEmergency.checked = enabled;
+}
+
+function syncEmergencyCheckbox(checked) {
+    isGlobalEmergency = checked;
+    const toggle = document.getElementById("globalEmergencyToggle");
+    if (toggle) toggle.checked = checked;
+    const card = document.querySelector(".emergency-banner-card");
+    if (card) {
+        if (checked) card.classList.add("active");
+        else card.classList.remove("active");
+    }
+}
+
 async function loadServices() {
     const servicesList = document.getElementById("servicesList");
     servicesList.innerHTML = `
@@ -119,11 +154,17 @@ async function loadServices() {
             const card = document.createElement("div");
             card.className = "service-card";
             card.innerHTML = `
-                <div class="service-icon">${service.icon}</div>
+                <div class="service-card-top">
+                    <div class="service-icon">${service.icon}</div>
+                    <span class="service-price-chip">${service.fairWageLabel || "Fair Wage"}</span>
+                </div>
                 <h3>${service.name}</h3>
-                <p>${service.category}</p>
+                <p class="service-desc">${service.description || service.category}</p>
+                <div class="service-coop-note">
+                    <small>🤝 ${service.benefitNote || "Fair wages, verified worker, community owned"}</small>
+                </div>
+                <button class="primary service-book-btn" onclick="openBooking('${service.name}', '${service.fairWageLabel || '₹299'}')">Book Now →</button>
             `;
-            card.onclick = function () { openBooking(service.name); };
             servicesList.appendChild(card);
         });
     } catch (error) {
@@ -132,25 +173,84 @@ async function loadServices() {
     }
 }
 
-function captureLocation() {
-    if (!navigator.geolocation) return;
+function syncBookingLocation() {
+    const statusEl = document.getElementById("bookingLocStatus");
+    if (!navigator.geolocation) {
+        if (statusEl) statusEl.innerHTML = `<small class="hint warning">Geolocation not supported.</small>`;
+        return;
+    }
+    if (statusEl) statusEl.innerHTML = `<small class="hint">📍 Syncing current GPS coordinates...</small>`;
+
     navigator.geolocation.getCurrentPosition(
         position => {
-            document.getElementById("customerLat").value = position.coords.latitude;
-            document.getElementById("customerLng").value = position.coords.longitude;
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            document.getElementById("customerLat").value = lat;
+            document.getElementById("customerLng").value = lng;
+            if (statusEl) {
+                statusEl.innerHTML = `<small class="hint" style="color:var(--teal); font-weight:600;">✓ GPS Synced: ${lat.toFixed(4)}, ${lng.toFixed(4)}</small>`;
+            }
         },
-        () => { /* denied or unavailable — booking still works without it */ }
+        err => {
+            if (statusEl) {
+                statusEl.innerHTML = `<small class="hint" style="color:var(--terracotta);">GPS access denied: using manual address.</small>`;
+            }
+        },
+        { timeout: 8000, enableHighAccuracy: true }
     );
 }
 
-function openBooking(serviceName) {
+function openBooking(serviceName, priceLabel) {
     showScreen("customerDashboardScreen");
     hideCustomerSubsections();
     const b = document.getElementById("bookingSection");
     if (b) b.classList.remove("hidden");
+
     const selectedInput = document.getElementById("selectedService");
     if (selectedInput) selectedInput.value = serviceName;
-    captureLocation();
+
+    const priceEl = document.getElementById("bookingFairWage");
+    if (priceEl) {
+        priceEl.textContent = priceLabel || SERVICE_PRICE_MAP[serviceName] || "₹299";
+    }
+
+    const emergencyEl = document.getElementById("isEmergency");
+    if (emergencyEl) emergencyEl.checked = isGlobalEmergency;
+
+    // Set default date to today if empty
+    const dateInput = document.getElementById("bookingDate");
+    if (dateInput && !dateInput.value) {
+        const today = new Date().toISOString().split("T")[0];
+        dateInput.value = today;
+    }
+
+    // Set default time to next hour if empty
+    const timeInput = document.getElementById("bookingTime");
+    if (timeInput && !timeInput.value) {
+        const now = new Date();
+        now.setHours(now.getHours() + 1);
+        const hh = String(now.getHours()).padStart(2, "0");
+        timeInput.value = `${hh}:00`;
+    }
+
+    // Sync saved customer profile data into booking form
+    const phone = localStorage.getItem("sahkaar_customer_phone");
+    const name = localStorage.getItem("sahkaar_customer_name");
+    const addr = localStorage.getItem("sahkaar_customer_address");
+    const lat = localStorage.getItem("sahkaar_customer_lat");
+    const lng = localStorage.getItem("sahkaar_customer_lng");
+
+    const nameInput = document.getElementById("customerName");
+    const phoneInput = document.getElementById("customerPhone");
+    const addrInput = document.getElementById("customerAddress");
+    const latInput = document.getElementById("customerLat");
+    const lngInput = document.getElementById("customerLng");
+
+    if (nameInput && name && !nameInput.value) nameInput.value = name;
+    if (phoneInput && phone && !phoneInput.value) phoneInput.value = phone;
+    if (addrInput && addr && !addrInput.value) addrInput.value = addr;
+    if (latInput && lat) latInput.value = lat;
+    if (lngInput && lng) lngInput.value = lng;
 }
 
 function showMyBookings() {
@@ -344,15 +444,54 @@ async function fetchMyBookings() {
             const item = document.createElement("div");
             item.className = "booking-item";
 
-            const emergencyTag = booking.is_emergency ? `<span class="badge emergency">🚨 Emergency</span><br>` : "";
+            let statusBadge = "";
+            if (booking.status === "Pending") statusBadge = `<span class="badge" style="background:#FFF4E5; color:#8C5300; border:1px solid #FFE0B2;">⏳ Pending Allocation</span>`;
+            else if (booking.status === "Assigned") statusBadge = `<span class="badge" style="background:#E3F2FD; color:#0D47A1; border:1px solid #BBDEFB;">👷 Worker Assigned</span>`;
+            else if (booking.status === "In Progress") statusBadge = `<span class="badge" style="background:#EDE7F6; color:#4A148C; border:1px solid #D1C4E9;">⚡ In Progress</span>`;
+            else if (booking.status === "Completed") statusBadge = `<span class="badge verified">${SEAL_ICON}Completed</span>`;
+            else if (booking.status === "Cancelled") statusBadge = `<span class="badge" style="background:var(--terracotta-tint); color:var(--terracotta); border:1px solid rgba(193,89,43,0.3);">❌ Cancelled</span>`;
+            else statusBadge = `<span class="badge">${booking.status}</span>`;
+
+            const emergencyTag = booking.is_emergency ? `<span class="badge emergency">🚨 EMERGENCY</span> ` : "";
+
+            let workerBox = "";
+            if (booking.worker_name) {
+                workerBox = `
+                    <div class="assigned-worker-card">
+                        <div class="worker-avatar">👷</div>
+                        <div class="worker-details">
+                            <strong>Assigned Worker: ${booking.worker_name}</strong>
+                            <div class="worker-sub">${booking.worker_skill || booking.service} • Verified Member</div>
+                            <div class="worker-phone">📞 <a href="tel:${booking.worker_phone}">${booking.worker_phone}</a></div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            let cancelAction = "";
+            if (booking.status === "Pending" || booking.status === "Assigned") {
+                cancelAction = `
+                    <div style="margin-top:10px;">
+                        <button class="btn-cancel" onclick="cancelCustomerBooking(${booking.id})">❌ Cancel Booking</button>
+                    </div>
+                `;
+            }
 
             let html = `
-                ${emergencyTag}
-                <strong>Booking ID:</strong> ${booking.id}<br>
-                <strong>Service:</strong> ${booking.service}<br>
-                <strong>Date:</strong> ${booking.booking_date}<br>
-                <strong>Time:</strong> ${booking.booking_time}<br>
-                <strong>Status:</strong> ${booking.status}
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+                    <div>
+                        ${emergencyTag}
+                        <strong style="font-size:16px;">${booking.service}</strong>
+                        <div style="font-size:12px; color:var(--muted); font-family:var(--font-mono);">Booking #${booking.id}</div>
+                    </div>
+                    ${statusBadge}
+                </div>
+                <div style="font-size:13.5px; line-height:1.7; margin-bottom:10px;">
+                    <strong>Service Date:</strong> ${booking.booking_date} at ${booking.booking_time}<br>
+                    <strong>Address:</strong> ${booking.address}
+                </div>
+                ${workerBox}
+                ${cancelAction}
             `;
 
             if (booking.status === "Completed") {
@@ -363,23 +502,23 @@ async function fetchMyBookings() {
                 if (invData.success) {
                     html += `
                         <div class="invoice-box">
-                            <strong>Invoice</strong><br>
+                            <strong>Official Cooperative Invoice</strong><br>
                             Service charge: ₹${invData.invoice.service_charge}<br>
-                            Cooperative share: ₹${invData.invoice.cooperative_share}<br>
-                            Worker earning: ₹${invData.invoice.worker_earning}<br>
+                            Cooperative welfare share: ₹${invData.invoice.cooperative_share}<br>
+                            Worker direct earning: ₹${invData.invoice.worker_earning}<br>
                             <strong>Total: ₹${invData.invoice.total_amount}</strong>
                         </div>
                         <button class="cta-gold" onclick="payMock(${booking.id}, this)">💳 Pay Now (Mock)</button>
                         <div class="rate-box">
-                            <label style="margin:0;">Rate:</label>
+                            <label style="margin:0;">Rate Worker:</label>
                             <select id="stars-${booking.id}">
-                                <option value="5">⭐⭐⭐⭐⭐</option>
-                                <option value="4">⭐⭐⭐⭐</option>
-                                <option value="3">⭐⭐⭐</option>
-                                <option value="2">⭐⭐</option>
-                                <option value="1">⭐</option>
+                                <option value="5">⭐⭐⭐⭐⭐ Outstanding</option>
+                                <option value="4">⭐⭐⭐⭐ Good</option>
+                                <option value="3">⭐⭐⭐ Satisfactory</option>
+                                <option value="2">⭐⭐ Needs Improvement</option>
+                                <option value="1">⭐ Unsatisfactory</option>
                             </select>
-                            <input type="text" id="comment-${booking.id}" placeholder="Optional comment">
+                            <input type="text" id="comment-${booking.id}" placeholder="Optional feedback">
                             <button class="secondary" onclick="submitRating(${booking.id})">Submit</button>
                         </div>
                         <div id="ratingMsg-${booking.id}"></div>
@@ -394,6 +533,22 @@ async function fetchMyBookings() {
     } catch (error) {
         console.error(error);
         result.innerHTML = `<div class="error">Server connection failed.</div>`;
+    }
+}
+
+async function cancelCustomerBooking(bookingId) {
+    if (!confirm("Are you sure you want to cancel this booking?")) return;
+    try {
+        const res = await fetch(`/api/bookings/${bookingId}/cancel`, { method: "POST" });
+        const data = await res.json();
+        if (data.success) {
+            fetchMyBookings();
+        } else {
+            alert(data.message);
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Server connection failed.");
     }
 }
 
@@ -521,24 +676,36 @@ async function fetchWorkerDashboard() {
             </div>
         `;
 
-        const activeRes = await fetch(`/api/bookings?assignedWorkerId=${worker.id}&status=Assigned`);
+        const activeRes = await fetch(`/api/bookings?assignedWorkerId=${worker.id}`);
         const activeData = await activeRes.json();
+        const activeBookings = (activeData.bookings || []).filter(b => b.status === "Assigned" || b.status === "In Progress");
 
         html += `<h3 style="margin-bottom:12px;">My Active Jobs</h3>`;
 
-        if (!activeData.success || activeData.bookings.length === 0) {
+        if (activeBookings.length === 0) {
             html += `<div class="empty-state"><span class="icon">🗓️</span>No active jobs right now.</div>`;
         } else {
-            activeData.bookings.forEach(booking => {
-                const emergencyTag = booking.is_emergency ? `<span class="badge emergency">🚨 Emergency</span><br>` : "";
+            activeBookings.forEach(booking => {
+                const emergencyTag = booking.is_emergency ? `<span class="badge emergency">🚨 Emergency</span> ` : "";
+                const statusBadge = booking.status === "In Progress"
+                    ? `<span class="badge" style="background:#EDE7F6; color:#4A148C; border:1px solid #D1C4E9;">⚡ In Progress</span>`
+                    : `<span class="badge" style="background:#E3F2FD; color:#0D47A1; border:1px solid #BBDEFB;">👷 Assigned</span>`;
+
+                const actionBtn = booking.status === "Assigned"
+                    ? `<button class="cta-gold" onclick="startWorkerJob(${booking.id})">⚡ Start Job (In Progress)</button>`
+                    : `<button class="secondary" onclick="markComplete(${booking.id})">✅ Mark Complete & Generate Invoice</button>`;
+
                 html += `
                     <div class="booking-item">
-                        ${emergencyTag}
-                        <strong>Booking ID:</strong> ${booking.id}<br>
-                        <strong>Customer:</strong> ${booking.customer_name}<br>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                            <div>${emergencyTag}<strong>Booking #${booking.id}</strong></div>
+                            ${statusBadge}
+                        </div>
+                        <strong>Service:</strong> ${booking.service}<br>
+                        <strong>Customer:</strong> ${booking.customer_name} (📞 <a href="tel:${booking.customer_phone}">${booking.customer_phone}</a>)<br>
                         <strong>Address:</strong> ${booking.address}<br>
                         <strong>Date:</strong> ${booking.booking_date} ${booking.booking_time}<br>
-                        <button class="secondary" onclick="markComplete(${booking.id})">✅ Mark Complete</button>
+                        <div style="margin-top:10px;">${actionBtn}</div>
                     </div>
                 `;
             });
@@ -585,6 +752,22 @@ async function acceptJob(bookingId, workerId) {
         const data = await res.json();
         alert(data.message);
         fetchWorkerDashboard();
+    } catch (error) {
+        console.error(error);
+        alert("Server connection failed.");
+    }
+async function startWorkerJob(bookingId) {
+    try {
+        const res = await fetch(`/api/bookings/${bookingId}/start`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" }
+        });
+        const data = await res.json();
+        if (data.success) {
+            fetchWorkerDashboard();
+        } else {
+            alert(data.message);
+        }
     } catch (error) {
         console.error(error);
         alert("Server connection failed.");

@@ -23,15 +23,24 @@ function bookingsRoute(req, res) {
 
         const { phone, service, status, assignedWorkerId } = req.query;
 
-        let query = "SELECT * FROM bookings WHERE 1=1";
+        let query = `
+            SELECT b.*,
+                   w.name AS worker_name,
+                   w.phone AS worker_phone,
+                   w.skill AS worker_skill,
+                   w.location AS worker_location
+            FROM bookings b
+            LEFT JOIN workers w ON b.assigned_worker_id = w.id
+            WHERE 1=1
+        `;
         const params = [];
 
-        if (phone) { query += " AND customer_phone = ?"; params.push(phone); }
-        if (service) { query += " AND service = ?"; params.push(service); }
-        if (status) { query += " AND status = ?"; params.push(status); }
-        if (assignedWorkerId) { query += " AND assigned_worker_id = ?"; params.push(assignedWorkerId); }
+        if (phone) { query += " AND b.customer_phone = ?"; params.push(phone); }
+        if (service) { query += " AND b.service = ?"; params.push(service); }
+        if (status) { query += " AND b.status = ?"; params.push(status); }
+        if (assignedWorkerId) { query += " AND b.assigned_worker_id = ?"; params.push(assignedWorkerId); }
 
-        query += " ORDER BY is_emergency DESC, id DESC";
+        query += " ORDER BY b.is_emergency DESC, b.id DESC";
 
         const bookings = db.prepare(query).all(...params);
 
@@ -93,9 +102,67 @@ function acceptBooking(req, res) {
     db.prepare("UPDATE bookings SET assigned_worker_id = ?, status = 'Assigned' WHERE id = ?")
         .run(workerId, bookingId);
 
-    const updated = db.prepare("SELECT * FROM bookings WHERE id = ?").get(bookingId);
+    const updated = db.prepare(`
+        SELECT b.*, w.name AS worker_name, w.phone AS worker_phone, w.skill AS worker_skill
+        FROM bookings b
+        LEFT JOIN workers w ON b.assigned_worker_id = w.id
+        WHERE b.id = ?
+    `).get(bookingId);
 
     return res.json({ success: true, message: "Job accepted!", booking: updated });
+}
+
+// =========================
+// WORKER STARTS AN ASSIGNED JOB
+// =========================
+function startBooking(req, res) {
+    const bookingId = Number(req.params.id);
+    const booking = db.prepare("SELECT * FROM bookings WHERE id = ?").get(bookingId);
+
+    if (!booking) {
+        return res.status(404).json({ success: false, message: "Booking not found." });
+    }
+
+    if (booking.status !== "Assigned") {
+        return res.status(400).json({ success: false, message: `Only assigned bookings can be started. Current status: ${booking.status}.` });
+    }
+
+    db.prepare("UPDATE bookings SET status = 'In Progress' WHERE id = ?").run(bookingId);
+
+    const updated = db.prepare(`
+        SELECT b.*, w.name AS worker_name, w.phone AS worker_phone, w.skill AS worker_skill
+        FROM bookings b
+        LEFT JOIN workers w ON b.assigned_worker_id = w.id
+        WHERE b.id = ?
+    `).get(bookingId);
+
+    return res.json({ success: true, message: "Job started and marked In Progress.", booking: updated });
+}
+
+// =========================
+// CUSTOMER OR ADMIN CANCELS A BOOKING
+// =========================
+function cancelBooking(req, res) {
+    const bookingId = Number(req.params.id);
+    const booking = db.prepare("SELECT * FROM bookings WHERE id = ?").get(bookingId);
+
+    if (!booking) {
+        return res.status(404).json({ success: false, message: "Booking not found." });
+    }
+
+    if (booking.status === "Completed") {
+        return res.status(400).json({ success: false, message: "Completed bookings cannot be cancelled." });
+    }
+
+    if (booking.status === "Cancelled") {
+        return res.status(400).json({ success: false, message: "Booking is already cancelled." });
+    }
+
+    db.prepare("UPDATE bookings SET status = 'Cancelled' WHERE id = ?").run(bookingId);
+
+    const updated = db.prepare("SELECT * FROM bookings WHERE id = ?").get(bookingId);
+
+    return res.json({ success: true, message: "Booking cancelled successfully.", booking: updated });
 }
 
 // =========================
@@ -137,4 +204,12 @@ function completeBooking(req, res) {
     return res.json({ success: true, message: "Booking marked complete.", booking: updatedBooking, invoice });
 }
 
-module.exports = { bookingsRoute, acceptBooking, completeBooking };
+module.exports = {
+    bookingsRoute,
+    acceptBooking,
+    startBooking,
+    completeBooking,
+    cancelBooking,
+    SERVICE_PRICES,
+    DEFAULT_PRICE
+};
