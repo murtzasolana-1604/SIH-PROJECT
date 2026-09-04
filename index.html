@@ -17,6 +17,24 @@
 
 <body>
 
+    <!-- ===================== SKIP TO MAIN CONTENT LINK (PHASE 19) ===================== -->
+    <a href="#mainContent" class="skip-to-content" data-i18n="skipToContent">Skip to main content</a>
+
+    <!-- ===================== SCREEN READER LIVE REGION (PHASE 19) ===================== -->
+    <div id="a11yLiveAnnouncer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+    <!-- ===================== GLOBAL ACCESSIBILITY TOOLBAR (PHASE 19) ===================== -->
+    <div id="a11yToolbar" class="a11y-toolbar" role="region" aria-label="Accessibility controls">
+        <div class="a11y-font-group" role="group" aria-label="Text size scaling">
+            <button class="a11y-font-btn active" data-scale="normal" onclick="setFontScale('normal')" title="Standard font size (100%)" aria-label="Standard font size (100%)">A</button>
+            <button class="a11y-font-btn" data-scale="large" onclick="setFontScale('large')" title="Enlarged font size (115%)" aria-label="Enlarged font size (115%)">A+</button>
+            <button class="a11y-font-btn" data-scale="xlarge" onclick="setFontScale('xlarge')" title="Maximum font size (130%)" aria-label="Maximum font size (130%)">A++</button>
+        </div>
+        <button class="a11y-contrast-btn" onclick="toggleHighContrast()" aria-pressed="false" title="Toggle WCAG High Contrast Mode" data-i18n="a11yContrastBtn">
+            🌓 High Contrast
+        </button>
+    </div>
+
     <!-- ===================== NETWORK LIVENESS STATUS BANNER (PHASE 16) ===================== -->
     <div id="networkStatusBanner" class="network-banner hidden" role="alert" aria-live="polite"></div>
 
@@ -34,6 +52,9 @@
             <button class="pwa-dismiss-btn" onclick="dismissPwaInstallBanner()" aria-label="Dismiss">✕</button>
         </div>
     </div>
+
+    <!-- ===================== MAIN CONTENT ANCHOR (PHASE 19) ===================== -->
+    <div id="mainContent" tabindex="-1" style="outline:none;"></div>
 
     <!-- ===================== ROLE SELECTION ===================== -->
     <div id="roleScreen" class="screen">
@@ -500,12 +521,12 @@
             </div>
 
             <!-- 1-Click SOS Emergency Modal (Phase 11) -->
-            <div id="sosEmergencyModal" class="modal-overlay hidden" onclick="if(event.target===this) closeEmergencySOSModal()">
+            <div id="sosEmergencyModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="sosModalTitleHeading" onclick="if(event.target===this) closeEmergencySOSModal()">
                 <div class="sos-modal-card">
                     <div class="sos-modal-header">
                         <div>
                             <span class="sos-badge-tag">SIH26089 • NCCT RAPID DISPATCH</span>
-                            <h3 class="sos-modal-title" data-i18n="sosModalTitle">🚨 1-Click Emergency SOS Call</h3>
+                            <h3 id="sosModalTitleHeading" class="sos-modal-title" data-i18n="sosModalTitle">🚨 1-Click Emergency SOS Call</h3>
                         </div>
                         <button type="button" class="sos-close-btn" onclick="closeEmergencySOSModal()" aria-label="Close modal">×</button>
                     </div>
@@ -1040,10 +1061,10 @@
         </main>
 
         <!-- ===================== NEW SOCIETY REGISTRATION MODAL (PHASE 14) ===================== -->
-        <div id="newSocietyModal" class="modal-overlay hidden" onclick="if(event.target===this) closeNewSocietyModal()">
+        <div id="newSocietyModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="newSocietyTitleHeading" onclick="if(event.target===this) closeNewSocietyModal()">
             <div class="modal-card" style="max-width:540px; background:white; border-radius:16px; padding:24px; border:2px solid var(--teal-deep); box-shadow:0 12px 35px rgba(0,0,0,0.2);">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--line); padding-bottom:10px;">
-                    <h3 style="margin:0; font-size:18px;">🏛️ Register New Cooperative Society / PACS</h3>
+                    <h3 id="newSocietyTitleHeading" style="margin:0; font-size:18px;">🏛️ Register New Cooperative Society / PACS</h3>
                     <button type="button" class="sos-close-btn" onclick="closeNewSocietyModal()" aria-label="Close modal">×</button>
                 </div>
 
@@ -1089,11 +1110,11 @@
         </div>
 
         <!-- ===================== COOPERATIVE IMPACT AUDIT MODAL (PHASE 15) ===================== -->
-        <div id="cooperativeAuditModal" class="modal-overlay hidden" onclick="if(event.target===this) closeCooperativeAuditModal()">
+        <div id="cooperativeAuditModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="coopAuditTitleHeading" onclick="if(event.target===this) closeCooperativeAuditModal()">
             <div class="modal-card" style="max-width:720px; width:95%; background:white; border-radius:16px; padding:24px; border:2px solid var(--teal-deep); box-shadow:0 14px 40px rgba(0,0,0,0.25); max-height:85vh; display:flex; flex-direction:column;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid var(--line); padding-bottom:10px;">
                     <div>
-                        <h3 style="margin:0; font-size:18px;">🏛️ Official Cooperative Economic Audit Statement</h3>
+                        <h3 id="coopAuditTitleHeading" style="margin:0; font-size:18px;">🏛️ Official Cooperative Economic Audit Statement</h3>
                         <small style="color:var(--muted);">Statutory Multi-State Co-operative Societies (MSCS) Act • NCCT SIH26089</small>
                     </div>
                     <button type="button" class="sos-close-btn" onclick="closeCooperativeAuditModal()" aria-label="Close modal">×</button>
@@ -1111,13 +1132,13 @@
         </div>
 
         <!-- ===================== WORKER DIGITAL ID CARD MODAL (PHASE 17) ===================== -->
-        <div id="workerDigitalIdModal" class="modal-overlay hidden" onclick="if(event.target===this) closeWorkerDigitalIdModal()">
+        <div id="workerDigitalIdModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="workerIdTitleHeading" onclick="if(event.target===this) closeWorkerDigitalIdModal()">
             <div class="modal-card id-card-modal-container" style="max-width:540px; width:95%; background:white; border-radius:20px; padding:0; overflow:hidden; border:2px solid var(--teal-deep); box-shadow:0 18px 50px rgba(0,0,0,0.3);">
                 <div style="padding:16px 20px; background:var(--teal-deep); color:white; display:flex; justify-content:space-between; align-items:center;">
                     <div style="display:flex; align-items:center; gap:8px;">
                         <span style="font-size:22px;">🏛️</span>
                         <div>
-                            <strong style="font-size:15px; letter-spacing:0.3px;">सहकार डिजिटल पहचान पत्र</strong><br>
+                            <strong id="workerIdTitleHeading" style="font-size:15px; letter-spacing:0.3px;">सहकार डिजिटल पहचान पत्र</strong><br>
                             <small style="opacity:0.85; font-size:11px;">Ministry of Cooperation • NCCT SIH26089</small>
                         </div>
                     </div>
@@ -1139,11 +1160,11 @@
         </div>
 
         <!-- ===================== CITIZEN TRUST & VERIFICATION MODAL (PHASE 17) ===================== -->
-        <div id="citizenTrustModal" class="modal-overlay hidden" onclick="if(event.target===this) closeCitizenTrustModal()">
+        <div id="citizenTrustModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="citizenTrustTitleHeading" onclick="if(event.target===this) closeCitizenTrustModal()">
             <div class="modal-card" style="max-width:580px; width:95%; background:white; border-radius:18px; padding:24px; border:2px solid #2E7D32; box-shadow:0 14px 45px rgba(0,0,0,0.25); max-height:85vh; display:flex; flex-direction:column;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--line); padding-bottom:10px;">
                     <div>
-                        <h3 style="margin:0; font-size:18px; color:#1B5E20;">🛡️ Official Cooperative Tradesperson Verification</h3>
+                        <h3 id="citizenTrustTitleHeading" style="margin:0; font-size:18px; color:#1B5E20;">🛡️ Official Cooperative Tradesperson Verification</h3>
                         <small style="color:var(--muted);">National Council for Cooperative Training (NCCT) Statutory Accreditation</small>
                     </div>
                     <button type="button" class="sos-close-btn" onclick="closeCitizenTrustModal()" aria-label="Close modal">×</button>
@@ -1160,11 +1181,11 @@
         </div>
 
         <!-- ===================== ADMIN BADGE CREDENTIALING MODAL (PHASE 17) ===================== -->
-        <div id="adminBadgeModal" class="modal-overlay hidden" onclick="if(event.target===this) closeAdminBadgeModal()">
+        <div id="adminBadgeModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="adminBadgeTitleHeading" onclick="if(event.target===this) closeAdminBadgeModal()">
             <div class="modal-card" style="max-width:560px; width:95%; background:white; border-radius:18px; padding:24px; border:2px solid var(--teal-deep); box-shadow:0 14px 45px rgba(0,0,0,0.25); max-height:85vh; display:flex; flex-direction:column;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--line); padding-bottom:10px;">
                     <div>
-                        <h3 style="margin:0; font-size:18px;">🎖️ NCCT Skill Credentialing & Tier Upgrade</h3>
+                        <h3 id="adminBadgeTitleHeading" style="margin:0; font-size:18px;">🎖️ NCCT Skill Credentialing & Tier Upgrade</h3>
                         <small style="color:var(--muted);">Federation Verification Authority • Multi-State Cooperative Societies Act</small>
                     </div>
                     <button type="button" class="sos-close-btn" onclick="closeAdminBadgeModal()" aria-label="Close modal">×</button>
@@ -1177,13 +1198,13 @@
         </div>
 
         <!-- ===================== WORKER INSURANCE POLICY & CLAIM MODAL (PHASE 18) ===================== -->
-        <div id="workerInsuranceModal" class="modal-overlay hidden" onclick="if(event.target===this) closeWorkerInsuranceModal()">
+        <div id="workerInsuranceModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="workerInsuranceTitleHeading" onclick="if(event.target===this) closeWorkerInsuranceModal()">
             <div class="modal-card id-card-modal-container" style="max-width:680px; width:95%; background:white; border-radius:20px; padding:0; overflow:hidden; border:2px solid #1B5E20; box-shadow:0 18px 50px rgba(0,0,0,0.3); max-height:90vh; display:flex; flex-direction:column;">
                 <div style="padding:16px 20px; background:linear-gradient(135deg, #1B5E20 0%, #004D40 100%); color:white; display:flex; justify-content:space-between; align-items:center;">
                     <div style="display:flex; align-items:center; gap:10px;">
                         <span style="font-size:24px;">🛡️</span>
                         <div>
-                            <strong style="font-size:16px; letter-spacing:0.3px;">PM Suraksha Bima Yojana (PMSBY) Certificate</strong><br>
+                            <strong id="workerInsuranceTitleHeading" style="font-size:16px; letter-spacing:0.3px;">PM Suraksha Bima Yojana (PMSBY) Certificate</strong><br>
                             <small style="opacity:0.9; font-size:11.5px;">Ministry of Cooperation • Statutory Member Social Security Cover</small>
                         </div>
                     </div>
@@ -1283,6 +1304,7 @@
     <script src="/js/app.js"></script>
     <script src="/js/chatbot.js"></script>
     <script src="/js/pwa.js"></script>
+    <script src="/js/a11y.js"></script>
 
 </body>
 

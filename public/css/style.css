@@ -4150,4 +4150,216 @@ footer { text-align: center; padding: 26px; color: var(--muted); font-size: 12.5
 .pmsby-officer-signature {
     text-align: right;
 }
+
+/* ================= ACCESSIBILITY & HIGH CONTRAST MODE (PHASE 19) ================= */
+
+/* 1. Universal Accessible Focus Indicator (Dual Ring) */
+*:focus-visible {
+    outline: 3px solid #F59E0B !important;
+    outline-offset: 2px !important;
+}
+
+/* 2. Skip to Main Content Navigation */
+.skip-to-content {
+    position: fixed;
+    top: -120px;
+    left: 20px;
+    background: #FFD700;
+    color: #000000;
+    padding: 12px 20px;
+    font-weight: 900;
+    font-size: 14px;
+    border-radius: 0 0 10px 10px;
+    z-index: 100005;
+    text-decoration: none;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+    border: 2px solid #000000;
+    transition: top 0.2s ease-in-out;
+}
+
+.skip-to-content:focus {
+    top: 0;
+}
+
+/* 3. Screen Reader Only Utility */
+.sr-only {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
+/* 4. Global Accessibility Toolbar */
+.a11y-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 6px 16px;
+    background: rgba(0, 77, 64, 0.04);
+    border-bottom: 1px solid var(--line);
+    font-size: 12px;
+    flex-wrap: wrap;
+}
+
+.a11y-font-group {
+    display: inline-flex;
+    background: var(--paper);
+    border: 1.5px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.a11y-font-btn {
+    background: transparent;
+    border: none;
+    padding: 4px 10px;
+    font-size: 11.5px;
+    font-weight: 800;
+    cursor: pointer;
+    color: var(--ink);
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.a11y-font-btn:hover {
+    background: rgba(0, 77, 64, 0.1);
+}
+
+.a11y-font-btn.active {
+    background: var(--teal-deep);
+    color: #FFFFFF;
+}
+
+.a11y-contrast-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--paper);
+    border: 1.5px solid var(--line);
+    border-radius: 8px;
+    padding: 4px 12px;
+    font-size: 11.5px;
+    font-weight: 800;
+    cursor: pointer;
+    color: var(--ink);
+    transition: all 0.2s ease;
+}
+
+.a11y-contrast-btn:hover {
+    background: var(--teal-deep);
+    color: white;
+    border-color: var(--teal-deep);
+}
+
+.a11y-contrast-btn.active {
+    background: #FFD700;
+    color: #000000;
+    border-color: #FFD700;
+}
+
+/* 5. Dynamic Typography Scaling */
+html.font-scale-large {
+    font-size: 115% !important;
+}
+
+html.font-scale-xlarge {
+    font-size: 130% !important;
+}
+
+/* 6. High Contrast Dark Theme (WCAG 2.1 AA > 7:1 Contrast Ratio) */
+body.theme-high-contrast {
+    background-color: #000000 !important;
+    color: #FFFFFF !important;
+    --paper: #121212 !important;
+    --panel: #1A1A1A !important;
+    --line: #FFFFFF !important;
+    --ink: #FFFFFF !important;
+    --muted: #E0E0E0 !important;
+    --teal-deep: #00E5FF !important;
+    --gold-deep: #FFD700 !important;
+}
+
+body.theme-high-contrast header,
+body.theme-high-contrast .role-brand,
+body.theme-high-contrast .role-card,
+body.theme-high-contrast .screen,
+body.theme-high-contrast .modal-card,
+body.theme-high-contrast .stat-card,
+body.theme-high-contrast .emergency-banner-card,
+body.theme-high-contrast .worker-welfare-shield-card,
+body.theme-high-contrast .earnings-summary-card,
+body.theme-high-contrast .coop-id-card,
+body.theme-high-contrast .pmsby-certificate-card,
+body.theme-high-contrast .coop-pricing-box,
+body.theme-high-contrast .saathi-drawer {
+    background-color: #121212 !important;
+    color: #FFFFFF !important;
+    border-color: #FFFFFF !important;
+    border-width: 2px !important;
+}
+
+body.theme-high-contrast input,
+body.theme-high-contrast select,
+body.theme-high-contrast textarea {
+    background-color: #1E1E1E !important;
+    color: #FFFFFF !important;
+    border: 2px solid #FFFFFF !important;
+}
+
+body.theme-high-contrast button.primary,
+body.theme-high-contrast button.cta-gold {
+    background: #FFD700 !important;
+    color: #000000 !important;
+    border: 2px solid #FFFFFF !important;
+    font-weight: 900 !important;
+}
+
+body.theme-high-contrast button.secondary {
+    background: #1E1E1E !important;
+    color: #FFFFFF !important;
+    border: 2px solid #FFFFFF !important;
+}
+
+body.theme-high-contrast .admin-table th {
+    background: #1E1E1E !important;
+    color: #FFD700 !important;
+    border-bottom: 2px solid #FFFFFF !important;
+}
+
+body.theme-high-contrast .admin-table td {
+    border-bottom: 1px solid #555555 !important;
+    color: #FFFFFF !important;
+}
+
+body.theme-high-contrast .badge {
+    border: 1.5px solid #FFFFFF !important;
+    background: #222222 !important;
+    color: #00FF66 !important;
+    font-weight: 900 !important;
+}
+
+body.theme-high-contrast .a11y-toolbar {
+    background: #000000 !important;
+    border-bottom: 2px solid #FFFFFF !important;
+}
+
+body.theme-high-contrast *:focus-visible {
+    outline: 3px solid #00E5FF !important;
+    outline-offset: 3px !important;
+}
+
+/* 7. Vestibular / Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
 

@@ -224,7 +224,18 @@ const translations = {
         claimTypeMedical: "Workplace Medical Relief",
         claimTypeAccident: "Accidental Injury / Disability Aid",
         welfarePoolReserveLabel: "Federation Welfare Reserve",
-        pmsbyCoverageRatioLabel: "PMSBY Active Coverage"
+        pmsbyCoverageRatioLabel: "PMSBY Active Coverage",
+
+        // Accessibility Audit & WCAG 2.1 AA (Phase 19)
+        skipToContent: "Skip to main content",
+        a11yControlsLabel: "Accessibility controls",
+        a11yContrastBtn: "🌓 High Contrast",
+        a11yContrastAnnounceOn: "High contrast mode enabled",
+        a11yContrastAnnounceOff: "Standard contrast mode restored",
+        a11yFontNormal: "Font size: Standard (100%)",
+        a11yFontLarge: "Font size: Large (115%)",
+        a11yFontXlarge: "Font size: Maximum (130%)",
+        a11yModalDismissed: "Modal dialog closed"
     },
     hi: {
         appTitle: "🤝 सहकार कनेक्ट",
@@ -451,7 +462,18 @@ const translations = {
         claimTypeMedical: "कार्यस्थल चिकित्सा एवं प्राथमिक उपचार राहत",
         claimTypeAccident: "दुर्घटना चोट / विकलांगता सहायता",
         welfarePoolReserveLabel: "फेडरेशन कल्याण आरक्षित निधि",
-        pmsbyCoverageRatioLabel: "सक्रिय पीएमएसबीवाई कवरेज"
+        pmsbyCoverageRatioLabel: "सक्रिय पीएमएसबीवाई कवरेज",
+
+        // Accessibility Audit & WCAG 2.1 AA (Phase 19)
+        skipToContent: "मुख्य सामग्री पर जाएं",
+        a11yControlsLabel: "सुलभता नियंत्रण",
+        a11yContrastBtn: "🌓 उच्च कंट्रास्ट (High Contrast)",
+        a11yContrastAnnounceOn: "उच्च कंट्रास्ट मोड सक्षम किया गया",
+        a11yContrastAnnounceOff: "सामान्य कंट्रास्ट मोड बहाल किया गया",
+        a11yFontNormal: "फ़ॉन्ट आकार: सामान्य (100%)",
+        a11yFontLarge: "फ़ॉन्ट आकार: बड़ा (115%)",
+        a11yFontXlarge: "फ़ॉन्ट आकार: अधिकतम (130%)",
+        a11yModalDismissed: "डायलॉग बॉक्स बंद किया गया"
     }
 };
 
