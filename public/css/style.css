@@ -2860,3 +2860,134 @@ footer { text-align: center; padding: 26px; color: var(--muted); font-size: 12.5
 .saathi-input-btn.send:hover {
     background: var(--teal);
 }
+
+/* ============================================================
+   PHASE 14: COOPERATIVE SOCIETIES & PACS CLUSTERS
+   ============================================================ */
+
+.societies-summary-strip {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.societies-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 16px;
+}
+
+.society-card {
+    background: #FFFFFF;
+    border: 1.5px solid var(--line);
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(18, 59, 49, 0.05);
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.society-card:hover {
+    border-color: var(--teal);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(18, 59, 49, 0.1);
+}
+
+.society-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 8px;
+}
+
+.society-reg-badge {
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--teal-deep);
+    background: var(--teal-tint);
+    border: 1px solid #A3D9C9;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    display: inline-block;
+    margin-bottom: 4px;
+}
+
+.society-title {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--ink);
+    margin: 0;
+    line-height: 1.3;
+}
+
+.society-meta-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-size: 12.5px;
+    margin-bottom: 12px;
+}
+
+.society-meta-item {
+    display: flex;
+    gap: 6px;
+    line-height: 1.4;
+}
+
+.meta-label {
+    font-weight: 700;
+    color: var(--muted);
+    min-width: 110px;
+}
+
+.meta-val {
+    color: var(--ink);
+}
+
+.society-metrics-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    background: #F8FAF9;
+    border-radius: 10px;
+    padding: 8px 6px;
+    border: 1px solid #E5ECE8;
+}
+
+@media (max-width: 480px) {
+    .society-metrics-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.society-metric-chip {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.society-metric-chip .metric-num {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--teal-deep);
+    font-family: var(--font-mono);
+}
+
+.society-metric-chip .metric-lbl {
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 1px;
+}
+
+.society-metric-chip.highlight .metric-num {
+    color: var(--terracotta);
+}

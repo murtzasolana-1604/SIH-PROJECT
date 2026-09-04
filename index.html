@@ -734,6 +734,15 @@
                         <input type="text" id="workerAvailability" placeholder="Example: 9 AM - 6 PM">
                     </div>
 
+                    <div class="form-group">
+                        <label data-i18n="workerSocietyLabel">Affiliated Cooperative Society / PACS</label>
+                        <select id="workerSocietySelect" required>
+                            <option value="1">Navodaya Labour Cooperative Society Ltd. (North District - Cluster 1)</option>
+                            <option value="2">Adarsh Shramik Sahkari Samiti (South District - Cluster 2)</option>
+                            <option value="3">Indraprastha PACS Gig Cooperative Union (East Rural Cluster)</option>
+                        </select>
+                    </div>
+
                     <button class="primary" type="submit">✅ Register Worker</button>
                     <button type="button" class="secondary" style="margin-left: 8px;" onclick="showWorkerDashboard()">Back to Dashboard</button>
 
@@ -789,6 +798,7 @@
                     <button class="admin-tab-btn" id="adminTabBtnBookings" onclick="switchAdminTab('bookings')">📋 Booking Allocations & Dispatch</button>
                     <button class="admin-tab-btn" id="adminTabBtnEmergency" onclick="switchAdminTab('emergency')">🚨 Emergency SLA Queue</button>
                     <button class="admin-tab-btn" id="adminTabBtnForecast" onclick="switchAdminTab('forecast')">📈 NCCT Demand Forecast</button>
+                    <button class="admin-tab-btn" id="adminTabBtnSocieties" onclick="switchAdminTab('societies')" data-i18n="tabSocieties">🏛️ Societies & PACS</button>
                 </div>
 
                 <!-- TAB 1: OVERVIEW & STATS -->
@@ -867,9 +877,78 @@
                     <div id="adminEmergencyQueue"></div>
                 </div>
 
+                <!-- TAB 6: COOPERATIVE SOCIETIES & PACS CLUSTERS (PHASE 14) -->
+                <div id="adminTabSocieties" class="admin-tab-content hidden">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
+                        <div>
+                            <h3 style="margin:0;" data-i18n="societiesHeader">🏛️ Primary Cooperative Societies & PACS Clusters</h3>
+                            <p style="margin:2px 0 0; font-size:12.5px; color:var(--muted);" data-i18n="societiesSub">Grassroots labor societies, cluster jurisdictions, and accumulated cooperative welfare balances.</p>
+                        </div>
+                        <div style="display:flex; gap:8px;">
+                            <button class="secondary" style="font-size:12px; padding:6px 14px;" onclick="loadAdminSocieties()">🔄 Refresh</button>
+                            <button class="primary" style="font-size:12px; padding:6px 14px;" onclick="openNewSocietyModal()" data-i18n="btnRegisterSociety">➕ Register New Society</button>
+                        </div>
+                    </div>
+
+                    <!-- Society Summary Bar -->
+                    <div id="adminSocietiesSummary" class="societies-summary-strip"></div>
+
+                    <!-- Society Cards Grid -->
+                    <div id="adminSocietiesList" class="societies-grid"></div>
+                </div>
+
             </section>
 
         </main>
+
+        <!-- ===================== NEW SOCIETY REGISTRATION MODAL (PHASE 14) ===================== -->
+        <div id="newSocietyModal" class="modal-overlay hidden" onclick="if(event.target===this) closeNewSocietyModal()">
+            <div class="modal-card" style="max-width:540px; background:white; border-radius:16px; padding:24px; border:2px solid var(--teal-deep); box-shadow:0 12px 35px rgba(0,0,0,0.2);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid var(--line); padding-bottom:10px;">
+                    <h3 style="margin:0; font-size:18px;">🏛️ Register New Cooperative Society / PACS</h3>
+                    <button type="button" class="sos-close-btn" onclick="closeNewSocietyModal()" aria-label="Close modal">×</button>
+                </div>
+
+                <form id="newSocietyForm" onsubmit="submitNewSociety(event)">
+                    <div class="form-group">
+                        <label>Society Legal Name</label>
+                        <input type="text" id="newSocietyName" placeholder="e.g. Pragati Shramik Cooperative Society Ltd." required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>MSCS / State Registration No.</label>
+                            <input type="text" id="newSocietyReg" placeholder="e.g. MSCS/CR/2026/089-D" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Cluster Zone Jurisdiction</label>
+                            <input type="text" id="newSocietyCluster" placeholder="e.g. West District - Cluster 4" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Postal PIN Code</label>
+                            <input type="text" id="newSocietyPincode" placeholder="6-digit PIN" maxlength="6" pattern="[0-9]{6}" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Secretary / Lead Contact</label>
+                            <input type="text" id="newSocietyContact" placeholder="Name & Designation" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Official Phone Number</label>
+                        <input type="tel" id="newSocietyPhone" placeholder="10-digit mobile number" maxlength="10" pattern="[0-9]{10}" required>
+                    </div>
+
+                    <button class="primary cta-gold" type="submit" style="width:100%; margin-top:10px;">
+                        🏛️ Register Cooperative Society in Federation
+                    </button>
+                    <div id="newSocietyResult" style="margin-top:10px;"></div>
+                </form>
+            </div>
+        </div>
 
         <footer>
             <p data-i18n="footer">SIH26089 • Smart Automation • HacNova</p>

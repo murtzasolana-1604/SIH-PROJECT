@@ -7,11 +7,21 @@ function workersRoute(req, res) {
         const { phone } = req.query;
 
         if (phone) {
-            const worker = db.prepare("SELECT * FROM workers WHERE phone = ?").get(phone);
+            const worker = db.prepare(`
+                SELECT w.*, s.name as society_name, s.reg_number as society_reg_number, s.cluster_zone as society_cluster
+                FROM workers w
+                LEFT JOIN societies s ON w.society_id = s.id
+                WHERE w.phone = ?
+            `).get(phone);
             return res.json({ success: true, worker: worker || null });
         }
 
-        const workers = db.prepare("SELECT * FROM workers ORDER BY id DESC").all();
+        const workers = db.prepare(`
+            SELECT w.*, s.name as society_name, s.reg_number as society_reg_number, s.cluster_zone as society_cluster
+            FROM workers w
+            LEFT JOIN societies s ON w.society_id = s.id
+            ORDER BY w.id DESC
+        `).all();
         return res.json({ success: true, workers });
     }
 
@@ -32,7 +42,8 @@ function workersRoute(req, res) {
             state,
             pincode,
             latitude,
-            longitude
+            longitude,
+            societyId
         } = req.body;
 
         if (!name || !phone || !skill) {
@@ -87,12 +98,16 @@ function workersRoute(req, res) {
             });
         }
 
+        const defaultSociety = db.prepare("SELECT id FROM societies ORDER BY id ASC LIMIT 1").get();
+        const resolvedSocietyId = Number(societyId) || (defaultSociety ? defaultSociety.id : 1);
+
         const result = db.prepare(`
             INSERT INTO workers (
                 name, phone, skill, experience, location, availability,
-                certification, additional_skills, address, village_town, city, state, pincode, latitude, longitude
+                certification, additional_skills, address, village_town, city, state, pincode, latitude, longitude,
+                society_id
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).run(
             name,
             cleanPhone,
@@ -108,10 +123,16 @@ function workersRoute(req, res) {
             state || "",
             pincode || "",
             latitude || null,
-            longitude || null
+            longitude || null,
+            resolvedSocietyId
         );
 
-        const worker = db.prepare("SELECT * FROM workers WHERE id = ?").get(result.lastInsertRowid);
+        const worker = db.prepare(`
+            SELECT w.*, s.name as society_name, s.reg_number as society_reg_number, s.cluster_zone as society_cluster
+            FROM workers w
+            LEFT JOIN societies s ON w.society_id = s.id
+            WHERE w.id = ?
+        `).get(result.lastInsertRowid);
 
         return res.status(201).json({
             success: true,

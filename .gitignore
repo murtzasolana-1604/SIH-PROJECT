@@ -4,3 +4,4 @@ sahkaar.db
 *.db
 *.sqlite
 *.sqlite3
+scratch/

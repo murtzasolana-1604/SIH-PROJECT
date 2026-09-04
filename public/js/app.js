@@ -1125,6 +1125,7 @@ async function fetchWorkerDashboard() {
                     </div>
                 </div>
                 <div style="font-size:13.5px; line-height:1.7; color:var(--ink); margin-bottom:12px;">
+                    <strong>Affiliated Society:</strong> 🏛️ ${worker.society_name || "Navodaya Labour Cooperative Society Ltd."} (${worker.society_reg_number || "MSCS/CR/2026/089-A"}) • ${worker.society_cluster || "North District - Cluster 1"}<br>
                     <strong>Experience:</strong> ${worker.experience || "1 year"}<br>
                     <strong>Certification:</strong> ${worker.certification || "Cooperative / NCCT Certified"}<br>
                     <strong>Service Area:</strong> ${worker.location || "Greater Noida"}<br>
@@ -1476,7 +1477,7 @@ async function markComplete(bookingId) {
 
 // Tab switching
 function switchAdminTab(tabName) {
-    const tabs = ["overview", "workers", "bookings", "emergency", "forecast"];
+    const tabs = ["overview", "workers", "bookings", "emergency", "forecast", "societies"];
     tabs.forEach(t => {
         const btn = document.getElementById(`adminTabBtn${t.charAt(0).toUpperCase() + t.slice(1)}`);
         const content = document.getElementById(`adminTab${t.charAt(0).toUpperCase() + t.slice(1)}`);
@@ -1485,6 +1486,9 @@ function switchAdminTab(tabName) {
     });
     if (tabName === "emergency") {
         loadAdminEmergencyQueue();
+    }
+    if (tabName === "societies") {
+        loadAdminSocieties();
     }
 }
 
@@ -2196,5 +2200,142 @@ async function reassignEmergencyJob(bookingId) {
     } catch (err) {
         console.error(err);
         alert("Server connection failed.");
+    }
+}
+
+// =====================================
+// COOPERATIVE SOCIETIES & PACS (PHASE 14)
+// =====================================
+
+async function loadAdminSocieties() {
+    const summaryEl = document.getElementById("adminSocietiesSummary");
+    const listEl = document.getElementById("adminSocietiesList");
+    if (!listEl) return;
+
+    listEl.innerHTML = `<div class="skeleton" style="height:110px;"></div><div class="skeleton" style="height:110px;"></div>`;
+
+    try {
+        const res = await adminFetch("/api/societies");
+        const data = await res.json();
+        const societies = data.societies || [];
+        const summary = data.summary || {};
+
+        if (summaryEl) {
+            summaryEl.innerHTML = `
+                <div class="stat-pill"><strong>${summary.totalSocieties || 0}</strong> Registered Societies</div>
+                <div class="stat-pill"><strong>${summary.totalActiveClusters || 0}</strong> Active Clusters</div>
+                <div class="stat-pill"><strong>${summary.totalAffiliatedWorkers || 0}</strong> Affiliated Tradespeople</div>
+                <div class="stat-pill critical" style="background:#E0F2F1; color:#004D40; border-color:#80CBC4;">
+                    <strong>₹${summary.federationWelfareReserve || 0}</strong> Accumulated Welfare Reserves
+                </div>
+            `;
+        }
+
+        if (societies.length === 0) {
+            listEl.innerHTML = `<div class="empty-state">No cooperative societies registered yet.</div>`;
+            return;
+        }
+
+        listEl.innerHTML = societies.map(s => `
+            <div class="society-card">
+                <div class="society-card-header">
+                    <div>
+                        <span class="society-reg-badge">${s.reg_number}</span>
+                        <h4 class="society-title">${s.name}</h4>
+                    </div>
+                    <span class="badge ${s.status === 'Active' ? 'verified' : 'unverified'}">${s.status}</span>
+                </div>
+
+                <div class="society-meta-grid">
+                    <div class="society-meta-item">
+                        <span class="meta-label">Cluster Jurisdiction:</span>
+                        <span class="meta-val">📍 ${s.cluster_zone} (PIN: ${s.pincode})</span>
+                    </div>
+                    <div class="society-meta-item">
+                        <span class="meta-label">Secretary / Lead Contact:</span>
+                        <span class="meta-val">👤 ${s.contact_person || 'Federation Lead'} (📞 ${s.contact_phone || 'N/A'})</span>
+                    </div>
+                </div>
+
+                <div class="society-metrics-row">
+                    <div class="society-metric-chip">
+                        <span class="metric-num">${s.total_workers}</span>
+                        <span class="metric-lbl">Total Workers</span>
+                    </div>
+                    <div class="society-metric-chip">
+                        <span class="metric-num">${s.verified_workers}</span>
+                        <span class="metric-lbl">NCCT Verified</span>
+                    </div>
+                    <div class="society-metric-chip">
+                        <span class="metric-num">${s.completed_bookings}</span>
+                        <span class="metric-lbl">Completed Jobs</span>
+                    </div>
+                    <div class="society-metric-chip highlight">
+                        <span class="metric-num">₹${s.welfare_fund_pool}</span>
+                        <span class="metric-lbl">Welfare Pool (15%)</span>
+                    </div>
+                </div>
+            </div>
+        `).join("");
+
+    } catch (err) {
+        console.error("Failed to load societies:", err);
+        listEl.innerHTML = `<div class="error">Failed to load cooperative societies.</div>`;
+    }
+}
+
+function openNewSocietyModal() {
+    const modal = document.getElementById("newSocietyModal");
+    if (modal) modal.classList.remove("hidden");
+}
+
+function closeNewSocietyModal() {
+    const modal = document.getElementById("newSocietyModal");
+    if (modal) modal.classList.add("hidden");
+}
+
+async function submitNewSociety(event) {
+    if (event) event.preventDefault();
+    const name = document.getElementById("newSocietyName").value.trim();
+    const reg_number = document.getElementById("newSocietyReg").value.trim();
+    const cluster_zone = document.getElementById("newSocietyCluster").value.trim();
+    const pincode = document.getElementById("newSocietyPincode").value.trim();
+    const contact_person = document.getElementById("newSocietyContact").value.trim();
+    const contact_phone = document.getElementById("newSocietyPhone").value.trim();
+    const resultEl = document.getElementById("newSocietyResult");
+
+    if (!name || !reg_number || !cluster_zone || !pincode) {
+        if (resultEl) resultEl.innerHTML = `<div class="error">Please fill all required fields.</div>`;
+        return;
+    }
+
+    try {
+        const res = await adminFetch("/api/societies", {
+            method: "POST",
+            body: JSON.stringify({
+                name,
+                reg_number,
+                cluster_zone,
+                pincode,
+                contact_person,
+                contact_phone
+            })
+        });
+
+        const data = await res.json();
+        if (res.ok && data.society) {
+            if (resultEl) resultEl.innerHTML = `<div class="success" style="color:#2E7D32; font-weight:700;">Cooperative Society registered successfully!</div>`;
+            document.getElementById("newSocietyForm").reset();
+            setTimeout(() => {
+                closeNewSocietyModal();
+                loadAdminSocieties();
+                if (resultEl) resultEl.innerHTML = "";
+            }, 900);
+        } else {
+            if (resultEl) resultEl.innerHTML = `<div class="error">${data.error || "Registration failed"}</div>`;
+        }
+    } catch (err) {
+        console.error(err);
+        if (resultEl) resultEl.innerHTML = `<div class="error">Server request failed.</div>`;
     }
 }

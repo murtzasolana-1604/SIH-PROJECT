@@ -160,7 +160,17 @@ const translations = {
         chatbotHeaderTitle: "Sahkaar Saathi • सहकार साथी",
         chatbotHeaderSub: "24/7 Cooperative AI Assistant",
         chatbotWelcomeMessage: "Hello! 🙏 I am Sahkaar Saathi, your 24/7 Cooperative AI Assistant. Ask me about finding the right tradesperson, fair cooperative wages, or instant emergency SOS dispatch!",
-        chatbotInputPlaceholder: "Ask Sahkaar Saathi or describe an issue..."
+        chatbotInputPlaceholder: "Ask Sahkaar Saathi or describe an issue...",
+
+        // Cooperative Societies & PACS Clusters (Phase 14)
+        tabSocieties: "🏛️ Societies & PACS",
+        societiesHeader: "🏛️ Primary Cooperative Societies & PACS Clusters",
+        societiesSub: "Grassroots labor societies, cluster jurisdictions, and accumulated cooperative welfare balances.",
+        workerSocietyLabel: "Affiliated Cooperative Society / PACS",
+        btnRegisterSociety: "➕ Register New Society",
+        totalSocietiesLabel: "Registered Societies",
+        activeClustersLabel: "Active Clusters",
+        welfareReservesLabel: "Federation Welfare Reserve"
     },
     hi: {
         appTitle: "🤝 सहकार कनेक्ट",
@@ -323,7 +333,17 @@ const translations = {
         chatbotHeaderTitle: "सहकार साथी • AI सहायक",
         chatbotHeaderSub: "24/7 सहकारी एआई सहायक",
         chatbotWelcomeMessage: "नमस्ते! 🙏 मैं सहकार साथी हूँ, आपका 24/7 सहकारी एआई सहायक। मुझसे सही कामगार खोजने, उचित मजदूरी समझने, या त्वरित आपातकालीन एसओएस के बारे में पूछें!",
-        chatbotInputPlaceholder: "समस्या बताएं या कोई सवाल पूछें..."
+        chatbotInputPlaceholder: "समस्या बताएं या कोई सवाल पूछें...",
+
+        // Cooperative Societies & PACS Clusters (Phase 14)
+        tabSocieties: "🏛️ समितियां व पैक्स",
+        societiesHeader: "🏛️ प्राथमिक सहकारी समितियां एवं पैक्स क्लस्टर",
+        societiesSub: "जमीनी स्तर की श्रम सहकारी समितियां, क्लस्टर अधिकार क्षेत्र और संचित कल्याण कोष।",
+        workerSocietyLabel: "संबद्ध सहकारी समिति / पैक्स",
+        btnRegisterSociety: "➕ नई समिति पंजीकृत करें",
+        totalSocietiesLabel: "पंजीकृत समितियां",
+        activeClustersLabel: "सक्रिय क्लस्टर",
+        welfareReservesLabel: "फेडरेशन कल्याण आरक्षित निधि"
     }
 };
 

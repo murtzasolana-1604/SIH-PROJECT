@@ -15,6 +15,7 @@ const auth = require("./routes/auth");
 const customerRoute = require("./routes/customer");
 const emergencyRoute = require("./routes/emergency");
 const chatbotRoute = require("./routes/chatbot");
+const societiesRoute = require("./routes/societies");
 
 const app = express();
 const PORT = 3000;
@@ -89,6 +90,9 @@ app.get("/api/forecast", forecastRoute.getForecast);
 
 // AI Chatbot "Sahkaar Saathi" (Phase 13)
 app.use("/api/chatbot", chatbotRoute);
+
+// Cooperative Societies & PACS Clusters (Phase 14)
+app.use("/api/societies", societiesRoute);
 
 // 404
 app.use((req, res) => {

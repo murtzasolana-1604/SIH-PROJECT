@@ -32,6 +32,12 @@ function formatInvoiceRow(inv) {
             name: inv.worker_name,
             phone: inv.worker_phone,
             skill: inv.worker_skill
+        },
+        society: {
+            id: inv.society_id || 1,
+            name: inv.society_name || "Navodaya Labour Cooperative Society Ltd.",
+            reg_number: inv.society_reg_number || "MSCS/CR/2026/089-A",
+            cluster_zone: inv.society_cluster || "North District - Cluster 1"
         }
     };
 }
@@ -44,11 +50,13 @@ function getInvoice(req, res) {
                b.service, b.customer_name, b.customer_phone, b.address AS customer_address,
                b.booking_date, b.booking_time, b.is_emergency, b.assigned_worker_id,
                w.name AS worker_name, w.phone AS worker_phone, w.skill AS worker_skill,
+               s.id AS society_id, s.name AS society_name, s.reg_number AS society_reg_number, s.cluster_zone AS society_cluster,
                p.id AS payment_id, p.transaction_id, p.method AS payment_method_record,
                p.status AS payment_record_status
         FROM invoices i
         LEFT JOIN bookings b ON i.booking_id = b.id
         LEFT JOIN workers w ON b.assigned_worker_id = w.id
+        LEFT JOIN societies s ON (w.society_id = s.id OR b.society_id = s.id)
         LEFT JOIN payments p ON p.booking_id = i.booking_id
     `;
 

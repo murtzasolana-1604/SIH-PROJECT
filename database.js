@@ -140,6 +140,75 @@ if (!existingAdmin) {
     console.log("Seeded DEMO admin — phone: 9999999999, password: admin123 (not real security, prototype only)");
 }
 
+// ============================================================
+// PHASE 14: COOPERATIVE SOCIETIES & PACS CLUSTERS
+// ============================================================
+db.exec(`
+    CREATE TABLE IF NOT EXISTS societies (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        reg_number TEXT UNIQUE NOT NULL,
+        name TEXT NOT NULL,
+        cluster_zone TEXT NOT NULL,
+        pincode TEXT NOT NULL,
+        contact_person TEXT,
+        contact_phone TEXT,
+        welfare_fund_pool REAL DEFAULT 0,
+        status TEXT DEFAULT 'Active',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+`);
+
+addColumnIfMissing("workers", "society_id INTEGER");
+addColumnIfMissing("bookings", "society_id INTEGER");
+
+// Seed default societies if empty
+const societyCount = db.prepare("SELECT COUNT(*) as count FROM societies").get().count;
+if (societyCount === 0) {
+    const insertSociety = db.prepare(`
+        INSERT INTO societies (reg_number, name, cluster_zone, pincode, contact_person, contact_phone, welfare_fund_pool)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    insertSociety.run(
+        "MSCS/CR/2026/089-A",
+        "Navodaya Labour Cooperative Society Ltd.",
+        "North District - Cluster 1",
+        "110001",
+        "Ramesh Sharma (Secretary)",
+        "9876543210",
+        2850.0
+    );
+
+    insertSociety.run(
+        "MSCS/CR/2026/089-B",
+        "Adarsh Shramik Sahkari Samiti",
+        "South District - Cluster 2",
+        "110016",
+        "Sunita Devi (Lead Director)",
+        "9876543211",
+        3420.0
+    );
+
+    insertSociety.run(
+        "MSCS/CR/2026/089-C",
+        "Indraprastha PACS Gig Cooperative Union",
+        "East Rural Cluster",
+        "110092",
+        "Virender Singh (Chairperson)",
+        "9876543212",
+        1980.0
+    );
+
+    console.log("Seeded default certified Cooperative Societies & PACS clusters!");
+}
+
+// Ensure all workers are affiliated with a cooperative society
+const firstSociety = db.prepare("SELECT id FROM societies ORDER BY id ASC LIMIT 1").get();
+if (firstSociety) {
+    db.prepare("UPDATE workers SET society_id = ? WHERE society_id IS NULL OR society_id = 0")
+        .run(firstSociety.id);
+}
+
 console.log("Database connected successfully!");
 
 module.exports = db;

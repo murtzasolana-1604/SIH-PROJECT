@@ -51,10 +51,14 @@ function getStats(req, res) {
 function getAllWorkers(req, res) {
     const workers = db.prepare(`
         SELECT w.*,
+               s.name AS society_name,
+               s.reg_number AS society_reg_number,
+               s.cluster_zone AS society_cluster,
                ROUND(COALESCE(AVG(r.stars), 0), 1) AS avg_rating,
                COUNT(r.id) AS rating_count,
                (SELECT COUNT(*) FROM bookings b WHERE b.assigned_worker_id = w.id AND b.status = 'Completed') AS completed_jobs
         FROM workers w
+        LEFT JOIN societies s ON w.society_id = s.id
         LEFT JOIN ratings r ON r.worker_id = w.id
         GROUP BY w.id
         ORDER BY w.verified ASC, w.id DESC
@@ -73,9 +77,13 @@ function getAllBookings(req, res) {
         SELECT b.*,
                w.name AS worker_name,
                w.phone AS worker_phone,
-               w.skill AS worker_skill
+               w.skill AS worker_skill,
+               s.name AS society_name,
+               s.reg_number AS society_reg_number,
+               s.cluster_zone AS society_cluster
         FROM bookings b
         LEFT JOIN workers w ON b.assigned_worker_id = w.id
+        LEFT JOIN societies s ON (w.society_id = s.id OR b.society_id = s.id)
     `;
     const conditions = [];
     const params = [];
