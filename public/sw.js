@@ -3,7 +3,7 @@
 // Progressive Web App (PWA) Offline-First Cache & Sync Engine
 // ============================================================
 
-const CACHE_NAME = "sahkaar-connect-v1";
+const CACHE_NAME = "sahkaar-connect-v2";
 
 const PRECACHE_ASSETS = [
     "/",

@@ -31,6 +31,9 @@ function showScreen(screenId) {
 
 function selectRole(role) {
     localStorage.setItem("sahkaar_role", role);
+    if (typeof loadChatbotPrompts === "function") {
+        loadChatbotPrompts();
+    }
 
     if (role === "customer") { showCustomerLoginFlow(); return; }
     if (role === "worker") { showWorkerLoginFlow(); return; }
@@ -101,6 +104,9 @@ function logout() {
     localStorage.removeItem("sahkaar_admin_name");
 
     showScreen("roleScreen");
+    if (typeof loadChatbotPrompts === "function") {
+        loadChatbotPrompts();
+    }
 }
 
 function changeRole() {

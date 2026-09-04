@@ -281,6 +281,26 @@ if (firstSociety) {
         .run(firstSociety.id);
 }
 
+// Seed default demo customer if not exists
+const existingCust = db.prepare("SELECT * FROM customers WHERE phone = ?").get("9876543210");
+if (!existingCust) {
+    db.prepare(`
+        INSERT INTO customers (phone, name, address, village_town, city, state, pincode, latitude, longitude)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+        "9876543210",
+        "Ramesh Kumar (Demo Citizen)",
+        "Flat 402, Shanti Cooperative Apts, Sector 62",
+        "Sector 62",
+        "Noida",
+        "Uttar Pradesh",
+        "201301",
+        28.6280,
+        77.3649
+    );
+    console.log("Seeded default demo customer (9876543210)!");
+}
+
 console.log("Database connected successfully!");
 
 module.exports = db;

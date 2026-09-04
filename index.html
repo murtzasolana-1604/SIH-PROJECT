@@ -94,13 +94,19 @@
                     <input type="tel" id="customerLoginPhone" placeholder="10-digit mobile number" data-i18n-placeholder="phonePlaceholder" maxlength="10">
                 </div>
                 <button class="primary" onclick="customerSendOtp()" data-i18n="btnSendOtp">Continue</button>
+                <div style="margin-top:8px; text-align:center;">
+                    <button type="button" class="link-btn" style="color:var(--teal-deep); font-weight:600; font-size:12.5px;" onclick="fillCustomerDemo('9876543210')">⚡ 1-Click Demo Login (9876543210)</button>
+                </div>
                 <div id="customerPhoneError"></div>
             </div>
 
             <div id="customerOtpStep" class="hidden">
                 <p class="otp-subtext" data-i18n="otpLabel">Enter the 6-digit OTP sent to +91 <span id="customerOtpPhoneDisplay"></span></p>
-                <input type="text" id="customerOtpInput" maxlength="6" inputmode="numeric" placeholder="------" class="otp-input">
+                <input type="text" id="customerOtpInput" maxlength="6" inputmode="numeric" placeholder="------" class="otp-input" value="123456">
                 <button class="primary" onclick="customerVerifyOtp()" data-i18n="btnVerifyOtp">Verify</button>
+                <div style="margin-top:6px; text-align:center;">
+                    <button type="button" class="link-btn" style="color:var(--teal-deep); font-weight:600; font-size:12px;" onclick="document.getElementById('customerOtpInput').value='123456'; customerVerifyOtp();">⚡ Auto-Verify Demo OTP: 123456</button>
+                </div>
                 <p class="demo-note" data-i18n="demoOtpHint">Demo OTP: 123456 — no real SMS is sent yet.</p>
                 <div id="customerOtpError"></div>
                 <button class="link-btn" onclick="customerBackToPhone()" data-i18n="btnBack">← Change number</button>
@@ -127,13 +133,19 @@
                     <input type="tel" id="workerLoginPhone" placeholder="10-digit mobile number" data-i18n-placeholder="phonePlaceholder" maxlength="10">
                 </div>
                 <button class="primary" onclick="workerSendOtp()" data-i18n="btnSendOtp">Continue</button>
+                <div style="margin-top:8px; text-align:center;">
+                    <button type="button" class="link-btn" style="color:var(--teal-deep); font-weight:600; font-size:12.5px;" onclick="fillWorkerDemo('9876543210')">⚡ 1-Click Demo Login: Sunil Verma (Painter)</button>
+                </div>
                 <div id="workerPhoneError"></div>
             </div>
 
             <div id="workerOtpStep" class="hidden">
                 <p class="otp-subtext" data-i18n="otpLabel">Enter the 6-digit OTP sent to +91 <span id="workerOtpPhoneDisplay"></span></p>
-                <input type="text" id="workerOtpInput" maxlength="6" inputmode="numeric" placeholder="------" class="otp-input">
+                <input type="text" id="workerOtpInput" maxlength="6" inputmode="numeric" placeholder="------" class="otp-input" value="123456">
                 <button class="primary" onclick="workerVerifyOtp()" data-i18n="btnVerifyOtp">Verify</button>
+                <div style="margin-top:6px; text-align:center;">
+                    <button type="button" class="link-btn" style="color:var(--teal-deep); font-weight:600; font-size:12px;" onclick="document.getElementById('workerOtpInput').value='123456'; workerVerifyOtp();">⚡ Auto-Verify Demo OTP: 123456</button>
+                </div>
                 <p class="demo-note" data-i18n="demoOtpHint">Demo OTP: 123456 — no real SMS is sent yet.</p>
                 <div id="workerOtpError"></div>
                 <button class="link-btn" onclick="workerBackToPhone()" data-i18n="btnBack">← Change number</button>
@@ -165,6 +177,9 @@
             </div>
 
             <button class="primary" onclick="adminLogin()">Login</button>
+            <div style="margin-top:8px; text-align:center;">
+                <button type="button" class="link-btn" style="color:var(--teal-deep); font-weight:600; font-size:12.5px;" onclick="fillAdminDemo('9999999999', 'admin123')">⚡ 1-Click Demo Admin Login</button>
+            </div>
 
             <p class="demo-note">Demo admin — phone: 9999999999, password: admin123. Not real security; for prototype access control only.</p>
 
@@ -1062,6 +1077,8 @@
         <footer>
             <p data-i18n="footer">SIH26089 • Smart Automation • HacNova</p>
         </footer>
+
+    </div>
 
     <!-- ============================================================
          PHASE 13: SAHKAAR SAATHI (सहकार साथी) AI CHATBOT WIDGET
