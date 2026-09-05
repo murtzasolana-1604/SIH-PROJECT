@@ -143,6 +143,15 @@ app.use((req, res) => {
     });
 });
 
+// Centralized JSON Error Handler
+app.use((err, req, res, next) => {
+    console.error("[Server Error]", err.message);
+    res.status(500).json({
+        success: false,
+        error: err.message || "Internal Server Error"
+    });
+});
+
 async function startServer() {
     try {
         await db.init();
