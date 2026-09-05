@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { registerRootComponent } from 'expo';
 import { useFonts } from 'expo-font';
 
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
@@ -550,3 +551,5 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
+
+registerRootComponent(App);
