@@ -183,18 +183,18 @@ export const WorkerDashboardScreen: React.FC<Props> = ({
               <Text style={styles.earningsSub}>
                 {language === 'hi' ? 'कुल अर्जित (85% जीवन वेतन)' : 'Total Net Payout (85% Living Wage)'}
               </Text>
-              <Text style={styles.earningsVal}>₹{earnings.livingWageShare.toLocaleString()}</Text>
+              <Text style={styles.earningsVal}>₹{(earnings?.livingWageShare ?? 0).toLocaleString()}</Text>
             </View>
             <View style={styles.coopChip}>
               <Text style={styles.coopChipText}>
                 {language === 'hi' ? 'सहकार 15% कोष' : '15% Co-op Fund'}
               </Text>
-              <Text style={styles.coopChipVal}>₹{earnings.cooperativeFundShare.toLocaleString()}</Text>
+              <Text style={styles.coopChipVal}>₹{(earnings?.cooperativeFundShare ?? 0).toLocaleString()}</Text>
             </View>
           </View>
           <View style={styles.earningsFooter}>
             <Text style={styles.jobsCompletedText}>
-              {earnings.completedJobsCount} {language === 'hi' ? 'कार्य पूर्ण' : 'Jobs Completed'}
+              {earnings?.completedJobsCount ?? 0} {language === 'hi' ? 'कार्य पूर्ण' : 'Jobs Completed'}
             </Text>
             <View style={styles.arrowRow}>
               <Text style={styles.viewDetailsText}>{t.viewDetails}</Text>

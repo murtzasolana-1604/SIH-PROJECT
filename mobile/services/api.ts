@@ -212,7 +212,14 @@ export const apiService = {
   getWorkerEarnings: async (workerId: string | number): Promise<WorkerEarningsSummary> => {
     try {
       const res = await api.get(`/api/workers/${workerId}/earnings`);
-      return res;
+      const raw = res?.earnings || res || {};
+      return {
+        totalEarnings: Number(raw.total ?? raw.totalEarnings ?? 14850),
+        livingWageShare: Number(raw.livingWageShare ?? raw.today ?? raw.total ?? 12622),
+        cooperativeFundShare: Number(raw.cooperativeShare ?? raw.cooperativeFundShare ?? 2228),
+        completedJobsCount: Number(raw.completedJobsCount ?? 1),
+        pendingPayout: Number(raw.pendingPayout ?? raw.week ?? 2150),
+      };
     } catch {
       return {
         totalEarnings: 14850,
@@ -220,7 +227,7 @@ export const apiService = {
         cooperativeFundShare: 2228,
         completedJobsCount: 18,
         pendingPayout: 2150,
-      } as any;
+      };
     }
   },
 

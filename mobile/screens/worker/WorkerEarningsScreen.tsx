@@ -103,23 +103,23 @@ export const WorkerEarningsScreen: React.FC<Props> = ({ onBack }) => {
           <Text style={styles.summaryLabel}>
             {language === 'hi' ? 'कुल अर्जित जीवन वेतन (85%)' : 'Net Worker Payout (85% Living Wage)'}
           </Text>
-          <Text style={styles.summaryValue}>₹{stats.livingWageShare.toLocaleString()}</Text>
+          <Text style={styles.summaryValue}>₹{(stats?.livingWageShare ?? 0).toLocaleString()}</Text>
 
           <View style={styles.divider} />
 
           <View style={styles.metricsRow}>
             <View style={styles.metricCol}>
               <Text style={styles.metricSub}>{language === 'hi' ? 'पूर्ण कार्य' : 'Jobs Done'}</Text>
-              <Text style={styles.metricNum}>{stats.completedJobsCount}</Text>
+              <Text style={styles.metricNum}>{stats?.completedJobsCount ?? 0}</Text>
             </View>
             <View style={styles.metricCol}>
               <Text style={styles.metricSub}>{language === 'hi' ? 'सहकार 15% कोष' : '15% Co-op Fund'}</Text>
-              <Text style={styles.metricNum}>₹{stats.cooperativeFundShare.toLocaleString()}</Text>
+              <Text style={styles.metricNum}>₹{(stats?.cooperativeFundShare ?? 0).toLocaleString()}</Text>
             </View>
             <View style={styles.metricCol}>
               <Text style={styles.metricSub}>{language === 'hi' ? 'लंबित निकासी' : 'Available'}</Text>
               <Text style={[styles.metricNum, { color: COLORS.secondaryDark }]}>
-                ₹{stats.pendingPayout.toLocaleString()}
+                ₹{(stats?.pendingPayout ?? 0).toLocaleString()}
               </Text>
             </View>
           </View>

@@ -51,7 +51,7 @@ export const WelfareCard: React.FC<WelfareCardProps> = ({
       <View style={styles.body}>
         <View style={styles.coverageBox}>
           <Text style={styles.coverageLabel}>Statutory Protection Cover</Text>
-          <Text style={styles.coverageAmount}>₹{finalCoverageAmount.toLocaleString("en-IN")}</Text>
+          <Text style={styles.coverageAmount}>₹{(finalCoverageAmount ?? 200000).toLocaleString("en-IN")}</Text>
           <Text style={styles.premiumNote}>100% Annual Premium Sponsored by Cooperative Fund</Text>
         </View>
 

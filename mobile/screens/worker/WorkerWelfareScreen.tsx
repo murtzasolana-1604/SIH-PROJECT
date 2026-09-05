@@ -232,7 +232,7 @@ export const WorkerWelfareScreen: React.FC<Props> = ({ onBack }) => {
                 </Text>
               </View>
               <View style={styles.claimStatusCol}>
-                <Text style={styles.claimAmount}>₹{c.amount.toLocaleString()}</Text>
+                <Text style={styles.claimAmount}>₹{(c?.amount ?? 0).toLocaleString()}</Text>
                 <View
                   style={[
                     styles.statusPill,

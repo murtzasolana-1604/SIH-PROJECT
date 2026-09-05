@@ -26,30 +26,30 @@ export const EarningsCard: React.FC<EarningsCardProps> = ({
     <View style={[styles.card, THEME.shadows.md]}>
       <View style={styles.topSection}>
         <Text style={styles.label}>Today's Direct Take-Home (85%)</Text>
-        <Text style={styles.todayAmount}>₹{todayEarnings.toFixed(2)}</Text>
+        <Text style={styles.todayAmount}>₹{(todayEarnings ?? 0).toFixed(2)}</Text>
         <Text style={styles.zeroCommission}>0% Exploitative Private Platform Cut</Text>
       </View>
 
       <View style={styles.statsGrid}>
         <View style={styles.statCol}>
           <Text style={styles.statLabel}>7-Day Earnings</Text>
-          <Text style={styles.statValue}>₹{weekEarnings.toFixed(2)}</Text>
+          <Text style={styles.statValue}>₹{(weekEarnings ?? 0).toFixed(2)}</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statCol}>
           <Text style={styles.statLabel}>Total Payouts</Text>
-          <Text style={styles.statValue}>₹{totalEarnings.toFixed(2)}</Text>
+          <Text style={styles.statValue}>₹{(totalEarnings ?? 0).toFixed(2)}</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statCol}>
           <Text style={styles.statLabel}>Jobs Done</Text>
-          <Text style={styles.statValue}>{completedJobsCount}</Text>
+          <Text style={styles.statValue}>{completedJobsCount ?? 0}</Text>
         </View>
       </View>
 
       <View style={styles.footerBanner}>
         <Text style={styles.footerText}>
-          🛡️ ₹{totalCoopShare.toFixed(2)} contributed to your NCCT PMSBY Insurance & Welfare Fund.
+          🛡️ ₹{(totalCoopShare ?? 0).toFixed(2)} contributed to your NCCT PMSBY Insurance & Welfare Fund.
         </Text>
       </View>
     </View>
