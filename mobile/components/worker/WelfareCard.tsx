@@ -4,10 +4,13 @@
  */
 
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { THEME } from "../../constants/theme";
+import { WorkerWelfareDetails } from "../../types/booking";
 
-interface WelfareCardProps {
+export interface WelfareCardProps {
+  welfare?: WorkerWelfareDetails;
+  onDownloadCertificate?: () => void;
   policyNumber?: string;
   coverageAmount?: number;
   status?: string;
@@ -17,13 +20,22 @@ interface WelfareCardProps {
 }
 
 export const WelfareCard: React.FC<WelfareCardProps> = ({
-  policyNumber = "PMSBY-2026-COOP-0006",
-  coverageAmount = 200000,
-  status = "ACTIVE",
-  validTo = "2027-05-31",
-  certHash = "e9f7823cba992384102934",
+  welfare,
+  onDownloadCertificate,
+  policyNumber,
+  coverageAmount,
+  status,
+  validTo,
+  certHash,
   societyName,
 }) => {
+  const finalPolicyNumber = welfare?.pmsbyPolicyNumber || welfare?.policy?.policyNumber || policyNumber || "PMSBY-2026-COOP-0006";
+  const finalCoverageAmount = welfare?.coverageAmount || welfare?.policy?.coverageAmount || coverageAmount || 200000;
+  const finalStatus = welfare?.pmsbyStatus || welfare?.policy?.status || status || "ACTIVE";
+  const finalValidTo = welfare?.validUntil || welfare?.policy?.validTo || validTo || "2027-05-31";
+  const finalCertHash = welfare?.certificateHash || welfare?.policy?.certificateHash || certHash || "e9f7823cba992384102934";
+  const finalSocietyName = welfare?.society?.name || societyName;
+
   return (
     <View style={[styles.card, THEME.shadows.md]}>
       <View style={styles.header}>
@@ -32,41 +44,41 @@ export const WelfareCard: React.FC<WelfareCardProps> = ({
           <Text style={styles.schemeSubtitle}>Cooperative Subsidized Accidental Protection</Text>
         </View>
         <View style={styles.activeBadge}>
-          <Text style={styles.activeText}>● {status}</Text>
+          <Text style={styles.activeText}>● {finalStatus.toUpperCase()}</Text>
         </View>
       </View>
 
       <View style={styles.body}>
         <View style={styles.coverageBox}>
           <Text style={styles.coverageLabel}>Statutory Protection Cover</Text>
-          <Text style={styles.coverageAmount}>₹{coverageAmount.toLocaleString("en-IN")}</Text>
+          <Text style={styles.coverageAmount}>₹{finalCoverageAmount.toLocaleString("en-IN")}</Text>
           <Text style={styles.premiumNote}>100% Annual Premium Sponsored by Cooperative Fund</Text>
         </View>
 
         <View style={styles.metaRow}>
           <View>
             <Text style={styles.metaLabel}>Policy Number</Text>
-            <Text style={styles.metaValue}>{policyNumber}</Text>
+            <Text style={styles.metaValue}>{finalPolicyNumber}</Text>
           </View>
           <View style={{ alignItems: "flex-end" }}>
             <Text style={styles.metaLabel}>Valid Until</Text>
-            <Text style={styles.metaValue}>{validTo}</Text>
+            <Text style={styles.metaValue}>{finalValidTo}</Text>
           </View>
         </View>
 
-        {societyName && (
+        {finalSocietyName && (
           <View style={styles.societyRow}>
             <Text style={styles.societyLabel}>Affiliated Society:</Text>
-            <Text style={styles.societyName}>{societyName}</Text>
+            <Text style={styles.societyName}>{finalSocietyName}</Text>
           </View>
         )}
 
-        <View style={styles.hashBox}>
+        <TouchableOpacity activeOpacity={0.7} onPress={onDownloadCertificate} style={styles.hashBox}>
           <Text style={styles.hashLabel}>NCCT Cryptographic Certificate Hash:</Text>
           <Text style={styles.hashValue} numberOfLines={1} ellipsizeMode="middle">
-            {certHash}
+            {finalCertHash}
           </Text>
-        </View>
+        </TouchableOpacity>
       </View>
     </View>
   );

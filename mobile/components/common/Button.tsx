@@ -10,20 +10,23 @@ import {
   ActivityIndicator,
   ViewStyle,
   TextStyle,
+  View,
 } from "react-native";
-import { THEME } from "../../constants/theme";
+import { Ionicons } from "@expo/vector-icons";
+import { THEME, COLORS, SPACING, RADIUS, TYPOGRAPHY, SHADOWS } from "../../constants/theme";
 
 export type ButtonVariant = "primary" | "secondary" | "danger" | "outline" | "ghost";
 
-interface ButtonProps {
+export interface ButtonProps {
   title: string;
   onPress: () => void;
   variant?: ButtonVariant;
   disabled?: boolean;
   loading?: boolean;
-  style?: ViewStyle;
+  style?: any;
   textStyle?: TextStyle;
   icon?: React.ReactNode;
+  leftIcon?: any;
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -35,46 +38,49 @@ export const Button: React.FC<ButtonProps> = ({
   style,
   textStyle,
   icon,
+  leftIcon,
 }) => {
   const getBackgroundColor = () => {
-    if (disabled) return THEME.colors.border;
+    if (disabled) return COLORS.border;
     switch (variant) {
       case "primary":
-        return THEME.colors.primary;
+        return COLORS.primary;
       case "secondary":
-        return THEME.colors.secondary;
+        return COLORS.secondary;
       case "danger":
-        return THEME.colors.danger;
+        return COLORS.danger;
       case "outline":
       case "ghost":
         return "transparent";
       default:
-        return THEME.colors.primary;
+        return COLORS.primary;
     }
   };
 
   const getTextColor = () => {
-    if (disabled) return THEME.colors.textMuted;
+    if (disabled) return COLORS.textTertiary;
     switch (variant) {
       case "primary":
       case "secondary":
       case "danger":
-        return THEME.colors.textInverse;
+        return COLORS.textInverse;
       case "outline":
-        return THEME.colors.primary;
+        return COLORS.primary;
       case "ghost":
-        return THEME.colors.text;
+        return COLORS.textPrimary;
       default:
-        return THEME.colors.textInverse;
+        return COLORS.textInverse;
     }
   };
 
   const getBorderColor = () => {
     if (variant === "outline") {
-      return disabled ? THEME.colors.border : THEME.colors.primary;
+      return disabled ? COLORS.border : COLORS.primary;
     }
     return "transparent";
   };
+
+  const textColor = getTextColor();
 
   return (
     <TouchableOpacity
@@ -88,31 +94,36 @@ export const Button: React.FC<ButtonProps> = ({
           borderColor: getBorderColor(),
           borderWidth: variant === "outline" ? 1.5 : 0,
         },
-        variant !== "outline" && variant !== "ghost" && !disabled && THEME.shadows.sm,
+        variant !== "outline" && variant !== "ghost" && !disabled && SHADOWS.sm,
         style,
       ]}
     >
       {loading ? (
         <ActivityIndicator
           size="small"
-          color={variant === "outline" ? THEME.colors.primary : THEME.colors.textInverse}
+          color={variant === "outline" ? COLORS.primary : COLORS.textInverse}
         />
       ) : (
-        <>
+        <View style={styles.innerRow}>
+          {leftIcon && (
+            typeof leftIcon === "string" ? (
+              <Ionicons name={leftIcon as any} size={18} color={textColor} style={{ marginRight: SPACING.xs }} />
+            ) : leftIcon
+          )}
           {icon}
           <Text
             style={[
               styles.text,
               {
-                color: getTextColor(),
-                marginLeft: icon ? THEME.spacing.sm : 0,
+                color: textColor,
+                marginLeft: (icon || leftIcon) ? SPACING.xs : 0,
               },
               textStyle,
             ]}
           >
             {title}
           </Text>
-        </>
+        </View>
       )}
     </TouchableOpacity>
   );
@@ -121,15 +132,19 @@ export const Button: React.FC<ButtonProps> = ({
 const styles = StyleSheet.create({
   button: {
     height: 50,
-    borderRadius: THEME.borderRadius.md,
+    borderRadius: RADIUS.md,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: SPACING.lg,
+    marginVertical: SPACING.xs,
+  },
+  innerRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: THEME.spacing.xl,
-    marginVertical: THEME.spacing.xs,
   },
   text: {
-    fontSize: THEME.typography.sizes.body,
+    fontSize: TYPOGRAPHY.fontSize.md,
     fontWeight: "600",
   },
 });

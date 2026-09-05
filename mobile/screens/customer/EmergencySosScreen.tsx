@@ -17,12 +17,14 @@ import { api } from "../../services/api";
 
 interface EmergencySosScreenProps {
   onBack: () => void;
-  onSosDispatched: (bookingId: number) => void;
+  onSosDispatched?: (bookingId: number) => void;
+  onBookingCreated?: (bookingId: any) => void;
 }
 
 export const EmergencySosScreen: React.FC<EmergencySosScreenProps> = ({
   onBack,
   onSosDispatched,
+  onBookingCreated,
 }) => {
   const { t } = useLanguage();
   const { customer, session } = useAuth();
@@ -92,7 +94,8 @@ export const EmergencySosScreen: React.FC<EmergencySosScreenProps> = ({
           "🚨 Emergency SOS Dispatched!",
           `Booking #${res.booking.id} has been broadcast to all verified ${serviceName} members within your radius with a guaranteed 15-minute response window.`
         );
-        onSosDispatched(res.booking.id);
+        if (onSosDispatched) onSosDispatched(res.booking.id);
+        if (onBookingCreated) onBookingCreated(String(res.booking.id));
       } else {
         Alert.alert("Dispatch Error", res.message || "Could not register emergency call.");
       }

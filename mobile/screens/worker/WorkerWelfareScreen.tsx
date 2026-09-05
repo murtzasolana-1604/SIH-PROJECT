@@ -136,7 +136,7 @@ export const WorkerWelfareScreen: React.FC<Props> = ({ onBack }) => {
           onDownloadCertificate={() =>
             Alert.alert(
               language === 'hi' ? 'प्रमाणपत्र' : 'Certificate',
-              `PMSBY Policy #${welfare.pmsbyPolicyNumber}\nHash: ${welfare.certificateHash.slice(0, 20)}...`
+              `PMSBY Policy #${welfare.pmsbyPolicyNumber || ''}\nHash: ${(welfare.certificateHash || '').slice(0, 20)}...`
             )
           }
         />

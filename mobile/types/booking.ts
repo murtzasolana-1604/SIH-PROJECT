@@ -3,35 +3,54 @@
  */
 
 export interface ServiceItem {
-  id: number;
+  id: number | string;
   name: string;
   category: string;
   icon?: string;
   description?: string;
   basePrice: number;
-  effectivePrice: number;
-  fairWagePrice: number;
-  fairWageLabel: string;
-  benefitNote: string;
-  isHighDemand: boolean;
-  demandMultiplier: number;
-  scarcityBonus: number;
+  effectivePrice?: number;
+  fairWagePrice?: number;
+  fairWageLabel?: string;
+  benefitNote?: string;
+  isHighDemand?: boolean;
+  demandMultiplier?: number;
+  scarcityBonus?: number;
 }
 
-export type BookingStatus = "Pending" | "Assigned" | "In Progress" | "Completed" | "Cancelled";
+export type BookingStatus =
+  | "pending"
+  | "confirmed"
+  | "assigned"
+  | "in_progress"
+  | "completed"
+  | "cancelled"
+  | "Pending"
+  | "Assigned"
+  | "In Progress"
+  | "Completed"
+  | "Cancelled";
 
 export interface Booking {
-  id: number;
+  id: string;
   service: string;
-  customer_name: string;
-  customer_phone: string;
+  customerName: string;
+  customerPhone: string;
+  customer_name?: string;
+  customer_phone?: string;
   address: string;
-  booking_date: string;
-  booking_time: string;
-  status: BookingStatus;
-  is_emergency: number;
+  bookingDate: string;
+  bookingTime: string;
+  booking_date?: string;
+  booking_time?: string;
+  status: BookingStatus | string;
+  isEmergency?: boolean | number;
+  is_emergency?: number;
+  price?: number;
   emergency_type?: string;
   assigned_worker_id?: number | null;
+  workerName?: string;
+  workerPhone?: string;
   worker_name?: string;
   worker_phone?: string;
   worker_skill?: string;
@@ -42,8 +61,8 @@ export interface Booking {
 }
 
 export interface Invoice {
-  id: number;
-  booking_id: number;
+  id: number | string;
+  booking_id: number | string;
   service_charge: number;
   cooperative_share: number;
   worker_earning: number;
@@ -55,9 +74,9 @@ export interface Invoice {
 }
 
 export interface Rating {
-  id: number;
-  booking_id: number;
-  worker_id: number;
+  id: number | string;
+  booking_id: number | string;
+  worker_id: number | string;
   worker_name?: string;
   customer_name?: string;
   service?: string;
@@ -68,8 +87,8 @@ export interface Rating {
 }
 
 export interface EmergencyQueueItem {
-  id: number;
-  booking_id: number;
+  id: number | string;
+  booking_id: number | string;
   service: string;
   customer_name: string;
   customer_phone: string;
@@ -82,21 +101,31 @@ export interface EmergencyQueueItem {
 }
 
 export interface WorkerEarningsSummary {
-  todayEarnings: number;
-  weekEarnings: number;
   totalEarnings: number;
-  totalCoopShare: number;
+  livingWageShare: number;
+  cooperativeFundShare: number;
   completedJobsCount: number;
-  invoices: any[];
+  pendingPayout: number;
+  todayEarnings?: number;
+  weekEarnings?: number;
+  totalCoopShare?: number;
+  invoices?: any[];
 }
 
 export interface WorkerWelfareDetails {
-  workerId: number;
-  workerName: string;
-  phone: string;
-  verified: boolean;
+  workerId?: number | string;
+  workerName?: string;
+  phone?: string;
+  verified?: boolean;
   ncctCertId?: string;
   badgeLevel?: string;
+  pmsbyStatus?: string;
+  pmsbyPolicyNumber?: string;
+  coverageAmount?: number;
+  validUntil?: string;
+  certificateHash?: string;
+  claimsCount?: number;
+  reliefDisbursed?: number;
   society?: {
     name: string;
     regNumber: string;
@@ -114,14 +143,16 @@ export interface WorkerWelfareDetails {
     certificateHash: string;
   };
   claims?: Array<{
-    id: number;
-    claimNumber: string;
+    id: number | string;
+    claimNumber?: string;
     type: string;
-    requestedAmount: number;
-    approvedAmount: number;
+    requestedAmount?: number;
+    amount?: number;
+    approvedAmount?: number;
     status: string;
     description: string;
-    createdAt: string;
+    createdAt?: string;
+    date?: string;
   }>;
   metrics?: {
     totalContribution: number;

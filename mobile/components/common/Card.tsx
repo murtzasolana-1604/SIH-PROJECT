@@ -8,7 +8,7 @@ import { THEME } from "../../constants/theme";
 
 interface CardProps {
   children: React.ReactNode;
-  style?: ViewStyle;
+  style?: any;
   onPress?: () => void;
   variant?: "elevated" | "outlined" | "flat";
 }

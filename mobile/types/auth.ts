@@ -22,15 +22,19 @@ export interface WorkerProfile {
   id: number;
   name: string;
   phone: string;
-  skill: string;
-  experience?: string;
-  location: string;
+  skill?: string;
+  skills?: string[];
+  experience?: string | number;
+  experienceYears?: number;
+  location?: string;
   availability?: string;
-  is_available: number;
-  verified: number;
+  is_available?: number;
+  isAvailable?: number;
+  verified?: number;
   certification?: string;
   additional_skills?: string;
   ncct_cert_id?: string;
+  ncctCertified?: boolean;
   badge_level?: string;
   verification_hash?: string;
   welfare_status?: string;
@@ -39,7 +43,9 @@ export interface WorkerProfile {
   society_name?: string;
   society_reg_number?: string;
   society_cluster?: string;
+  cooperativeSociety?: string;
   avg_rating?: number;
+  rating?: number;
   rating_count?: number;
   completed_jobs?: number;
 }
@@ -52,4 +58,6 @@ export interface AuthSession {
   id?: number;
   customer?: CustomerProfile;
   worker?: WorkerProfile;
+  customerProfile?: CustomerProfile;
+  workerProfile?: WorkerProfile;
 }

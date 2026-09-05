@@ -11,13 +11,15 @@ import {
   TextInputProps,
   ViewStyle,
 } from "react-native";
-import { THEME } from "../../constants/theme";
+import { Ionicons } from "@expo/vector-icons";
+import { COLORS, SPACING, RADIUS, TYPOGRAPHY } from "../../constants/theme";
 
-interface InputProps extends TextInputProps {
+export interface InputProps extends TextInputProps {
   label?: string;
   error?: string;
   helper?: string;
   containerStyle?: ViewStyle;
+  leftIcon?: any;
 }
 
 export const Input: React.FC<InputProps> = ({
@@ -26,20 +28,29 @@ export const Input: React.FC<InputProps> = ({
   helper,
   containerStyle,
   style,
+  leftIcon,
   ...rest
 }) => {
   return (
     <View style={[styles.container, containerStyle]}>
       {label && <Text style={styles.label}>{label}</Text>}
-      <TextInput
-        style={[
-          styles.input,
-          error ? styles.inputError : null,
-          style,
-        ]}
-        placeholderTextColor={THEME.colors.textMuted}
-        {...rest}
-      />
+      <View style={[styles.inputWrapper, error ? styles.inputError : null]}>
+        {leftIcon && (
+          typeof leftIcon === "string" ? (
+            <Ionicons
+              name={leftIcon as any}
+              size={20}
+              color={COLORS.textTertiary}
+              style={styles.icon}
+            />
+          ) : leftIcon
+        )}
+        <TextInput
+          style={[styles.input, style]}
+          placeholderTextColor={COLORS.textTertiary}
+          {...rest}
+        />
+      </View>
       {error ? (
         <Text style={styles.errorText}>{error}</Text>
       ) : helper ? (
@@ -51,35 +62,44 @@ export const Input: React.FC<InputProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: THEME.spacing.xs,
+    marginVertical: SPACING.xs,
   },
   label: {
-    fontSize: THEME.typography.sizes.subtext,
-    color: THEME.colors.textSecondary,
+    fontSize: TYPOGRAPHY.fontSize.sm,
+    color: COLORS.textSecondary,
     fontWeight: "600",
-    marginBottom: THEME.spacing.xs,
+    marginBottom: SPACING.xs,
+  },
+  inputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    minHeight: 48,
+    backgroundColor: COLORS.surface,
+    borderColor: COLORS.border,
+    borderWidth: 1.5,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: SPACING.md,
+  },
+  icon: {
+    marginRight: SPACING.xs,
   },
   input: {
-    height: 48,
-    backgroundColor: THEME.colors.surface,
-    borderColor: THEME.colors.border,
-    borderWidth: 1.5,
-    borderRadius: THEME.borderRadius.md,
-    paddingHorizontal: THEME.spacing.md,
-    fontSize: THEME.typography.sizes.body,
-    color: THEME.colors.text,
+    flex: 1,
+    fontSize: TYPOGRAPHY.fontSize.sm,
+    color: COLORS.textPrimary,
+    paddingVertical: SPACING.sm,
   },
   inputError: {
-    borderColor: THEME.colors.danger,
+    borderColor: COLORS.danger,
   },
   errorText: {
-    fontSize: THEME.typography.sizes.caption,
-    color: THEME.colors.danger,
-    marginTop: THEME.spacing.xs,
+    fontSize: TYPOGRAPHY.fontSize.xs,
+    color: COLORS.danger,
+    marginTop: SPACING.xs,
   },
   helperText: {
-    fontSize: THEME.typography.sizes.caption,
-    color: THEME.colors.textMuted,
-    marginTop: THEME.spacing.xs,
+    fontSize: TYPOGRAPHY.fontSize.xs,
+    color: COLORS.textTertiary,
+    marginTop: SPACING.xs,
   },
 });

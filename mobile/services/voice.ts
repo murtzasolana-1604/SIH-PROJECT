@@ -36,7 +36,15 @@ export const VoiceService = {
   simulateVoiceQuery(phrase: string, language: "en" | "hi"): VoiceRecognitionResult {
     return {
       transcript: phrase.replace(/^['"🚰⚡🚨💰\s]+|['"\s]+$/g, ""),
-      language
+      language,
     };
-  }
+  },
+
+  async simulateVoiceInput(language: "en" | "hi"): Promise<string> {
+    await new Promise((r) => setTimeout(r, 1500));
+    const prompts = this.getVoicePrompts(language);
+    const chosen = prompts[Math.floor(Math.random() * prompts.length)];
+    return chosen.replace(/^['"🚰⚡🚨💰\s]+|['"\s]+$/g, "");
+  },
 };
+

@@ -27,18 +27,24 @@ import { api } from "../../services/api";
 interface CustomerHomeScreenProps {
   onSelectService: (serviceName: string) => void;
   onSelectWorker: (worker: WorkerProfile) => void;
-  onOpenSos: () => void;
-  onOpenAssistant: () => void;
-  onOpenBookings: () => void;
+  onOpenSos?: () => void;
+  onEmergencyPress?: () => void;
+  onOpenAssistant?: () => void;
+  onSaathiPress?: () => void;
+  onOpenBookings?: () => void;
 }
 
 export const CustomerHomeScreen: React.FC<CustomerHomeScreenProps> = ({
   onSelectService,
   onSelectWorker,
   onOpenSos,
+  onEmergencyPress,
   onOpenAssistant,
+  onSaathiPress,
   onOpenBookings,
 }) => {
+  const handleSos = onEmergencyPress || onOpenSos || (() => {});
+  const handleAssistant = onSaathiPress || onOpenAssistant || (() => {});
   const { t } = useLanguage();
   const { customer } = useAuth();
 
@@ -100,7 +106,7 @@ export const CustomerHomeScreen: React.FC<CustomerHomeScreenProps> = ({
         {/* Emergency SOS Banner */}
         <TouchableOpacity
           activeOpacity={0.9}
-          onPress={onOpenSos}
+          onPress={handleSos}
           style={[styles.sosBanner, THEME.shadows.md]}
         >
           <View style={styles.sosContent}>
@@ -182,7 +188,7 @@ export const CustomerHomeScreen: React.FC<CustomerHomeScreenProps> = ({
         {/* Sahkaar Saathi Floating Promo */}
         <TouchableOpacity
           activeOpacity={0.9}
-          onPress={onOpenAssistant}
+          onPress={handleAssistant}
           style={[styles.assistantCard, THEME.shadows.md]}
         >
           <View style={styles.assistantAvatar}>

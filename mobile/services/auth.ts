@@ -78,3 +78,5 @@ export const AuthService = {
     return StorageService.getSession();
   }
 };
+
+export const authService = AuthService;

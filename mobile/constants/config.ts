@@ -6,8 +6,10 @@ export const CONFIG = {
   // Centralized backend URL (Defaults to Render production PostgreSQL backend)
   API_BASE_URL: process.env.EXPO_PUBLIC_API_URL || "https://sih-project-v7qg.onrender.com",
   
-  // Prototype demo OTP for testing
+  // Prototype demo OTP and credentials for testing
   DEMO_OTP: "123456",
+  DEMO_WORKER_PHONE: "9876543210",
+  DEMO_CUSTOMER_PHONE: "9876543210",
   
   // App Identity
   APP_NAME: "Sahkaar Connect",

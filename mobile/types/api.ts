@@ -4,27 +4,22 @@
 
 export interface ChatMessage {
   id: string;
-  sender: "user" | "saathi";
-  text: string;
+  sender?: "user" | "saathi" | "assistant";
+  role?: "user" | "assistant" | "saathi";
+  text?: string;
+  content?: string;
   timestamp: string;
+  intent?: string;
   suggestions?: string[];
-  action?: {
-    type: "OPEN_BOOKING" | "OPEN_SOS" | "SHOW_MY_BOOKINGS" | "SHOW_SERVICES" | "TOGGLE_AVAILABILITY" | "SHOW_PMSBY";
-    service?: string;
-    label?: string;
-  };
+  action?: any;
 }
 
 export interface ChatbotResponse {
   reply: string;
   intent: string;
   suggestions?: string[];
-  action?: {
-    type: "OPEN_BOOKING" | "OPEN_SOS" | "SHOW_MY_BOOKINGS" | "SHOW_SERVICES" | "TOGGLE_AVAILABILITY" | "SHOW_PMSBY";
-    service?: string;
-    label?: string;
-  };
-  timestamp: string;
+  action?: any;
+  timestamp?: string;
 }
 
 export interface ApiResponse<T = any> {

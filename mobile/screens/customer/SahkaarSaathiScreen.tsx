@@ -221,7 +221,7 @@ export const SahkaarSaathiScreen: React.FC<Props> = ({
 
               <View style={[styles.bubble, isUser ? styles.bubbleUser : styles.bubbleBot]}>
                 <Text style={[styles.bubbleText, isUser ? styles.textUser : styles.textBot]}>
-                  {msg.content}
+                  {msg.content || msg.text}
                 </Text>
                 <Text style={[styles.timestamp, isUser ? styles.tsUser : styles.tsBot]}>
                   {msg.timestamp}
@@ -230,7 +230,7 @@ export const SahkaarSaathiScreen: React.FC<Props> = ({
                 {/* Intent based quick action card */}
                 {!isUser && msg.action && (
                   <View style={styles.actionBox}>
-                    {msg.action === 'book_service' && onNavigateToBooking && (
+                    {(msg.action === 'book_service' || (msg.action as any)?.type === 'OPEN_BOOKING') && onNavigateToBooking && (
                       <TouchableOpacity
                         style={styles.actionBtn}
                         onPress={() => onNavigateToBooking()}
@@ -239,7 +239,7 @@ export const SahkaarSaathiScreen: React.FC<Props> = ({
                         <Text style={styles.actionBtnText}>{t('bookNow')}</Text>
                       </TouchableOpacity>
                     )}
-                    {msg.action === 'emergency_sos' && onNavigateToEmergency && (
+                    {(msg.action === 'emergency_sos' || (msg.action as any)?.type === 'OPEN_SOS') && onNavigateToEmergency && (
                       <TouchableOpacity
                         style={[styles.actionBtn, { backgroundColor: COLORS.danger }]}
                         onPress={onNavigateToEmergency}

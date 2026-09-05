@@ -5,13 +5,14 @@
 
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { THEME } from "../../constants/theme";
+import { THEME, COLORS, SPACING, RADIUS, TYPOGRAPHY, SHADOWS } from "../../constants/theme";
 import { Booking } from "../../types/booking";
 import { StatusBadge } from "../common/StatusBadge";
 import { Button } from "../common/Button";
 
-interface JobCardProps {
-  job: Booking;
+export interface JobCardProps {
+  job?: Booking;
+  booking?: Booking;
   onPress: () => void;
   onAccept?: () => void;
   onStart?: () => void;
@@ -21,13 +22,23 @@ interface JobCardProps {
 
 export const JobCard: React.FC<JobCardProps> = ({
   job,
+  booking,
   onPress,
   onAccept,
   onStart,
   onComplete,
   loadingAction = false,
 }) => {
-  const isEmergency = job.is_emergency === 1;
+  const b = booking || job;
+  if (!b) return null;
+
+  const isEmergency = b.is_emergency === 1 || b.isEmergency === true || b.isEmergency === 1;
+  const statusStr = String(b.status || "").toLowerCase();
+
+  const customerName = b.customerName || b.customer_name || "Citizen";
+  const address = b.address || "";
+  const dateStr = b.bookingDate || b.booking_date || "";
+  const timeStr = b.bookingTime || b.booking_time || "";
 
   return (
     <TouchableOpacity
@@ -36,36 +47,36 @@ export const JobCard: React.FC<JobCardProps> = ({
       style={[
         styles.card,
         isEmergency && styles.emergencyBorder,
-        THEME.shadows.sm,
+        SHADOWS.sm,
       ]}
     >
       <View style={styles.headerRow}>
         <View style={styles.titleCol}>
-          <Text style={styles.serviceName}>{job.service}</Text>
-          <Text style={styles.jobId}>Job #{job.id}</Text>
+          <Text style={styles.serviceName}>{b.service}</Text>
+          <Text style={styles.jobId}>#{String(b.id).slice(0, 8)}</Text>
         </View>
         <View style={styles.badgeGroup}>
           {isEmergency && (
             <View style={styles.emergencyPill}>
-              <Text style={styles.emergencyText}>🚨 SOS PRIORITY</Text>
+              <Text style={styles.emergencyText}>🚨 SOS</Text>
             </View>
           )}
-          <StatusBadge status={job.status} size="sm" />
+          <StatusBadge status={b.status as any} size="sm" />
         </View>
       </View>
 
       <View style={styles.infoSection}>
-        <Text style={styles.customerName}>👤 Citizen: {job.customer_name}</Text>
+        <Text style={styles.customerName}>👤 {customerName}</Text>
         <Text style={styles.address} numberOfLines={2}>
-          📍 {job.address}
+          📍 {address}
         </Text>
         <Text style={styles.timeSlot}>
-          📅 {job.booking_date} • ⏰ {job.booking_time}
+          📅 {dateStr} • ⏰ {timeStr}
         </Text>
       </View>
 
       <View style={styles.actionRow}>
-        {job.status === "Pending" && onAccept && (
+        {statusStr === "pending" && onAccept && (
           <Button
             title="Accept Request"
             variant="primary"
@@ -74,7 +85,7 @@ export const JobCard: React.FC<JobCardProps> = ({
             style={styles.actionBtn}
           />
         )}
-        {job.status === "Assigned" && onStart && (
+        {(statusStr === "confirmed" || statusStr === "assigned") && onStart && (
           <Button
             title="Start Work (On-Site)"
             variant="secondary"
@@ -83,7 +94,7 @@ export const JobCard: React.FC<JobCardProps> = ({
             style={styles.actionBtn}
           />
         )}
-        {job.status === "In Progress" && onComplete && (
+        {statusStr === "in_progress" && onComplete && (
           <Button
             title="Complete & Invoice"
             variant="primary"
@@ -99,15 +110,15 @@ export const JobCard: React.FC<JobCardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: THEME.colors.surface,
-    borderRadius: THEME.borderRadius.lg,
-    padding: THEME.spacing.md,
-    marginVertical: THEME.spacing.xs,
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+    marginVertical: SPACING.xs,
     borderWidth: 1,
-    borderColor: THEME.colors.border,
+    borderColor: COLORS.border,
   },
   emergencyBorder: {
-    borderColor: THEME.colors.danger,
+    borderColor: COLORS.danger,
     backgroundColor: "#FFF5F5",
   },
   headerRow: {
@@ -120,14 +131,14 @@ const styles = StyleSheet.create({
     alignItems: "baseline",
   },
   serviceName: {
-    fontSize: THEME.typography.sizes.title,
+    fontSize: TYPOGRAPHY.fontSize.md,
     fontWeight: "700",
-    color: THEME.colors.text,
+    color: COLORS.textPrimary,
     marginRight: 6,
   },
   jobId: {
-    fontSize: THEME.typography.sizes.caption,
-    color: THEME.colors.textMuted,
+    fontSize: TYPOGRAPHY.fontSize.xs,
+    color: COLORS.textTertiary,
     fontWeight: "600",
   },
   badgeGroup: {
@@ -135,41 +146,41 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   emergencyPill: {
-    backgroundColor: THEME.colors.dangerMuted,
+    backgroundColor: COLORS.dangerLight,
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: THEME.borderRadius.full,
+    borderRadius: RADIUS.full,
     marginRight: 6,
   },
   emergencyText: {
     fontSize: 9,
     fontWeight: "800",
-    color: THEME.colors.danger,
+    color: COLORS.danger,
   },
   infoSection: {
-    marginTop: THEME.spacing.sm,
-    paddingTop: THEME.spacing.xs,
+    marginTop: SPACING.sm,
+    paddingTop: SPACING.xs,
     borderTopWidth: 1,
-    borderTopColor: THEME.colors.border,
+    borderTopColor: COLORS.borderLight,
   },
   customerName: {
-    fontSize: THEME.typography.sizes.subtext,
+    fontSize: TYPOGRAPHY.fontSize.sm,
     fontWeight: "600",
-    color: THEME.colors.text,
+    color: COLORS.textPrimary,
   },
   address: {
-    fontSize: THEME.typography.sizes.caption,
-    color: THEME.colors.textSecondary,
+    fontSize: TYPOGRAPHY.fontSize.xs,
+    color: COLORS.textSecondary,
     marginTop: 2,
   },
   timeSlot: {
-    fontSize: THEME.typography.sizes.caption,
-    color: THEME.colors.primaryDark,
+    fontSize: TYPOGRAPHY.fontSize.xs,
+    color: COLORS.primaryDark,
     fontWeight: "600",
     marginTop: 3,
   },
   actionRow: {
-    marginTop: THEME.spacing.sm,
+    marginTop: SPACING.sm,
   },
   actionBtn: {
     height: 40,

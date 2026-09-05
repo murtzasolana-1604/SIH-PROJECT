@@ -15,14 +15,19 @@ interface AuthContextType {
   token: string | null;
   customer: CustomerProfile | null;
   worker: WorkerProfile | null;
+  customerProfile: CustomerProfile | null;
+  workerProfile: WorkerProfile | null;
+  isAuthenticated: boolean;
   isLoading: boolean;
   setRole: (role: UserRole | null) => void;
-  loginCustomer: (phone: string, otp: string) => Promise<boolean>;
-  loginWorker: (phone: string, otp: string) => Promise<boolean>;
+  loginCustomer: (phone: string, otp: string) => Promise<any>;
+  loginWorker: (phone: string, otp: string) => Promise<any>;
   logout: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   updateCustomerState: (profile: CustomerProfile) => void;
   updateWorkerState: (worker: WorkerProfile) => void;
+  updateCustomerProfile: (profile: Partial<CustomerProfile>) => Promise<void>;
+  updateWorkerProfile: (worker: Partial<WorkerProfile>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -58,49 +63,61 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setRoleState(newRole);
   };
 
-  const loginCustomer = async (phone: string, otp: string): Promise<boolean> => {
+  const loginCustomer = async (phone: string, otp: string): Promise<any> => {
     setIsLoading(true);
     try {
       const res = await AuthService.customerVerifyOtp(phone, otp);
       if (res.success && res.token) {
+        const custProfile: CustomerProfile = res.customer || { phone, name: (res as any).name || "Citizen" };
         const newSession: AuthSession = {
           token: res.token,
           role: "customer",
           phone,
-          name: res.customer?.name,
-          id: res.customer?.id,
-          customer: res.customer,
+          name: custProfile.name,
+          id: custProfile.id,
+          customer: custProfile,
+          customerProfile: custProfile,
         };
         setSession(newSession);
         setRoleState("customer");
-        setCustomer(res.customer || { phone });
-        return true;
+        setCustomer(custProfile);
+        await StorageService.setSession(newSession);
+        return newSession;
       }
-      return false;
+      throw new Error((res as any).message || "Invalid OTP");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const loginWorker = async (phone: string, otp: string): Promise<boolean> => {
+  const loginWorker = async (phone: string, otp: string): Promise<any> => {
     setIsLoading(true);
     try {
       const res = await AuthService.workerVerifyOtp(phone, otp);
       if (res.success && res.token) {
+        const wrkProfile: WorkerProfile = res.worker || {
+          id: 1,
+          name: (res as any).name || "Worker",
+          phone,
+          skills: ["Electrician"],
+          isAvailable: 1,
+        };
         const newSession: AuthSession = {
           token: res.token,
           role: "worker",
           phone,
-          name: res.worker?.name,
-          id: res.worker?.id,
-          worker: res.worker,
+          name: wrkProfile.name,
+          id: wrkProfile.id,
+          worker: wrkProfile,
+          workerProfile: wrkProfile,
         };
         setSession(newSession);
         setRoleState("worker");
-        setWorker(res.worker);
-        return true;
+        setWorker(wrkProfile);
+        await StorageService.setSession(newSession);
+        return newSession;
       }
-      return false;
+      throw new Error((res as any).message || "Invalid OTP");
     } finally {
       setIsLoading(false);
     }
@@ -121,7 +138,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const res = await api.get("/api/customer/profile", { phone: session.phone });
         if (res.success && res.customer) {
           setCustomer(res.customer);
-          const updated = { ...session, customer: res.customer };
+          const updated = { ...session, customer: res.customer, customerProfile: res.customer };
           setSession(updated);
           await StorageService.setSession(updated);
         }
@@ -130,7 +147,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (res.success && res.badge) {
           const updatedWorker = { ...(worker || {}), ...res.badge } as WorkerProfile;
           setWorker(updatedWorker);
-          const updated = { ...session, worker: updatedWorker };
+          const updated = { ...session, worker: updatedWorker, workerProfile: updatedWorker };
           setSession(updated);
           await StorageService.setSession(updated);
         }
@@ -143,7 +160,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updateCustomerState = (profile: CustomerProfile) => {
     setCustomer(profile);
     if (session) {
-      const updated = { ...session, customer: profile, name: profile.name };
+      const updated = { ...session, customer: profile, customerProfile: profile, name: profile.name };
       setSession(updated);
       StorageService.setSession(updated);
     }
@@ -152,10 +169,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updateWorkerState = (w: WorkerProfile) => {
     setWorker(w);
     if (session) {
-      const updated = { ...session, worker: w, name: w.name };
+      const updated = { ...session, worker: w, workerProfile: w, name: w.name };
       setSession(updated);
       StorageService.setSession(updated);
     }
+  };
+
+  const updateCustomerProfile = async (partial: Partial<CustomerProfile>) => {
+    const updated = { ...(customer || {}), ...partial } as CustomerProfile;
+    updateCustomerState(updated);
+  };
+
+  const updateWorkerProfile = async (partial: Partial<WorkerProfile>) => {
+    const updated = { ...(worker || {}), ...partial } as WorkerProfile;
+    updateWorkerState(updated);
   };
 
   return (
@@ -166,6 +193,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         token: session?.token || null,
         customer,
         worker,
+        customerProfile: customer,
+        workerProfile: worker,
+        isAuthenticated: !!session?.token,
         isLoading,
         setRole,
         loginCustomer,
@@ -174,6 +204,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         refreshProfile,
         updateCustomerState,
         updateWorkerState,
+        updateCustomerProfile,
+        updateWorkerProfile,
       }}
     >
       {children}

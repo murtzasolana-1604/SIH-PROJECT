@@ -5,14 +5,17 @@
 
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ViewStyle } from "react-native";
-import { THEME } from "../../constants/theme";
+import { Ionicons } from "@expo/vector-icons";
+import { COLORS, SPACING, RADIUS, TYPOGRAPHY } from "../../constants/theme";
 import { useLanguage } from "../../context/LanguageContext";
 
-interface HeaderProps {
+export interface HeaderProps {
   title: string;
   subtitle?: string;
   onBack?: () => void;
+  showBack?: boolean;
   rightAction?: React.ReactNode;
+  rightElement?: React.ReactNode;
   showLanguageToggle?: boolean;
   style?: ViewStyle;
 }
@@ -21,7 +24,9 @@ export const Header: React.FC<HeaderProps> = ({
   title,
   subtitle,
   onBack,
+  showBack = true,
   rightAction,
+  rightElement,
   showLanguageToggle = true,
   style,
 }) => {
@@ -30,14 +35,14 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <View style={[styles.container, style]}>
       <View style={styles.leftRow}>
-        {onBack && (
+        {showBack && onBack && (
           <TouchableOpacity
             activeOpacity={0.7}
             onPress={onBack}
             style={styles.backButton}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           >
-            <Text style={styles.backIcon}>‹</Text>
+            <Ionicons name="arrow-back" size={20} color={COLORS.textPrimary} />
           </TouchableOpacity>
         )}
         <View style={styles.titleContainer}>
@@ -60,10 +65,11 @@ export const Header: React.FC<HeaderProps> = ({
             style={styles.langPill}
           >
             <Text style={styles.langText}>
-              {language === "en" ? "🇮🇳 हिंदी" : "🇬🇧 English"}
+              {language === "en" ? "EN | हिंदी" : "हिंदी | EN"}
             </Text>
           </TouchableOpacity>
         )}
+        {rightElement}
         {rightAction}
       </View>
     </View>
@@ -75,11 +81,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: THEME.spacing.lg,
-    paddingVertical: THEME.spacing.md,
-    backgroundColor: THEME.colors.surface,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    backgroundColor: COLORS.surface,
     borderBottomWidth: 1,
-    borderBottomColor: THEME.colors.border,
+    borderBottomColor: COLORS.borderLight,
   },
   leftRow: {
     flexDirection: "row",
@@ -87,48 +93,43 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   backButton: {
-    marginRight: THEME.spacing.md,
+    marginRight: SPACING.sm,
     width: 36,
     height: 36,
-    borderRadius: THEME.borderRadius.full,
-    backgroundColor: THEME.colors.background,
+    borderRadius: RADIUS.full,
+    backgroundColor: COLORS.background,
     alignItems: "center",
     justifyContent: "center",
-  },
-  backIcon: {
-    fontSize: 26,
-    fontWeight: "600",
-    color: THEME.colors.text,
-    lineHeight: 28,
   },
   titleContainer: {
     flex: 1,
   },
   title: {
-    fontSize: THEME.typography.sizes.title,
+    fontSize: TYPOGRAPHY.fontSize.md,
     fontWeight: "700",
-    color: THEME.colors.text,
+    color: COLORS.textPrimary,
   },
   subtitle: {
-    fontSize: THEME.typography.sizes.caption,
-    color: THEME.colors.textMuted,
-    marginTop: 2,
+    fontSize: TYPOGRAPHY.fontSize.xs,
+    color: COLORS.textTertiary,
+    marginTop: 1,
   },
   rightRow: {
     flexDirection: "row",
     alignItems: "center",
+    gap: SPACING.xs,
   },
   langPill: {
-    backgroundColor: THEME.colors.primaryMuted,
-    paddingHorizontal: THEME.spacing.md,
-    paddingVertical: 6,
-    borderRadius: THEME.borderRadius.full,
+    backgroundColor: COLORS.primaryLight,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 5,
+    borderRadius: RADIUS.full,
     borderWidth: 1,
-    borderColor: THEME.colors.primaryLight,
+    borderColor: "rgba(21, 128, 61, 0.2)",
   },
   langText: {
-    fontSize: THEME.typography.sizes.caption,
+    fontSize: 10,
     fontWeight: "700",
-    color: THEME.colors.primaryDark,
+    color: COLORS.primaryDark,
   },
 });

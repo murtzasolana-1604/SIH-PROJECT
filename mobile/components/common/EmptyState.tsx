@@ -4,29 +4,38 @@
 
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { THEME } from "../../constants/theme";
+import { Ionicons } from "@expo/vector-icons";
+import { THEME, COLORS, SPACING, TYPOGRAPHY } from "../../constants/theme";
 import { Button } from "./Button";
 
-interface EmptyStateProps {
+export interface EmptyStateProps {
   icon?: string;
   title: string;
-  description: string;
+  description?: string;
+  subtitle?: string;
   actionTitle?: string;
   onAction?: () => void;
 }
 
 export const EmptyState: React.FC<EmptyStateProps> = ({
-  icon = "📂",
+  icon = "file-tray-outline",
   title,
   description,
+  subtitle,
   actionTitle,
   onAction,
 }) => {
+  const finalDesc = description || subtitle || "";
+
   return (
     <View style={styles.container}>
-      <Text style={styles.icon}>{icon}</Text>
+      {icon.length > 2 ? (
+        <Ionicons name={icon as any} size={48} color={COLORS.textTertiary} style={styles.icon} />
+      ) : (
+        <Text style={styles.emojiIcon}>{icon}</Text>
+      )}
       <Text style={styles.title}>{title}</Text>
-      <Text style={styles.description}>{description}</Text>
+      {finalDesc ? <Text style={styles.description}>{finalDesc}</Text> : null}
       {actionTitle && onAction && (
         <Button
           title={actionTitle}
@@ -41,28 +50,31 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    padding: THEME.spacing.xl,
+    padding: SPACING.xl,
     alignItems: "center",
     justifyContent: "center",
-    marginVertical: THEME.spacing.lg,
+    marginVertical: SPACING.lg,
   },
   icon: {
+    marginBottom: SPACING.sm,
+  },
+  emojiIcon: {
     fontSize: 44,
-    marginBottom: THEME.spacing.sm,
+    marginBottom: SPACING.sm,
   },
   title: {
-    fontSize: THEME.typography.sizes.title,
+    fontSize: TYPOGRAPHY.fontSize.md,
     fontWeight: "700",
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.xs,
+    color: COLORS.textPrimary,
+    marginBottom: SPACING.xs,
     textAlign: "center",
   },
   description: {
-    fontSize: THEME.typography.sizes.subtext,
-    color: THEME.colors.textMuted,
+    fontSize: TYPOGRAPHY.fontSize.xs,
+    color: COLORS.textTertiary,
     textAlign: "center",
     maxWidth: 280,
-    marginBottom: THEME.spacing.md,
+    marginBottom: SPACING.md,
   },
   button: {
     minWidth: 160,

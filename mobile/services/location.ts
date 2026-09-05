@@ -67,6 +67,17 @@ export const LocationService = {
     }
   },
 
+  async getCurrentAddress(): Promise<{ formattedAddress: string; latitude: number; longitude: number } | null> {
+    const loc = await this.getCurrentLocation();
+    if (!loc) return null;
+    const parts = [loc.address, loc.city, loc.state, loc.pincode].filter(Boolean);
+    return {
+      formattedAddress: parts.join(", ") || `${loc.latitude.toFixed(4)}, ${loc.longitude.toFixed(4)}`,
+      latitude: loc.latitude,
+      longitude: loc.longitude,
+    };
+  },
+
   // Calculate approximate straight-line distance in km
   calculateDistanceKm(
     lat1: number,

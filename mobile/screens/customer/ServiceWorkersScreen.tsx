@@ -15,18 +15,23 @@ import { WorkerProfile } from "../../types/auth";
 import { api } from "../../services/api";
 
 interface ServiceWorkersScreenProps {
-  selectedService: string;
+  selectedService?: string;
+  serviceName?: string;
   onBack: () => void;
   onSelectWorker: (worker: WorkerProfile) => void;
-  onBookWorker: (worker: WorkerProfile) => void;
+  onBookWorker?: (worker: WorkerProfile) => void;
+  onBookService?: () => void;
 }
 
 export const ServiceWorkersScreen: React.FC<ServiceWorkersScreenProps> = ({
   selectedService,
+  serviceName,
   onBack,
   onSelectWorker,
   onBookWorker,
+  onBookService,
 }) => {
+  const activeService = serviceName || selectedService || "";
   const { t } = useLanguage();
   const [workers, setWorkers] = useState<WorkerProfile[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -34,7 +39,7 @@ export const ServiceWorkersScreen: React.FC<ServiceWorkersScreenProps> = ({
 
   const fetchWorkers = async () => {
     try {
-      const params = selectedService ? { skill: selectedService } : {};
+      const params = activeService ? { skill: activeService } : {};
       const res = await api.get("/api/workers", params);
       const list = Array.isArray(res) ? res : res.workers || [];
       setWorkers(list);
@@ -48,7 +53,7 @@ export const ServiceWorkersScreen: React.FC<ServiceWorkersScreenProps> = ({
 
   useEffect(() => {
     fetchWorkers();
-  }, [selectedService]);
+  }, [activeService]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -58,7 +63,7 @@ export const ServiceWorkersScreen: React.FC<ServiceWorkersScreenProps> = ({
   return (
     <View style={styles.container}>
       <Header
-        title={selectedService || t.workersFound}
+        title={activeService || t.workersFound}
         subtitle={`${workers.length} verified cooperative members`}
         onBack={onBack}
         showLanguageToggle={true}
@@ -82,7 +87,15 @@ export const ServiceWorkersScreen: React.FC<ServiceWorkersScreenProps> = ({
             <WorkerCard
               worker={item}
               onPress={() => onSelectWorker(item)}
-              onBook={() => onBookWorker(item)}
+              onBook={() => {
+                if (onBookWorker) {
+                  onBookWorker(item);
+                } else if (onBookService) {
+                  onBookService();
+                } else {
+                  onSelectWorker(item);
+                }
+              }}
             />
           )}
           ListEmptyComponent={

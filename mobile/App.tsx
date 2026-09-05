@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { NetworkProvider, useNetwork } from './context/NetworkContext';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { COLORS, SPACING, RADIUS, SHADOWS, TYPOGRAPHY } from './constants/theme';
 import { WorkerProfile } from './types/auth';
 
@@ -340,7 +341,7 @@ const MainNavigator: React.FC = () => {
                   }}
                   onSelectWorker={(w) => {
                     setSelectedWorker(w);
-                    setSelectedService(w.skills[0] || 'General');
+                    setSelectedService(w.skills?.[0] || w.skill || 'General');
                     setScreen('customer_worker_detail');
                   }}
                   onEmergencyPress={() => setScreen('customer_emergency')}
@@ -350,8 +351,9 @@ const MainNavigator: React.FC = () => {
 
               {customerTab === 'bookings' && (
                 <CustomerBookingsScreen
-                  onSelectBooking={(bId) => {
-                    setSelectedBookingId(bId);
+                  onSelectBooking={(b: any) => {
+                    const idStr = typeof b === 'object' && b ? String(b.id) : String(b);
+                    setSelectedBookingId(idStr);
                     setScreen('customer_booking_detail');
                   }}
                 />
@@ -442,15 +444,17 @@ const MainNavigator: React.FC = () => {
 
 export default function App() {
   return (
-    <SafeAreaProvider>
-      <LanguageProvider>
-        <AuthProvider>
-          <NetworkProvider>
-            <MainNavigator />
-          </NetworkProvider>
-        </AuthProvider>
-      </LanguageProvider>
-    </SafeAreaProvider>
+    <ErrorBoundary>
+      <SafeAreaProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            <NetworkProvider>
+              <MainNavigator />
+            </NetworkProvider>
+          </AuthProvider>
+        </LanguageProvider>
+      </SafeAreaProvider>
+    </ErrorBoundary>
   );
 }
 

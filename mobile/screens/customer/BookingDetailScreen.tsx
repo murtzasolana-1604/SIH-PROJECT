@@ -17,20 +17,31 @@ import { Booking, Invoice } from "../../types/booking";
 import { api } from "../../services/api";
 
 interface BookingDetailScreenProps {
-  booking: Booking;
+  booking?: Booking;
+  bookingId?: string | number;
   onBack: () => void;
   onBookingUpdated?: () => void;
 }
 
 export const BookingDetailScreen: React.FC<BookingDetailScreenProps> = ({
   booking,
+  bookingId,
   onBack,
   onBookingUpdated,
 }) => {
   const { t } = useLanguage();
+  const [currentBooking, setCurrentBooking] = useState<Booking | null>(booking || null);
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [loadingInvoice, setLoadingInvoice] = useState<boolean>(true);
   const [paying, setPaying] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!currentBooking && bookingId) {
+      api.get(`/api/bookings/${bookingId}`).then((res) => {
+        if (res) setCurrentBooking(res);
+      }).catch(() => {});
+    }
+  }, [bookingId]);
 
   // Rating State
   const [stars, setStars] = useState<number>(5);
@@ -39,8 +50,10 @@ export const BookingDetailScreen: React.FC<BookingDetailScreenProps> = ({
   const [ratingSubmitted, setRatingSubmitted] = useState<boolean>(false);
 
   const fetchInvoice = async () => {
+    const id = activeBooking?.id || bookingId;
+    if (!id) return;
     try {
-      const res = await api.get("/api/invoices", { bookingId: booking.id });
+      const res = await api.get("/api/invoices", { bookingId: id });
       if (res && res.invoice) {
         setInvoice(res.invoice);
       }
@@ -51,15 +64,20 @@ export const BookingDetailScreen: React.FC<BookingDetailScreenProps> = ({
     }
   };
 
+  const activeBooking = currentBooking || booking;
+
   useEffect(() => {
-    fetchInvoice();
-  }, [booking.id]);
+    if (activeBooking?.id) {
+      fetchInvoice();
+    }
+  }, [activeBooking?.id]);
 
   const handlePayUpi = async () => {
+    if (!activeBooking?.id) return;
     setPaying(true);
     try {
       const res = await api.post("/api/payments/mock", {
-        bookingId: booking.id,
+        bookingId: activeBooking.id,
         method: "UPI",
       });
 
@@ -77,37 +95,44 @@ export const BookingDetailScreen: React.FC<BookingDetailScreenProps> = ({
     }
   };
 
-  const handleSubmitRating = async () => {
-    if (!booking.assigned_worker_id && !booking.id) return;
+  const handleRatingSubmit = async () => {
+    if (!activeBooking?.id) return;
     setSubmittingRating(true);
     try {
-      const res = await api.post("/api/ratings", {
-        bookingId: booking.id,
-        workerId: booking.assigned_worker_id,
-        stars,
-        comment: comment.trim() || "Great cooperative service!",
+      const res = await api.post(`/api/bookings/${activeBooking.id}/rate`, {
+        rating: stars,
+        comment: comment.trim(),
+        workerId: activeBooking.assigned_worker_id,
       });
 
       if (res && res.success) {
         setRatingSubmitted(true);
-        Alert.alert("Thank You!", "Your verified rating has been recorded for the cooperative worker.");
-      } else {
-        Alert.alert("Rating Failed", res.message || "Could not submit rating.");
+        Alert.alert("Thank you!", "Your feedback helps strengthen our cooperative trust network.");
+        if (onBookingUpdated) onBookingUpdated();
       }
     } catch (err: any) {
-      Alert.alert("Rating Error", err.message || "Could not submit rating.");
+      Alert.alert("Rating Error", err.message || "Failed to submit rating.");
     } finally {
       setSubmittingRating(false);
     }
   };
 
-  const isEmergency = booking.is_emergency === 1;
+  if (!activeBooking) {
+    return (
+      <View style={styles.container}>
+        <Header title="Booking Details" onBack={onBack} />
+      </View>
+    );
+  }
+
+  const isEmergency = activeBooking.is_emergency === 1 || activeBooking.isEmergency === true;
+  const isCompleted = String(activeBooking.status).toLowerCase() === "completed";
 
   return (
     <View style={styles.container}>
       <Header
-        title={`Booking #${booking.id}`}
-        subtitle={booking.service}
+        title={`Booking #${activeBooking.id}`}
+        subtitle={activeBooking.service}
         onBack={onBack}
         showLanguageToggle={true}
       />
@@ -117,12 +142,12 @@ export const BookingDetailScreen: React.FC<BookingDetailScreenProps> = ({
         <Card variant="elevated" style={styles.card}>
           <View style={styles.statusRow}>
             <View>
-              <Text style={styles.serviceName}>{booking.service}</Text>
+              <Text style={styles.serviceName}>{activeBooking.service}</Text>
               <Text style={styles.dateSlot}>
-                📅 {booking.booking_date} • ⏰ {booking.booking_time}
+                📅 {activeBooking.bookingDate || activeBooking.booking_date} • ⏰ {activeBooking.bookingTime || activeBooking.booking_time}
               </Text>
             </View>
-            <StatusBadge status={booking.status} />
+            <StatusBadge status={activeBooking.status as any} />
           </View>
           {isEmergency && (
             <View style={styles.emergencyNotice}>
@@ -136,27 +161,27 @@ export const BookingDetailScreen: React.FC<BookingDetailScreenProps> = ({
         {/* Location Card */}
         <Card variant="outlined" style={styles.card}>
           <Text style={styles.sectionHeader}>📍 Service Location</Text>
-          <Text style={styles.addressText}>{booking.address}</Text>
-          <Text style={styles.customerPhone}>📞 Citizen: {booking.customer_name} (+91 {booking.customer_phone})</Text>
+          <Text style={styles.addressText}>{activeBooking.address}</Text>
+          <Text style={styles.customerPhone}>📞 Citizen: {activeBooking.customerName || activeBooking.customer_name} (+91 {activeBooking.customerPhone || activeBooking.customer_phone})</Text>
         </Card>
 
         {/* Assigned Worker Card */}
         <Card variant="outlined" style={styles.card}>
           <Text style={styles.sectionHeader}>👷 Assigned Cooperative Member</Text>
-          {booking.worker_name ? (
+          {(activeBooking.worker_name || activeBooking.workerName) ? (
             <View style={styles.workerInfoRow}>
               <View style={styles.workerAvatar}>
                 <Text style={styles.workerAvatarText}>
-                  {booking.worker_name.charAt(0).toUpperCase()}
+                  {(activeBooking.worker_name || activeBooking.workerName || "W").charAt(0).toUpperCase()}
                 </Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.workerName}>{booking.worker_name}</Text>
+                <Text style={styles.workerName}>{activeBooking.worker_name || (activeBooking as any).workerName}</Text>
                 <Text style={styles.workerSkill}>
-                  {booking.worker_skill || booking.service} • NCCT Skill Certified
+                  {activeBooking.worker_skill || (activeBooking as any).workerSkill || activeBooking.service} • NCCT Skill Certified
                 </Text>
-                {booking.worker_phone && (
-                  <Text style={styles.workerPhone}>📞 Phone: +91 {booking.worker_phone}</Text>
+                {(activeBooking.worker_phone || (activeBooking as any).workerPhone) && (
+                  <Text style={styles.workerPhone}>📞 Phone: +91 {activeBooking.worker_phone || (activeBooking as any).workerPhone}</Text>
                 )}
               </View>
             </View>
@@ -205,7 +230,7 @@ export const BookingDetailScreen: React.FC<BookingDetailScreenProps> = ({
         ) : null}
 
         {/* Rating Form (If completed) */}
-        {booking.status === "Completed" && (
+        {isCompleted && (
           <Card variant="outlined" style={styles.card}>
             <Text style={styles.sectionHeader}>★ Rate This Cooperative Service</Text>
             {ratingSubmitted ? (
@@ -235,7 +260,7 @@ export const BookingDetailScreen: React.FC<BookingDetailScreenProps> = ({
                 <Button
                   title="Submit Cooperative Review"
                   variant="primary"
-                  onPress={handleSubmitRating}
+                  onPress={handleRatingSubmit}
                   loading={submittingRating}
                   style={{ marginTop: THEME.spacing.sm }}
                 />

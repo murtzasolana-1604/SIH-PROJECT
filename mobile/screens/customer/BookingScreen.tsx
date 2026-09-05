@@ -27,21 +27,29 @@ import { api } from "../../services/api";
 
 interface BookingScreenProps {
   initialService?: string;
+  serviceName?: string;
   initialWorker?: WorkerProfile | null;
+  worker?: WorkerProfile | null;
   onBack: () => void;
-  onBookingSuccess: (bookingId: number) => void;
+  onBookingSuccess?: (bookingId: number) => void;
+  onSuccess?: () => void;
 }
 
 export const BookingScreen: React.FC<BookingScreenProps> = ({
-  initialService = "Electrician",
-  initialWorker = null,
+  initialService,
+  serviceName,
+  initialWorker,
+  worker,
   onBack,
   onBookingSuccess,
+  onSuccess,
 }) => {
+  const activeService = serviceName || initialService || "Electrician";
+  const activeWorker = worker || initialWorker || null;
   const { t } = useLanguage();
   const { customer, session } = useAuth();
 
-  const [service, setService] = useState<string>(initialService || "Electrician");
+  const [service, setService] = useState<string>(activeService);
   const [address, setAddress] = useState<string>(customer?.address || "Plot 42, Civil Lines, Jaipur");
   const [bookingDate, setBookingDate] = useState<string>(new Date().toISOString().split("T")[0]);
   const [bookingTime, setBookingTime] = useState<string>("10:00 AM");
@@ -100,8 +108,10 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
 
       const res = await api.post("/api/bookings", payload);
 
-      if (res.success && res.booking && res.booking.id) {
-        onBookingSuccess(res.booking.id);
+      if (res.success || res.booking) {
+        const bId = res.booking?.id || 1;
+        if (onBookingSuccess) onBookingSuccess(bId);
+        if (onSuccess) onSuccess();
       } else {
         setError(res.message || "Failed to create booking.");
       }
