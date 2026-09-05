@@ -445,9 +445,9 @@ const MainNavigator: React.FC = () => {
 };
 
 export default function App() {
+  // Load all Ionicons fonts so they render correctly in Hermes release builds
   const [fontsLoaded, fontError] = useFonts({
-    // Load all Ionicons fonts explicitly for Hermes release builds
-    'Ionicons': require('@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/Ionicons.ttf'),
+    ...Ionicons.font,
   });
 
   // Show crash info on screen if fonts fail (helps diagnose native crashes)
