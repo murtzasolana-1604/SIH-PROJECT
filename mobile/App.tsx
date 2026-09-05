@@ -13,7 +13,6 @@ import {
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { registerRootComponent } from 'expo';
-import { useFonts } from 'expo-font';
 
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -446,37 +445,6 @@ const MainNavigator: React.FC = () => {
 };
 
 export default function App() {
-  // Load all Ionicons fonts so they render correctly in Hermes release builds
-  const [fontsLoaded, fontError] = useFonts({
-    ...Ionicons.font,
-  });
-
-  // Show crash info on screen if fonts fail (helps diagnose native crashes)
-  if (fontError) {
-    return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#15803D', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
-        <Text style={{ color: '#fff', fontSize: 22, fontWeight: 'bold', marginBottom: 12 }}>🏛️ Sahkaar Connect</Text>
-        <Text style={{ color: '#FEF08A', fontSize: 14, fontWeight: '700', marginBottom: 16 }}>Font Load Error (Report to developer)</Text>
-        <ScrollView style={{ backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 8, padding: 12, maxHeight: 300 }}>
-          <Text style={{ color: '#fff', fontSize: 11, fontFamily: 'monospace' }}>
-            {fontError.message}
-          </Text>
-        </ScrollView>
-      </SafeAreaView>
-    );
-  }
-
-  // Show loading while fonts are being prepared
-  if (!fontsLoaded) {
-    return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#15803D', justifyContent: 'center', alignItems: 'center' }}>
-        <Text style={{ color: '#fff', fontSize: 32, marginBottom: 16 }}>🤝</Text>
-        <Text style={{ color: '#fff', fontSize: 24, fontWeight: '800' }}>Sahkaar Connect</Text>
-        <Text style={{ color: '#DCFCE7', fontSize: 14, marginTop: 8 }}>Loading cooperative platform...</Text>
-      </SafeAreaView>
-    );
-  }
-
   return (
     <ErrorBoundary>
       <SafeAreaProvider>
