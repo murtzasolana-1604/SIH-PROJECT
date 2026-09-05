@@ -57,13 +57,11 @@ async function getAllWorkers(req, res) {
                s.name AS society_name,
                s.reg_number AS society_reg_number,
                s.cluster_zone AS society_cluster,
-               ROUND(COALESCE(AVG(r.stars), 0), 1) AS avg_rating,
-               COUNT(r.id) AS rating_count,
-               (SELECT COUNT(*) FROM bookings b WHERE b.assigned_worker_id = w.id AND b.status = 'Completed') AS completed_jobs
+               COALESCE((SELECT ROUND(CAST(AVG(r.stars) AS numeric), 1) FROM ratings r WHERE r.worker_id = w.id), 4.5) AS avg_rating,
+               COALESCE((SELECT COUNT(*) FROM ratings r WHERE r.worker_id = w.id), 0) AS rating_count,
+               COALESCE((SELECT COUNT(*) FROM bookings b WHERE b.assigned_worker_id = w.id AND b.status = 'Completed'), 0) AS completed_jobs
         FROM workers w
         LEFT JOIN societies s ON w.society_id = s.id
-        LEFT JOIN ratings r ON r.worker_id = w.id
-        GROUP BY w.id
         ORDER BY w.verified ASC, w.id DESC
     `).all();
 
