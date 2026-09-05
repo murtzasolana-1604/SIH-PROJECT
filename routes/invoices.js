@@ -42,7 +42,7 @@ function formatInvoiceRow(inv) {
     };
 }
 
-function getInvoice(req, res) {
+async function getInvoice(req, res) {
     const { bookingId, workerId, customerPhone, limit } = req.query;
 
     const baseSql = `
@@ -62,7 +62,7 @@ function getInvoice(req, res) {
 
     // 1. Single booking invoice
     if (bookingId) {
-        const inv = db.prepare(`${baseSql} WHERE i.booking_id = ?`).get(Number(bookingId));
+        const inv = await db.prepare(`${baseSql} WHERE i.booking_id = ?`).get(Number(bookingId));
         if (!inv) {
             return res.status(404).json({ success: false, message: "No invoice yet — booking may not be completed." });
         }
@@ -71,20 +71,21 @@ function getInvoice(req, res) {
 
     // 2. Invoices for a worker
     if (workerId) {
-        const rows = db.prepare(`${baseSql} WHERE b.assigned_worker_id = ? ORDER BY i.id DESC`).all(Number(workerId));
+        const rows = await db.prepare(`${baseSql} WHERE b.assigned_worker_id = ? ORDER BY i.id DESC`).all(Number(workerId));
         return res.json({ success: true, invoices: rows.map(formatInvoiceRow) });
     }
 
     // 3. Invoices for a customer
     if (customerPhone) {
-        const rows = db.prepare(`${baseSql} WHERE b.customer_phone = ? ORDER BY i.id DESC`).all(customerPhone);
+        const rows = await db.prepare(`${baseSql} WHERE b.customer_phone = ? ORDER BY i.id DESC`).all(customerPhone);
         return res.json({ success: true, invoices: rows.map(formatInvoiceRow) });
     }
 
     // 4. Platform-wide invoices
     const max = Math.min(Number(limit) || 25, 100);
-    const rows = db.prepare(`${baseSql} ORDER BY i.id DESC LIMIT ?`).all(max);
+    const rows = await db.prepare(`${baseSql} ORDER BY i.id DESC LIMIT ?`).all(max);
     return res.json({ success: true, invoices: rows.map(formatInvoiceRow) });
 }
+
 
 module.exports = { getInvoice };

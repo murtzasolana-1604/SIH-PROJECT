@@ -4,20 +4,21 @@ const db = require("../database");
 // DEMAND FORECAST & WORKFORCE MOBILIZATION
 // Backward compatible with Phase 7 tests while enriched with Phase 15 multi-factor analytics
 // ============================================================
-function getForecast(req, res) {
-    const demand = db.prepare(`
+async function getForecast(req, res) {
+    const demand = await db.prepare(`
         SELECT service, COUNT(*) AS bookingCount
         FROM bookings
         GROUP BY service
         ORDER BY bookingCount DESC
     `).all();
 
-    const supply = db.prepare(`
+    const supply = await db.prepare(`
         SELECT skill, COUNT(*) AS workerCount
         FROM workers
         WHERE verified = 1
         GROUP BY skill
     `).all();
+
 
     const supplyMap = {};
     supply.forEach(row => { supplyMap[row.skill] = row.workerCount; });

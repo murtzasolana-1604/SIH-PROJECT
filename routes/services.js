@@ -16,9 +16,9 @@ function calculateEffectivePrice(service) {
  * GET /api/services
  * Returns all active services formatted for citizen display and booking.
  */
-router.get("/", (req, res) => {
+router.get("/", async (req, res) => {
     try {
-        const rows = db.prepare("SELECT * FROM services WHERE status = 'Active' ORDER BY id ASC").all();
+        const rows = await db.prepare("SELECT * FROM services WHERE status = 'Active' ORDER BY id ASC").all();
 
         const services = rows.map(s => {
             const effectivePrice = calculateEffectivePrice(s);
@@ -54,32 +54,36 @@ router.get("/", (req, res) => {
  * GET /api/services/analytics
  * Returns all services with live supply (available workers) vs demand (active bookings) metrics.
  */
-router.get("/analytics", (req, res) => {
+router.get("/analytics", async (req, res) => {
     try {
-        const services = db.prepare("SELECT * FROM services ORDER BY id ASC").all();
+        const services = await db.prepare("SELECT * FROM services ORDER BY id ASC").all();
 
-        const analytics = services.map(s => {
+        const analytics = await Promise.all(services.map(async s => {
             // Count verified available workers for this skill
-            const availableWorkers = db.prepare(`
+            const awRow = await db.prepare(`
                 SELECT COUNT(*) as c FROM workers 
                 WHERE skill = ? AND verified = 1 AND is_available = 1
-            `).get(s.name).c;
+            `).get(s.name);
+            const availableWorkers = awRow ? awRow.c : 0;
 
-            const totalWorkers = db.prepare(`
+            const twRow = await db.prepare(`
                 SELECT COUNT(*) as c FROM workers 
                 WHERE skill = ? AND verified = 1
-            `).get(s.name).c;
+            `).get(s.name);
+            const totalWorkers = twRow ? twRow.c : 0;
 
             // Count pending/assigned active bookings for this service
-            const activeBookings = db.prepare(`
+            const abRow = await db.prepare(`
                 SELECT COUNT(*) as c FROM bookings 
                 WHERE service = ? AND status IN ('Pending', 'Assigned', 'In Progress')
-            `).get(s.name).c;
+            `).get(s.name);
+            const activeBookings = abRow ? abRow.c : 0;
 
-            const completedBookings = db.prepare(`
+            const cbRow = await db.prepare(`
                 SELECT COUNT(*) as c FROM bookings 
                 WHERE service = ? AND status = 'Completed'
-            `).get(s.name).c;
+            `).get(s.name);
+            const completedBookings = cbRow ? cbRow.c : 0;
 
             const effectivePrice = calculateEffectivePrice(s);
             const workerEarning85 = Math.round(effectivePrice * 0.85 * 100) / 100;
@@ -108,7 +112,7 @@ router.get("/analytics", (req, res) => {
                 completedBookings,
                 isScarcityAlert
             };
-        });
+        }));
 
         const totalServices = analytics.length;
         const highDemandCount = analytics.filter(a => a.isHighDemand).length;
@@ -137,7 +141,7 @@ router.get("/analytics", (req, res) => {
  * POST /api/services
  * Registers a new cooperative service (Admin only).
  */
-router.post("/", (req, res) => {
+router.post("/", async (req, res) => {
     try {
         const { name, category, icon, description, basePrice, demandMultiplier, isHighDemand, scarcityBonus } = req.body;
 
@@ -146,12 +150,12 @@ router.post("/", (req, res) => {
         }
 
         const cleanName = name.trim();
-        const existing = db.prepare("SELECT id FROM services WHERE LOWER(name) = LOWER(?)").get(cleanName);
+        const existing = await db.prepare("SELECT id FROM services WHERE LOWER(name) = LOWER(?)").get(cleanName);
         if (existing) {
             return res.status(400).json({ success: false, message: `Service '${cleanName}' already exists.` });
         }
 
-        const result = db.prepare(`
+        const result = await db.prepare(`
             INSERT INTO services 
             (name, category, icon, description, base_price, demand_multiplier, is_high_demand, scarcity_bonus, status)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Active')
@@ -166,7 +170,7 @@ router.post("/", (req, res) => {
             Number(scarcityBonus) || 0
         );
 
-        const newService = db.prepare("SELECT * FROM services WHERE id = ?").get(result.lastInsertRowid);
+        const newService = await db.prepare("SELECT * FROM services WHERE id = ?").get(result.lastInsertRowid);
         return res.status(201).json({
             success: true,
             message: `Service '${cleanName}' registered successfully.`,
@@ -182,12 +186,12 @@ router.post("/", (req, res) => {
  * PUT /api/services/:id
  * Updates base price, demand multiplier, scarcity bonus, and description of a service.
  */
-router.put("/:id", (req, res) => {
+router.put("/:id", async (req, res) => {
     try {
         const serviceId = Number(req.params.id);
         const { basePrice, demandMultiplier, isHighDemand, scarcityBonus, description, status } = req.body;
 
-        const current = db.prepare("SELECT * FROM services WHERE id = ?").get(serviceId);
+        const current = await db.prepare("SELECT * FROM services WHERE id = ?").get(serviceId);
         if (!current) {
             return res.status(404).json({ success: false, message: "Service not found." });
         }
@@ -199,13 +203,13 @@ router.put("/:id", (req, res) => {
         const newDescription = description !== undefined ? description : current.description;
         const newStatus = status !== undefined ? status : current.status;
 
-        db.prepare(`
+        await db.prepare(`
             UPDATE services 
             SET base_price = ?, demand_multiplier = ?, is_high_demand = ?, scarcity_bonus = ?, description = ?, status = ?
             WHERE id = ?
         `).run(newBasePrice, newMultiplier, newIsHighDemand, newScarcityBonus, newDescription, newStatus, serviceId);
 
-        const updated = db.prepare("SELECT * FROM services WHERE id = ?").get(serviceId);
+        const updated = await db.prepare("SELECT * FROM services WHERE id = ?").get(serviceId);
         const effectivePrice = calculateEffectivePrice(updated);
 
         return res.json({
@@ -224,10 +228,10 @@ router.put("/:id", (req, res) => {
  * POST /api/services/:id/toggle-demand
  * 1-Click toggle for High Demand / Scarcity pricing.
  */
-router.post("/:id/toggle-demand", (req, res) => {
+router.post("/:id/toggle-demand", async (req, res) => {
     try {
         const serviceId = Number(req.params.id);
-        const service = db.prepare("SELECT * FROM services WHERE id = ?").get(serviceId);
+        const service = await db.prepare("SELECT * FROM services WHERE id = ?").get(serviceId);
 
         if (!service) {
             return res.status(404).json({ success: false, message: "Service not found." });
@@ -237,13 +241,13 @@ router.post("/:id/toggle-demand", (req, res) => {
         const multiplier = (newDemandState === 1 && service.demand_multiplier <= 1.0) ? 1.2 : (newDemandState === 0 ? 1.0 : service.demand_multiplier);
         const bonus = newDemandState === 1 ? (service.scarcity_bonus || 30) : 0;
 
-        db.prepare(`
+        await db.prepare(`
             UPDATE services 
             SET is_high_demand = ?, demand_multiplier = ?, scarcity_bonus = ?
             WHERE id = ?
         `).run(newDemandState, multiplier, bonus, serviceId);
 
-        const updated = db.prepare("SELECT * FROM services WHERE id = ?").get(serviceId);
+        const updated = await db.prepare("SELECT * FROM services WHERE id = ?").get(serviceId);
         const effectivePrice = calculateEffectivePrice(updated);
 
         return res.json({
@@ -262,3 +266,4 @@ router.post("/:id/toggle-demand", (req, res) => {
 });
 
 module.exports = router;
+

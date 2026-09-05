@@ -17,7 +17,7 @@ const DEFAULT_PRICE = 299;
 // =========================
 // GET / CREATE BOOKINGS
 // =========================
-function bookingsRoute(req, res) {
+async function bookingsRoute(req, res) {
 
     if (req.method === "GET") {
 
@@ -42,7 +42,7 @@ function bookingsRoute(req, res) {
 
         query += " ORDER BY b.is_emergency DESC, b.id DESC";
 
-        const bookings = db.prepare(query).all(...params);
+        const bookings = await db.prepare(query).all(...params);
 
         return res.json({ success: true, bookings });
     }
@@ -58,7 +58,7 @@ function bookingsRoute(req, res) {
             return res.status(400).json({ success: false, message: "All booking fields are required." });
         }
 
-        const result = db.prepare(`
+        const result = await db.prepare(`
             INSERT INTO bookings
             (service, customer_name, customer_phone, address, booking_date, booking_time, is_emergency, customer_lat, customer_lng, emergency_type)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -70,7 +70,7 @@ function bookingsRoute(req, res) {
             emergencyType || null
         );
 
-        const booking = db.prepare("SELECT * FROM bookings WHERE id = ?").get(result.lastInsertRowid);
+        const booking = await db.prepare("SELECT * FROM bookings WHERE id = ?").get(result.lastInsertRowid);
 
         return res.status(201).json({ success: true, message: "Booking created successfully!", booking });
     }
@@ -78,10 +78,11 @@ function bookingsRoute(req, res) {
     return res.status(405).json({ success: false, message: "Method not allowed" });
 }
 
+
 // =========================
 // WORKER ACCEPTS A PENDING BOOKING
 // =========================
-function acceptBooking(req, res) {
+async function acceptBooking(req, res) {
 
     const bookingId = Number(req.params.id);
     const { workerId } = req.body;
@@ -90,7 +91,7 @@ function acceptBooking(req, res) {
         return res.status(400).json({ success: false, message: "workerId is required." });
     }
 
-    const booking = db.prepare("SELECT * FROM bookings WHERE id = ?").get(bookingId);
+    const booking = await db.prepare("SELECT * FROM bookings WHERE id = ?").get(bookingId);
 
     if (!booking) {
         return res.status(404).json({ success: false, message: "Booking not found." });
@@ -100,10 +101,10 @@ function acceptBooking(req, res) {
         return res.status(400).json({ success: false, message: `Booking is already ${booking.status}.` });
     }
 
-    db.prepare("UPDATE bookings SET assigned_worker_id = ?, status = 'Assigned', dispatched_at = CURRENT_TIMESTAMP WHERE id = ?")
+    await db.prepare("UPDATE bookings SET assigned_worker_id = ?, status = 'Assigned', dispatched_at = CURRENT_TIMESTAMP WHERE id = ?")
         .run(workerId, bookingId);
 
-    const updated = db.prepare(`
+    const updated = await db.prepare(`
         SELECT b.*, w.name AS worker_name, w.phone AS worker_phone, w.skill AS worker_skill
         FROM bookings b
         LEFT JOIN workers w ON b.assigned_worker_id = w.id
@@ -116,9 +117,9 @@ function acceptBooking(req, res) {
 // =========================
 // WORKER STARTS AN ASSIGNED JOB
 // =========================
-function startBooking(req, res) {
+async function startBooking(req, res) {
     const bookingId = Number(req.params.id);
-    const booking = db.prepare("SELECT * FROM bookings WHERE id = ?").get(bookingId);
+    const booking = await db.prepare("SELECT * FROM bookings WHERE id = ?").get(bookingId);
 
     if (!booking) {
         return res.status(404).json({ success: false, message: "Booking not found." });
@@ -128,9 +129,9 @@ function startBooking(req, res) {
         return res.status(400).json({ success: false, message: `Only assigned bookings can be started. Current status: ${booking.status}.` });
     }
 
-    db.prepare("UPDATE bookings SET status = 'In Progress' WHERE id = ?").run(bookingId);
+    await db.prepare("UPDATE bookings SET status = 'In Progress' WHERE id = ?").run(bookingId);
 
-    const updated = db.prepare(`
+    const updated = await db.prepare(`
         SELECT b.*, w.name AS worker_name, w.phone AS worker_phone, w.skill AS worker_skill
         FROM bookings b
         LEFT JOIN workers w ON b.assigned_worker_id = w.id
@@ -143,9 +144,9 @@ function startBooking(req, res) {
 // =========================
 // CUSTOMER OR ADMIN CANCELS A BOOKING
 // =========================
-function cancelBooking(req, res) {
+async function cancelBooking(req, res) {
     const bookingId = Number(req.params.id);
-    const booking = db.prepare("SELECT * FROM bookings WHERE id = ?").get(bookingId);
+    const booking = await db.prepare("SELECT * FROM bookings WHERE id = ?").get(bookingId);
 
     if (!booking) {
         return res.status(404).json({ success: false, message: "Booking not found." });
@@ -159,9 +160,9 @@ function cancelBooking(req, res) {
         return res.status(400).json({ success: false, message: "Booking is already cancelled." });
     }
 
-    db.prepare("UPDATE bookings SET status = 'Cancelled' WHERE id = ?").run(bookingId);
+    await db.prepare("UPDATE bookings SET status = 'Cancelled' WHERE id = ?").run(bookingId);
 
-    const updated = db.prepare("SELECT * FROM bookings WHERE id = ?").get(bookingId);
+    const updated = await db.prepare("SELECT * FROM bookings WHERE id = ?").get(bookingId);
 
     return res.json({ success: true, message: "Booking cancelled successfully.", booking: updated });
 }
@@ -169,11 +170,11 @@ function cancelBooking(req, res) {
 // =========================
 // MARK A BOOKING COMPLETE + AUTO-GENERATE INVOICE
 // =========================
-function completeBooking(req, res) {
+async function completeBooking(req, res) {
 
     const bookingId = Number(req.params.id);
 
-    const booking = db.prepare("SELECT * FROM bookings WHERE id = ?").get(bookingId);
+    const booking = await db.prepare("SELECT * FROM bookings WHERE id = ?").get(bookingId);
 
     if (!booking) {
         return res.status(404).json({ success: false, message: "Booking not found." });
@@ -183,15 +184,15 @@ function completeBooking(req, res) {
         return res.status(400).json({ success: false, message: "Booking is already completed." });
     }
 
-    db.prepare("UPDATE bookings SET status = 'Completed' WHERE id = ?").run(bookingId);
+    await db.prepare("UPDATE bookings SET status = 'Completed' WHERE id = ?").run(bookingId);
 
-    let invoice = db.prepare("SELECT * FROM invoices WHERE booking_id = ?").get(bookingId);
+    let invoice = await db.prepare("SELECT * FROM invoices WHERE booking_id = ?").get(bookingId);
 
     if (!invoice) {
         // Dynamic price lookup from services table (supports demand multiplier & scarcity bonus)
         let basePrice = SERVICE_PRICES[booking.service] || DEFAULT_PRICE;
         try {
-            const serviceRow = db.prepare("SELECT * FROM services WHERE name = ? COLLATE NOCASE").get(booking.service);
+            const serviceRow = await db.prepare("SELECT * FROM services WHERE LOWER(name) = LOWER(?)").get(booking.service);
             if (serviceRow) {
                 const mult = Number(serviceRow.demand_multiplier) || 1.0;
                 const bonus = serviceRow.is_high_demand ? (Number(serviceRow.scarcity_bonus) || 0) : 0;
@@ -206,18 +207,19 @@ function completeBooking(req, res) {
         const cooperativeShare = Math.round(serviceCharge * 0.15 * 100) / 100;
         const workerEarning = Math.round((serviceCharge - cooperativeShare) * 100) / 100;
 
-        const result = db.prepare(`
+        const result = await db.prepare(`
             INSERT INTO invoices (booking_id, service_charge, cooperative_share, worker_earning, total_amount)
             VALUES (?, ?, ?, ?, ?)
         `).run(bookingId, serviceCharge, cooperativeShare, workerEarning, serviceCharge);
 
-        invoice = db.prepare("SELECT * FROM invoices WHERE id = ?").get(result.lastInsertRowid);
+        invoice = await db.prepare("SELECT * FROM invoices WHERE id = ?").get(result.lastInsertRowid);
     }
 
-    const updatedBooking = db.prepare("SELECT * FROM bookings WHERE id = ?").get(bookingId);
+    const updatedBooking = await db.prepare("SELECT * FROM bookings WHERE id = ?").get(bookingId);
 
     return res.json({ success: true, message: "Booking marked complete.", booking: updatedBooking, invoice });
 }
+
 
 module.exports = {
     bookingsRoute,

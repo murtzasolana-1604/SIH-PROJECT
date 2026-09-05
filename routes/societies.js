@@ -6,7 +6,7 @@ const db = require("../database");
  * GET /api/societies
  * Returns all certified Cooperative Societies & PACS clusters with aggregated performance metrics
  */
-router.get("/", (req, res) => {
+router.get("/", async (req, res) => {
     try {
         const query = `
             SELECT 
@@ -32,7 +32,7 @@ router.get("/", (req, res) => {
             ORDER BY s.id ASC
         `;
 
-        const societies = db.prepare(query).all();
+        const societies = await db.prepare(query).all();
 
         // Calculate Federation Total Reserves
         const totalWelfarePool = societies.reduce((sum, s) => sum + (Number(s.welfare_fund_pool) || 0), 0);
@@ -58,7 +58,7 @@ router.get("/", (req, res) => {
  * POST /api/societies
  * Registers a new Labor Cooperative Society or PACS under the Federation
  */
-router.post("/", (req, res) => {
+router.post("/", async (req, res) => {
     try {
         const {
             name,
@@ -76,7 +76,7 @@ router.post("/", (req, res) => {
         }
 
         // Check if registration number is duplicate
-        const existing = db.prepare("SELECT id FROM societies WHERE reg_number = ?").get(reg_number.trim());
+        const existing = await db.prepare("SELECT id FROM societies WHERE reg_number = ?").get(reg_number.trim());
         if (existing) {
             return res.status(409).json({
                 error: `A cooperative society with registration number "${reg_number}" already exists.`
@@ -88,7 +88,7 @@ router.post("/", (req, res) => {
             VALUES (?, ?, ?, ?, ?, ?, 0.0)
         `);
 
-        const result = insertStmt.run(
+        const result = await insertStmt.run(
             reg_number.trim(),
             name.trim(),
             cluster_zone.trim(),
@@ -97,7 +97,7 @@ router.post("/", (req, res) => {
             (contact_phone || "").trim()
         );
 
-        const newSociety = db.prepare("SELECT * FROM societies WHERE id = ?").get(result.lastInsertRowid);
+        const newSociety = await db.prepare("SELECT * FROM societies WHERE id = ?").get(result.lastInsertRowid);
 
         return res.status(201).json({
             message: "Cooperative society successfully registered under the Federation.",
@@ -113,26 +113,26 @@ router.post("/", (req, res) => {
  * GET /api/societies/:id
  * Fetches detailed profile of a specific cooperative society including affiliated member roster
  */
-router.get("/:id", (req, res) => {
+router.get("/:id", async (req, res) => {
     try {
         const societyId = Number(req.params.id);
         if (!societyId) {
             return res.status(400).json({ error: "Invalid society ID" });
         }
 
-        const society = db.prepare("SELECT * FROM societies WHERE id = ?").get(societyId);
+        const society = await db.prepare("SELECT * FROM societies WHERE id = ?").get(societyId);
         if (!society) {
             return res.status(404).json({ error: "Cooperative society not found" });
         }
 
-        const workers = db.prepare(`
+        const workers = await db.prepare(`
             SELECT id, name, phone, skill, experience, location, verified, is_available, certification
             FROM workers
             WHERE society_id = ?
             ORDER BY verified DESC, name ASC
         `).all(societyId);
 
-        const recentBookings = db.prepare(`
+        const recentBookings = await db.prepare(`
             SELECT b.id, b.service, b.customer_name, b.booking_date, b.status, b.is_emergency,
                    w.name as worker_name
             FROM bookings b
@@ -154,3 +154,4 @@ router.get("/:id", (req, res) => {
 });
 
 module.exports = router;
+

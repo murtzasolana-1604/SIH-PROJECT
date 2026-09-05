@@ -6,13 +6,21 @@ const db = require('../database');
  * GET /api/simulator/pitch-deck
  * Returns structured presentation slides, comparative economics, and live platform metrics for SIH Judges.
  */
-router.get('/pitch-deck', (req, res) => {
+router.get('/pitch-deck', async (req, res) => {
     try {
-        const workerCount = db.prepare('SELECT COUNT(*) as count FROM workers').get().count;
-        const verifiedCount = db.prepare('SELECT COUNT(*) as count FROM workers WHERE verified = 1').get().count;
-        const societyCount = db.prepare('SELECT COUNT(*) as count FROM societies').get().count;
-        const bookingCount = db.prepare('SELECT COUNT(*) as count FROM bookings').get().count;
-        const poolRow = db.prepare(`
+        const wCountRow = await db.prepare('SELECT COUNT(*) as count FROM workers').get();
+        const workerCount = wCountRow ? wCountRow.count : 0;
+
+        const vCountRow = await db.prepare('SELECT COUNT(*) as count FROM workers WHERE verified = 1').get();
+        const verifiedCount = vCountRow ? vCountRow.count : 0;
+
+        const sCountRow = await db.prepare('SELECT COUNT(*) as count FROM societies').get();
+        const societyCount = sCountRow ? sCountRow.count : 0;
+
+        const bCountRow = await db.prepare('SELECT COUNT(*) as count FROM bookings').get();
+        const bookingCount = bCountRow ? bCountRow.count : 0;
+
+        const poolRow = await db.prepare(`
             SELECT 
                 COALESCE(SUM(CASE WHEN entry_type LIKE 'INFLOW%' THEN amount ELSE 0 END), 0) -
                 COALESCE(SUM(CASE WHEN entry_type LIKE 'OUTFLOW%' THEN amount ELSE 0 END), 0) AS total_reserve
@@ -120,9 +128,9 @@ router.get('/pitch-deck', (req, res) => {
                         "Primary Cooperative Societies (PACS) & hyper-local cluster zoning for localized rapid dispatch."
                     ],
                     stats: [
-                        { label: "Offline Capability", value: "100% PWA", note: "IndexedDB Local Vault" },
-                        { label: "AI Voice Assistant", value: "Bilingual", note: "Speech Synthesis & Audio" },
-                        { label: "Emergency SLA", value: "15-30m", note: "Priority SOS Rapid Dispatch" }
+                        { label: "PWA Offline", value: "100% Ready", note: "IndexedDB sync queue" },
+                        { label: "Voice AI", value: "Bilingual (HI/EN)", note: "Dialect accessible" },
+                        { label: "SOS Dispatch", value: "<30 Mins", note: "Proximity routing" }
                     ]
                 },
                 {
@@ -157,19 +165,19 @@ router.get('/pitch-deck', (req, res) => {
  * Executes an end-to-end simulated cooperative service lifecycle.
  * Supports running all 5 stages in one call or a specific step (1 to 5).
  */
-router.post('/run', (req, res) => {
+router.post('/run', async (req, res) => {
     try {
         const targetStep = req.body.step || 'all'; // 'all' or 1, 2, 3, 4, 5
 
         // Check if there is an existing simulation booking
-        let simBooking = db.prepare(`
+        let simBooking = await db.prepare(`
             SELECT * FROM bookings 
             WHERE customer_name = 'Aarav Sharma (Simulation)' 
             ORDER BY id DESC LIMIT 1
         `).get();
 
         // Worker Sunil Verma (#6) is our default cooperative master tradesperson
-        const worker = db.prepare("SELECT * FROM workers WHERE id = 6 OR phone = '9876543210' LIMIT 1").get();
+        const worker = await db.prepare("SELECT * FROM workers WHERE id = 6 OR phone = '9876543210' LIMIT 1").get();
         if (!worker) {
             return res.status(500).json({ success: false, message: "Demo worker Sunil Verma (#6) not found in database." });
         }
@@ -184,14 +192,14 @@ router.post('/run', (req, res) => {
             const today = new Date().toISOString().split('T')[0];
             const time = "14:30";
 
-            const insertResult = db.prepare(`
+            const insertResult = await db.prepare(`
                 INSERT INTO bookings 
                 (service, customer_name, customer_phone, address, booking_date, booking_time, is_emergency, customer_lat, customer_lng, emergency_type, status)
                 VALUES 
                 ('Electrician', 'Aarav Sharma (Simulation)', '9811223344', 'Flat 402, Block B, Sector 62, Noida (Cluster 4)', ?, ?, 1, 28.6280, 77.3649, 'Total Power Outage / Sparking', 'Pending')
             `).run(today, time);
 
-            simBooking = db.prepare("SELECT * FROM bookings WHERE id = ?").get(insertResult.lastInsertRowid);
+            simBooking = await db.prepare("SELECT * FROM bookings WHERE id = ?").get(insertResult.lastInsertRowid);
             stagesExecuted.push({
                 stage: 1,
                 name: "Customer Booking Created",
@@ -215,13 +223,13 @@ router.post('/run', (req, res) => {
         // STAGE 2: Algorithmic Cooperative Dispatch
         // ==========================================
         if (targetStep === 'all' || targetStep === 2) {
-            db.prepare(`
+            await db.prepare(`
                 UPDATE bookings 
                 SET assigned_worker_id = ?, status = 'Assigned', dispatched_at = CURRENT_TIMESTAMP 
                 WHERE id = ?
             `).run(worker.id, simBooking.id);
 
-            simBooking = db.prepare("SELECT * FROM bookings WHERE id = ?").get(simBooking.id);
+            simBooking = await db.prepare("SELECT * FROM bookings WHERE id = ?").get(simBooking.id);
             stagesExecuted.push({
                 stage: 2,
                 name: "Algorithmic Dispatch to Nearest Accredited Worker",
@@ -245,13 +253,13 @@ router.post('/run', (req, res) => {
         // STAGE 3: Worker Acceptance & Job Start
         // ==========================================
         if (targetStep === 'all' || targetStep === 3) {
-            db.prepare(`
+            await db.prepare(`
                 UPDATE bookings 
                 SET status = 'In Progress' 
                 WHERE id = ?
             `).run(simBooking.id);
 
-            simBooking = db.prepare("SELECT * FROM bookings WHERE id = ?").get(simBooking.id);
+            simBooking = await db.prepare("SELECT * FROM bookings WHERE id = ?").get(simBooking.id);
             stagesExecuted.push({
                 stage: 3,
                 name: "Worker Accepted & Service Commenced",
@@ -274,7 +282,7 @@ router.post('/run', (req, res) => {
         // ==========================================
         let invoice = null;
         if (targetStep === 'all' || targetStep === 4) {
-            db.prepare("UPDATE bookings SET status = 'Completed' WHERE id = ?").run(simBooking.id);
+            await db.prepare("UPDATE bookings SET status = 'Completed' WHERE id = ?").run(simBooking.id);
 
             const basePrice = 249; // Electrician base
             const emergencyFee = 50; // Emergency priority surcharge
@@ -282,18 +290,18 @@ router.post('/run', (req, res) => {
             const coopShare = Math.round(totalBill * 0.15 * 100) / 100; // ₹44.85
             const workerEarning = Math.round((totalBill - coopShare) * 100) / 100; // ₹254.15
 
-            let existingInv = db.prepare("SELECT * FROM invoices WHERE booking_id = ?").get(simBooking.id);
+            let existingInv = await db.prepare("SELECT * FROM invoices WHERE booking_id = ?").get(simBooking.id);
             if (!existingInv) {
-                const invResult = db.prepare(`
+                const invResult = await db.prepare(`
                     INSERT INTO invoices (booking_id, service_charge, cooperative_share, worker_earning, total_amount)
                     VALUES (?, ?, ?, ?, ?)
                 `).run(simBooking.id, totalBill, coopShare, workerEarning, totalBill);
-                invoice = db.prepare("SELECT * FROM invoices WHERE id = ?").get(invResult.lastInsertRowid);
+                invoice = await db.prepare("SELECT * FROM invoices WHERE id = ?").get(invResult.lastInsertRowid);
             } else {
                 invoice = existingInv;
             }
 
-            simBooking = db.prepare("SELECT * FROM bookings WHERE id = ?").get(simBooking.id);
+            simBooking = await db.prepare("SELECT * FROM bookings WHERE id = ?").get(simBooking.id);
             stagesExecuted.push({
                 stage: 4,
                 name: "Work Completed & 85/15 Cooperative Dividend Split",
@@ -321,10 +329,10 @@ router.post('/run', (req, res) => {
 
             // Log welfare inflow in ledger
             const refId = "SIM-INV-" + (invoice ? invoice.id : simBooking.id);
-            const existingLedger = db.prepare("SELECT * FROM welfare_pool_ledger WHERE reference_id = ?").get(refId);
+            const existingLedger = await db.prepare("SELECT * FROM welfare_pool_ledger WHERE reference_id = ?").get(refId);
 
             if (!existingLedger) {
-                db.prepare(`
+                await db.prepare(`
                     INSERT INTO welfare_pool_ledger 
                     (society_id, entry_type, amount, worker_id, reference_id, description)
                     VALUES 
@@ -332,11 +340,11 @@ router.post('/run', (req, res) => {
                 `).run(coopShare, worker.id, refId);
 
                 // Update society welfare reserve
-                db.prepare("UPDATE societies SET welfare_fund_pool = welfare_fund_pool + ? WHERE id = 1").run(coopShare);
+                await db.prepare("UPDATE societies SET welfare_fund_pool = welfare_fund_pool + ? WHERE id = 1").run(coopShare);
             }
 
             // Retrieve active PMSBY policy
-            const pmsbyPolicy = db.prepare("SELECT * FROM worker_insurance_policies WHERE worker_id = ? ORDER BY id DESC LIMIT 1").get(worker.id);
+            const pmsbyPolicy = await db.prepare("SELECT * FROM worker_insurance_policies WHERE worker_id = ? ORDER BY id DESC LIMIT 1").get(worker.id);
 
             stagesExecuted.push({
                 stage: 5,
@@ -378,22 +386,22 @@ router.post('/run', (req, res) => {
  * POST /api/simulator/reset
  * Removes simulated demo bookings, associated invoices, and simulation welfare ledger entries.
  */
-router.post('/reset', (req, res) => {
+router.post('/reset', async (req, res) => {
     try {
-        const simBookings = db.prepare("SELECT id FROM bookings WHERE customer_name LIKE '%(Simulation)%'").all();
+        const simBookings = await db.prepare("SELECT id FROM bookings WHERE customer_name LIKE '%(Simulation)%'").all();
         const ids = simBookings.map(b => b.id);
 
         if (ids.length > 0) {
             const placeholders = ids.map(() => '?').join(',');
             
             // Delete invoices
-            db.prepare(`DELETE FROM invoices WHERE booking_id IN (${placeholders})`).run(...ids);
+            await db.prepare(`DELETE FROM invoices WHERE booking_id IN (${placeholders})`).run(...ids);
             
             // Delete simulation welfare ledger entries
-            db.prepare("DELETE FROM welfare_pool_ledger WHERE reference_id LIKE 'SIM-INV-%'").run();
+            await db.prepare("DELETE FROM welfare_pool_ledger WHERE reference_id LIKE 'SIM-INV-%'").run();
 
             // Delete bookings
-            db.prepare(`DELETE FROM bookings WHERE id IN (${placeholders})`).run(...ids);
+            await db.prepare(`DELETE FROM bookings WHERE id IN (${placeholders})`).run(...ids);
         }
 
         return res.json({ 
@@ -405,5 +413,6 @@ router.post('/reset', (req, res) => {
         return res.status(500).json({ success: false, message: err.message });
     }
 });
+
 
 module.exports = router;

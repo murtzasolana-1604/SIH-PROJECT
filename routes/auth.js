@@ -32,7 +32,7 @@ function customerSendOtp(req, res) {
     });
 }
 
-function customerVerifyOtp(req, res) {
+async function customerVerifyOtp(req, res) {
     const { phone, otp } = req.body;
 
     if (!phone || !otp) {
@@ -53,8 +53,9 @@ function customerVerifyOtp(req, res) {
     }
 
     // Check if customer already exists in database
-    const customer = db.prepare("SELECT * FROM customers WHERE phone = ?").get(cleanPhone);
+    const customer = await db.prepare("SELECT * FROM customers WHERE phone = ?").get(cleanPhone);
     const isNew = !customer;
+
 
     // Issue session token
     const token = crypto.randomBytes(24).toString("hex");
@@ -97,7 +98,7 @@ function workerSendOtp(req, res) {
     });
 }
 
-function workerVerifyOtp(req, res) {
+async function workerVerifyOtp(req, res) {
     const { phone, otp } = req.body;
 
     if (!phone || !otp) {
@@ -118,8 +119,9 @@ function workerVerifyOtp(req, res) {
     }
 
     // Check if worker already exists in database
-    const worker = db.prepare("SELECT * FROM workers WHERE phone = ?").get(cleanPhone);
+    const worker = await db.prepare("SELECT * FROM workers WHERE phone = ?").get(cleanPhone);
     const isNew = !worker;
+
 
     // Issue session token
     const token = crypto.randomBytes(24).toString("hex");

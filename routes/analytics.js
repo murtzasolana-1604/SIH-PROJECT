@@ -105,7 +105,7 @@ function getDiurnalMultiplier(hour) {
 // 1. PREDICTIVE DEMAND FORECAST ENDPOINT
 // GET /api/analytics/forecast?cluster_id=...&season=...
 // ============================================================
-router.get("/forecast", (req, res) => {
+router.get("/forecast", async (req, res) => {
     try {
         const clusterId = req.query.cluster_id ? parseInt(req.query.cluster_id) : null;
         const requestedSeason = req.query.season || getCurrentSeason();
@@ -120,7 +120,7 @@ router.get("/forecast", (req, res) => {
             demandParams.push(clusterId);
         }
         demandSql += ` GROUP BY service`;
-        const historicalDemand = db.prepare(demandSql).all(...demandParams);
+        const historicalDemand = await db.prepare(demandSql).all(...demandParams);
         const demandMap = {};
         historicalDemand.forEach(row => { demandMap[row.service] = row.historical_count; });
 
@@ -132,7 +132,7 @@ router.get("/forecast", (req, res) => {
             supplyParams.push(clusterId);
         }
         supplySql += ` GROUP BY skill`;
-        const workerSupply = db.prepare(supplySql).all(...supplyParams);
+        const workerSupply = await db.prepare(supplySql).all(...supplyParams);
         const supplyMap = {};
         workerSupply.forEach(row => {
             supplyMap[row.skill] = {
@@ -140,6 +140,7 @@ router.get("/forecast", (req, res) => {
                 available: row.available_count || 0
             };
         });
+
 
         // 7-day daily rolling projection weights
         const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -246,17 +247,17 @@ router.get("/forecast", (req, res) => {
 // 2. FAIR WAGE & LIVING WAGE COMPLIANCE BENCHMARKS
 // GET /api/analytics/fair-wage
 // ============================================================
-router.get("/fair-wage", (req, res) => {
+router.get("/fair-wage", async (req, res) => {
     try {
         // Aggregate cumulative financials from invoices
-        const financial = db.prepare(`
+        const financial = (await db.prepare(`
             SELECT
                 COALESCE(SUM(total_amount), 0) AS total_gmv,
                 COALESCE(SUM(worker_earning), 0) AS total_worker_payout,
                 COALESCE(SUM(cooperative_share), 0) AS total_welfare_fund,
                 COUNT(*) AS total_invoices
             FROM invoices
-        `).get();
+        `).get()) || { total_gmv: 0, total_worker_payout: 0, total_welfare_fund: 0, total_invoices: 0 };
 
         // Calculate cumulative worker surplus:
         // Commercial aggregators take 28% commission + ₹40 platform fee per booking.
@@ -273,67 +274,46 @@ router.get("/fair-wage", (req, res) => {
             const sahkaarWorkerTakeHome = Math.round(baseRate * 0.85 * 100) / 100;
             const sahkaarCoopShare = Math.round(baseRate * 0.15 * 100) / 100;
             const sahkaarHourlyYield = Math.round((sahkaarWorkerTakeHome / bench.avgDurationHours) * 100) / 100;
+            const statutoryMinHourly = Math.round((bench.delhiGovtMinDailyWage / 8) * 100) / 100;
 
-            // Commercial Aggregator (28% commission + booking fee deducted from worker)
-            const aggregatorCommission = Math.round(baseRate * (bench.aggregatorCommissionPct / 100) * 100) / 100;
-            const aggregatorWorkerTakeHome = Math.max(0, Math.round((baseRate - aggregatorCommission - bench.aggregatorBookingFee) * 100) / 100);
+            // Commercial Aggregator comparison (e.g. Urban Company ~28% cut + delay)
+            const aggregatorWorkerTakeHome = Math.round(baseRate * 0.72 * 100) / 100;
             const aggregatorHourlyYield = Math.round((aggregatorWorkerTakeHome / bench.avgDurationHours) * 100) / 100;
 
-            // Statutory Minimum Wage Benchmark
-            const statutoryHourly = bench.statutoryMinHourlyWage;
-            const statutoryJobEquivalent = Math.round(statutoryHourly * bench.avgDurationHours * 100) / 100;
-
-            // Comparative Indices
-            const minWageComplianceRatio = Math.round((sahkaarHourlyYield / statutoryHourly) * 100) / 100;
-            const workerSurplusPerJob = Math.round((sahkaarWorkerTakeHome - aggregatorWorkerTakeHome) * 100) / 100;
-            const premiumOverAggregatorPct = Math.round(((sahkaarWorkerTakeHome - aggregatorWorkerTakeHome) / (aggregatorWorkerTakeHome || 1)) * 100);
+            // Percentage premium earned by worker under cooperative
+            const coopWageLiftPct = Math.round(((sahkaarWorkerTakeHome - aggregatorWorkerTakeHome) / aggregatorWorkerTakeHome) * 100);
 
             return {
                 trade,
-                skillCategory: bench.skillCategory,
-                avgDurationHours: bench.avgDurationHours,
-                baseCustomerCharge: baseRate,
-                sahkaar: {
-                    workerTakeHome: sahkaarWorkerTakeHome,
-                    cooperativeWelfare: sahkaarCoopShare,
-                    hourlyYield: sahkaarHourlyYield,
-                    workerPct: 85
-                },
-                commercialAggregator: {
-                    workerTakeHome: aggregatorWorkerTakeHome,
-                    commissionDeduction: aggregatorCommission,
-                    bookingFeeDeduction: bench.aggregatorBookingFee,
-                    hourlyYield: aggregatorHourlyYield,
-                    workerPct: Math.round((aggregatorWorkerTakeHome / baseRate) * 100)
-                },
-                statutoryBenchmark: {
-                    statutoryMinHourlyWage: statutoryHourly,
-                    statutoryJobEquivalent: statutoryJobEquivalent,
-                    complianceRatio: minWageComplianceRatio
-                },
-                workerSurplusPerJob,
-                premiumOverAggregatorPct
+                cooperativeBaseRate: baseRate,
+                workerLivingWageTakeHome: sahkaarWorkerTakeHome,
+                cooperativeWelfareReserveContribution: sahkaarCoopShare,
+                sahkaarHourlyYield,
+                aggregatorHourlyYield,
+                delhiGovtStatutoryMinHourly: statutoryMinHourly,
+                livingWageComplianceRatio: Math.round((sahkaarHourlyYield / statutoryMinHourly) * 100) / 100,
+                cooperativeWageLiftPct,
+                isCompliant: sahkaarHourlyYield >= statutoryMinHourly
             };
         });
 
-        // Compute average living wage multiplier across all trades
-        const avgCompliance = Math.round((tradeAnalysis.reduce((acc, t) => acc + t.statutoryBenchmark.complianceRatio, 0) / tradeAnalysis.length) * 100) / 100;
+        const avgLivingWageLift = Math.round(tradeAnalysis.reduce((acc, t) => acc + t.cooperativeWageLiftPct, 0) / tradeAnalysis.length);
 
         return res.json({
             success: true,
             summary: {
-                totalGMV: Math.round(financial.total_gmv * 100) / 100,
+                totalGrossMerchandiseValue: Math.round(financial.total_gmv * 100) / 100,
                 totalWorkerPayout: Math.round(financial.total_worker_payout * 100) / 100,
-                totalWelfareFund: Math.round(financial.total_welfare_fund * 100) / 100,
-                cumulativeWorkerSurplus,
-                averageLivingWageMultiplier: avgCompliance,
-                cooperativeTakeHomeGuarantee: "85% Guaranteed Direct Payout (0% Private Investor Extraction)"
+                totalCooperativeWelfareReserves: Math.round(financial.total_welfare_fund * 100) / 100,
+                cumulativeWorkerSurplusGenerated: cumulativeWorkerSurplus,
+                averageCoopWageLiftPercentage: avgLivingWageLift,
+                statutoryFramework: "Delhi Minimum Wages Act (Govt. of NCT Delhi / NCCT Living Wage Guidelines)"
             },
-            benchmarks: tradeAnalysis
+            trades: tradeAnalysis
         });
     } catch (error) {
         console.error("Fair wage analytics error:", error);
-        return res.status(500).json({ success: false, message: "Fair wage benchmark calculation failed." });
+        return res.status(500).json({ success: false, message: "Failed to calculate fair wage benchmarks." });
     }
 });
 
@@ -341,9 +321,9 @@ router.get("/fair-wage", (req, res) => {
 // 3. CLUSTER CAPACITY & HEALTH
 // GET /api/analytics/cluster-health
 // ============================================================
-router.get("/cluster-health", (req, res) => {
+router.get("/cluster-health", async (req, res) => {
     try {
-        const societies = db.prepare(`
+        const societies = await db.prepare(`
             SELECT s.*,
                 (SELECT COUNT(*) FROM workers w WHERE w.society_id = s.id) AS total_workers,
                 (SELECT COUNT(*) FROM workers w WHERE w.society_id = s.id AND w.is_available = 1) AS available_workers,
@@ -381,32 +361,32 @@ router.get("/cluster-health", (req, res) => {
                 availableWorkers: s.available_workers,
                 verifiedWorkers: s.verified_workers,
                 activeBookings: s.active_bookings,
-                totalBookings: s.total_bookings,
-                welfareFundPool: s.welfare_fund_pool,
                 loadRatio,
                 healthStatus,
-                healthColor
+                healthColor,
+                welfareFundPool: s.welfare_fund_pool
             };
         });
 
         return res.json({
             success: true,
+            count: clusterHealth.length,
             clusters: clusterHealth
         });
     } catch (error) {
-        console.error("Cluster health error:", error);
-        return res.status(500).json({ success: false, message: "Cluster health query failed." });
+        console.error("Cluster health query error:", error);
+        return res.status(500).json({ success: false, message: "Failed to calculate cluster health." });
     }
 });
 
 // ============================================================
-// 4. NCCT UPSKILLING COHORTS & RECOMMENDATIONS
+// 4. NCCT CAPACITY BUILDING & UPSKILLING
 // GET /api/analytics/upskilling
 // POST /api/analytics/upskilling/publish
 // ============================================================
-router.get("/upskilling", (req, res) => {
+router.get("/upskilling", async (req, res) => {
     try {
-        const programs = db.prepare(`
+        const programs = await db.prepare(`
             SELECT p.*, s.name AS society_name, s.cluster_zone
             FROM ncct_upskilling_programs p
             JOIN societies s ON p.society_id = s.id
@@ -424,23 +404,23 @@ router.get("/upskilling", (req, res) => {
     }
 });
 
-router.post("/upskilling/publish", (req, res) => {
+router.post("/upskilling/publish", async (req, res) => {
     try {
         const { programId } = req.body;
         if (!programId) {
             return res.status(400).json({ success: false, message: "programId is required." });
         }
 
-        const prog = db.prepare("SELECT * FROM ncct_upskilling_programs WHERE id = ?").get(programId);
+        const prog = await db.prepare("SELECT * FROM ncct_upskilling_programs WHERE id = ?").get(programId);
         if (!prog) {
             return res.status(404).json({ success: false, message: "Program not found." });
         }
 
         const nextStatus = prog.status === "Recommended" ? "Published" : "Active";
-        db.prepare("UPDATE ncct_upskilling_programs SET status = ?, enrolled_count = MAX(enrolled_count, 4) WHERE id = ?")
+        await db.prepare("UPDATE ncct_upskilling_programs SET status = ?, enrolled_count = CASE WHEN enrolled_count < 4 THEN 4 ELSE enrolled_count END WHERE id = ?")
             .run(nextStatus, programId);
 
-        const updated = db.prepare(`
+        const updated = await db.prepare(`
             SELECT p.*, s.name AS society_name, s.cluster_zone
             FROM ncct_upskilling_programs p
             JOIN societies s ON p.society_id = s.id
@@ -462,22 +442,31 @@ router.post("/upskilling/publish", (req, res) => {
 // 5. COOPERATIVE IMPACT AUDIT EXPORT
 // GET /api/analytics/export
 // ============================================================
-router.get("/export", (req, res) => {
+router.get("/export", async (req, res) => {
     try {
-        const financial = db.prepare(`
+        const financial = (await db.prepare(`
             SELECT
                 COALESCE(SUM(total_amount), 0) AS total_gmv,
                 COALESCE(SUM(worker_earning), 0) AS total_worker_payout,
                 COALESCE(SUM(cooperative_share), 0) AS total_welfare_fund,
                 COUNT(*) AS total_invoices
             FROM invoices
-        `).get();
+        `).get()) || { total_gmv: 0, total_worker_payout: 0, total_welfare_fund: 0, total_invoices: 0 };
 
-        const workerCount = db.prepare("SELECT COUNT(*) AS c FROM workers").get().c;
-        const verifiedWorkerCount = db.prepare("SELECT COUNT(*) AS c FROM workers WHERE verified = 1").get().c;
-        const societiesCount = db.prepare("SELECT COUNT(*) AS c FROM societies").get().c;
-        const completedBookings = db.prepare("SELECT COUNT(*) AS c FROM bookings WHERE status = 'Completed'").get().c;
-        const emergencyBookings = db.prepare("SELECT COUNT(*) AS c FROM bookings WHERE is_emergency = 1").get().c;
+        const wRow = await db.prepare("SELECT COUNT(*) AS c FROM workers").get();
+        const workerCount = wRow ? wRow.c : 0;
+
+        const vwRow = await db.prepare("SELECT COUNT(*) AS c FROM workers WHERE verified = 1").get();
+        const verifiedWorkerCount = vwRow ? vwRow.c : 0;
+
+        const sRow = await db.prepare("SELECT COUNT(*) AS c FROM societies").get();
+        const societiesCount = sRow ? sRow.c : 0;
+
+        const cbRow = await db.prepare("SELECT COUNT(*) AS c FROM bookings WHERE status = 'Completed'").get();
+        const completedBookings = cbRow ? cbRow.c : 0;
+
+        const ebRow = await db.prepare("SELECT COUNT(*) AS c FROM bookings WHERE is_emergency = 1").get();
+        const emergencyBookings = ebRow ? ebRow.c : 0;
 
         const aggregatorDeductions = (financial.total_gmv * 0.28) + (financial.total_invoices * 40);
         const cumulativeSurplus = Math.round(aggregatorDeductions * 100) / 100;

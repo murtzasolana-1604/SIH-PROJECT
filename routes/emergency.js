@@ -35,7 +35,7 @@ function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
 /**
  * 1-Click SOS Rapid Emergency Booking Dispatch
  */
-function triggerEmergencySOS(req, res) {
+async function triggerEmergencySOS(req, res) {
     const {
         service, customerName, customerPhone, address,
         customerLat, customerLng, emergencyType, targetResponseMins
@@ -55,7 +55,7 @@ function triggerEmergencySOS(req, res) {
     const eType = emergencyType || "Critical Emergency Immediate Assistance";
     const targetSLA = Number(targetResponseMins) || 30;
 
-    const result = db.prepare(`
+    const result = await db.prepare(`
         INSERT INTO bookings
         (service, customer_name, customer_phone, address, booking_date, booking_time,
          is_emergency, customer_lat, customer_lng, emergency_type, target_response_mins)
@@ -67,15 +67,16 @@ function triggerEmergencySOS(req, res) {
         eType, targetSLA
     );
 
-    const booking = db.prepare("SELECT * FROM bookings WHERE id = ?").get(result.lastInsertRowid);
+    const booking = await db.prepare("SELECT * FROM bookings WHERE id = ?").get(result.lastInsertRowid);
 
     // Geospatial & Availability Proximity Matching
-    const candidateWorkers = db.prepare(`
+    const candidateWorkers = await db.prepare(`
         SELECT id, name, phone, skill, experience, location, village_town, city, state,
                latitude, longitude, certification, welfare_status, is_available, verified
         FROM workers
         WHERE skill = ? AND is_available = 1
     `).all(service);
+
 
     const rankedWorkers = candidateWorkers.map(w => {
         let distanceKm = null;
@@ -145,8 +146,8 @@ function triggerEmergencySOS(req, res) {
 /**
  * Real-time Emergency Queue with SLA Monitoring
  */
-function getEmergencyQueue(req, res) {
-    const rows = db.prepare(`
+async function getEmergencyQueue(req, res) {
+    const rows = await db.prepare(`
         SELECT b.*,
                w.name AS worker_name,
                w.phone AS worker_phone,
@@ -158,11 +159,13 @@ function getEmergencyQueue(req, res) {
         ORDER BY b.id DESC
     `).all();
 
-function parseSqliteUtc(dateStr) {
-    if (!dateStr) return Date.now();
-    const iso = dateStr.includes('T') ? dateStr : dateStr.replace(' ', 'T');
-    return new Date(iso.endsWith('Z') ? iso : iso + 'Z').getTime();
-}
+    function parseSqliteUtc(dateStr) {
+        if (!dateStr) return Date.now();
+        if (dateStr instanceof Date) return dateStr.getTime();
+        const str = String(dateStr);
+        const iso = str.includes('T') ? str : str.replace(' ', 'T');
+        return new Date(iso.endsWith('Z') ? iso : iso + 'Z').getTime();
+    }
 
     const now = Date.now();
     const queue = rows.map(b => {
@@ -192,7 +195,7 @@ function parseSqliteUtc(dateStr) {
 /**
  * Admin Instant Override / Standby Reassignment
  */
-function reassignEmergency(req, res) {
+async function reassignEmergency(req, res) {
     const bookingId = Number(req.params.id);
     const { workerId } = req.body;
 
@@ -200,17 +203,17 @@ function reassignEmergency(req, res) {
         return res.status(400).json({ success: false, message: "workerId is required." });
     }
 
-    const booking = db.prepare("SELECT * FROM bookings WHERE id = ?").get(bookingId);
+    const booking = await db.prepare("SELECT * FROM bookings WHERE id = ?").get(bookingId);
     if (!booking) {
         return res.status(404).json({ success: false, message: "Booking not found." });
     }
 
-    const worker = db.prepare("SELECT * FROM workers WHERE id = ?").get(workerId);
+    const worker = await db.prepare("SELECT * FROM workers WHERE id = ?").get(workerId);
     if (!worker) {
         return res.status(404).json({ success: false, message: "Worker not found." });
     }
 
-    db.prepare(`
+    await db.prepare(`
         UPDATE bookings
         SET assigned_worker_id = ?,
             status = 'Assigned',
@@ -218,7 +221,7 @@ function reassignEmergency(req, res) {
         WHERE id = ?
     `).run(workerId, bookingId);
 
-    const updated = db.prepare(`
+    const updated = await db.prepare(`
         SELECT b.*, w.name AS worker_name, w.phone AS worker_phone, w.skill AS worker_skill
         FROM bookings b
         LEFT JOIN workers w ON b.assigned_worker_id = w.id
@@ -231,6 +234,7 @@ function reassignEmergency(req, res) {
         booking: updated
     });
 }
+
 
 module.exports = {
     calculateHaversineDistance,

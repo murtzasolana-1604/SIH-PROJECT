@@ -1,13 +1,13 @@
 const db = require("../database");
 
-function workersRoute(req, res) {
+async function workersRoute(req, res) {
 
     if (req.method === "GET") {
 
         const { phone } = req.query;
 
         if (phone) {
-            const worker = db.prepare(`
+            const worker = await db.prepare(`
                 SELECT w.*, s.name as society_name, s.reg_number as society_reg_number, s.cluster_zone as society_cluster
                 FROM workers w
                 LEFT JOIN societies s ON w.society_id = s.id
@@ -16,7 +16,7 @@ function workersRoute(req, res) {
             return res.json({ success: true, worker: worker || null });
         }
 
-        const workers = db.prepare(`
+        const workers = await db.prepare(`
             SELECT w.*, s.name as society_name, s.reg_number as society_reg_number, s.cluster_zone as society_cluster
             FROM workers w
             LEFT JOIN societies s ON w.society_id = s.id
@@ -56,10 +56,10 @@ function workersRoute(req, res) {
         const cleanPhone = String(phone).trim();
         const resolvedLocation = location || (city && state ? `${city}, ${state}` : (city || address || "Greater Noida"));
 
-        const existingWorker = db.prepare("SELECT * FROM workers WHERE phone = ?").get(cleanPhone);
+        const existingWorker = await db.prepare("SELECT * FROM workers WHERE phone = ?").get(cleanPhone);
 
         if (existingWorker) {
-            db.prepare(`
+            await db.prepare(`
                 UPDATE workers
                 SET name = ?, skill = ?, experience = ?, location = ?, availability = ?,
                     certification = COALESCE(?, certification),
@@ -90,7 +90,7 @@ function workersRoute(req, res) {
                 existingWorker.id
             );
 
-            const updated = db.prepare("SELECT * FROM workers WHERE id = ?").get(existingWorker.id);
+            const updated = await db.prepare("SELECT * FROM workers WHERE id = ?").get(existingWorker.id);
             return res.json({
                 success: true,
                 message: "Worker profile updated successfully!",
@@ -98,10 +98,10 @@ function workersRoute(req, res) {
             });
         }
 
-        const defaultSociety = db.prepare("SELECT id FROM societies ORDER BY id ASC LIMIT 1").get();
+        const defaultSociety = await db.prepare("SELECT id FROM societies ORDER BY id ASC LIMIT 1").get();
         const resolvedSocietyId = Number(societyId) || (defaultSociety ? defaultSociety.id : 1);
 
-        const result = db.prepare(`
+        const result = await db.prepare(`
             INSERT INTO workers (
                 name, phone, skill, experience, location, availability,
                 certification, additional_skills, address, village_town, city, state, pincode, latitude, longitude,
@@ -127,7 +127,7 @@ function workersRoute(req, res) {
             resolvedSocietyId
         );
 
-        const worker = db.prepare(`
+        const worker = await db.prepare(`
             SELECT w.*, s.name as society_name, s.reg_number as society_reg_number, s.cluster_zone as society_cluster
             FROM workers w
             LEFT JOIN societies s ON w.society_id = s.id
@@ -144,10 +144,11 @@ function workersRoute(req, res) {
     return res.status(405).json({ success: false, message: "Method not allowed" });
 }
 
+
 // =====================================
 // UPDATE AVAILABILITY (Available / Busy)
 // =====================================
-function updateAvailability(req, res) {
+async function updateAvailability(req, res) {
     const workerId = Number(req.params.id);
     const { isAvailable } = req.body;
 
@@ -155,13 +156,13 @@ function updateAvailability(req, res) {
         return res.status(400).json({ success: false, message: "isAvailable (0 or 1) is required." });
     }
 
-    const worker = db.prepare("SELECT * FROM workers WHERE id = ?").get(workerId);
+    const worker = await db.prepare("SELECT * FROM workers WHERE id = ?").get(workerId);
     if (!worker) {
         return res.status(404).json({ success: false, message: "Worker not found." });
     }
 
-    db.prepare("UPDATE workers SET is_available = ? WHERE id = ?").run(isAvailable ? 1 : 0, workerId);
-    const updated = db.prepare("SELECT * FROM workers WHERE id = ?").get(workerId);
+    await db.prepare("UPDATE workers SET is_available = ? WHERE id = ?").run(isAvailable ? 1 : 0, workerId);
+    const updated = await db.prepare("SELECT * FROM workers WHERE id = ?").get(workerId);
 
     return res.json({
         success: true,
@@ -173,15 +174,15 @@ function updateAvailability(req, res) {
 // =====================================
 // GET WORKER EARNINGS BREAKDOWN
 // =====================================
-function getEarnings(req, res) {
+async function getEarnings(req, res) {
     const workerId = Number(req.params.id);
-    const worker = db.prepare("SELECT * FROM workers WHERE id = ?").get(workerId);
+    const worker = await db.prepare("SELECT * FROM workers WHERE id = ?").get(workerId);
 
     if (!worker) {
         return res.status(404).json({ success: false, message: "Worker not found." });
     }
 
-    const invoices = db.prepare(`
+    const invoices = await db.prepare(`
         SELECT i.*, b.booking_date, b.service, b.created_at AS booking_created_at
         FROM invoices i
         JOIN bookings b ON i.booking_id = b.id
@@ -236,10 +237,10 @@ function getEarnings(req, res) {
 // PHASE 17: WORKER DIGITAL BADGE & VERIFICATION
 // ============================================================
 
-function getWorkerBadge(req, res) {
+async function getWorkerBadge(req, res) {
     const { id } = req.params;
 
-    const worker = db.prepare(`
+    const worker = await db.prepare(`
         SELECT w.*, 
                s.name as society_name, 
                s.reg_number as society_reg_number, 
@@ -254,16 +255,17 @@ function getWorkerBadge(req, res) {
         return res.status(404).json({ success: false, message: "Worker not found." });
     }
 
-    const ratingsAgg = db.prepare(`
+    const ratingsAgg = (await db.prepare(`
         SELECT ROUND(COALESCE(AVG(stars), 5.0), 1) as avg_rating, COUNT(id) as rating_count
         FROM ratings WHERE worker_id = ?
-    `).get(id);
+    `).get(id)) || {};
 
-    const completedJobs = db.prepare(`
+    const completedJobsRow = await db.prepare(`
         SELECT COUNT(*) as count FROM bookings WHERE assigned_worker_id = ? AND status = 'Completed'
-    `).get(id).count;
+    `).get(id);
+    const completedJobs = completedJobsRow ? completedJobsRow.count : 0;
 
-    const audits = db.prepare(`
+    const audits = await db.prepare(`
         SELECT * FROM worker_cert_audit WHERE worker_id = ? ORDER BY id DESC LIMIT 5
     `).all(id);
 
@@ -313,14 +315,14 @@ function getWorkerBadge(req, res) {
     });
 }
 
-function verifyWorkerByHash(req, res) {
+async function verifyWorkerByHash(req, res) {
     const { hash } = req.params;
 
     if (!hash) {
         return res.status(400).json({ success: false, message: "Verification hash is required." });
     }
 
-    const worker = db.prepare(`
+    const worker = await db.prepare(`
         SELECT w.*, 
                s.name as society_name, 
                s.reg_number as society_reg_number, 
@@ -338,14 +340,15 @@ function verifyWorkerByHash(req, res) {
         });
     }
 
-    const ratingsAgg = db.prepare(`
+    const ratingsAgg = (await db.prepare(`
         SELECT ROUND(COALESCE(AVG(stars), 5.0), 1) as avg_rating, COUNT(id) as rating_count
         FROM ratings WHERE worker_id = ?
-    `).get(worker.id);
+    `).get(worker.id)) || {};
 
-    const completedJobs = db.prepare(`
+    const completedJobsRow = await db.prepare(`
         SELECT COUNT(*) as count FROM bookings WHERE assigned_worker_id = ? AND status = 'Completed'
-    `).get(worker.id).count;
+    `).get(worker.id);
+    const completedJobs = completedJobsRow ? completedJobsRow.count : 0;
 
     return res.json({
         success: true,
@@ -382,6 +385,7 @@ function verifyWorkerByHash(req, res) {
         }
     });
 }
+
 
 workersRoute.updateAvailability = updateAvailability;
 workersRoute.getEarnings = getEarnings;

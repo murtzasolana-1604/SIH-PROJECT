@@ -3,7 +3,7 @@ const db = require("../database");
 // =====================================
 // GET CUSTOMER PROFILE
 // =====================================
-function getProfile(req, res) {
+async function getProfile(req, res) {
     const phone = req.query.phone || (req.customer ? req.customer.phone : null);
 
     if (!phone) {
@@ -13,7 +13,7 @@ function getProfile(req, res) {
         });
     }
 
-    const customer = db.prepare("SELECT * FROM customers WHERE phone = ?").get(phone);
+    const customer = await db.prepare("SELECT * FROM customers WHERE phone = ?").get(phone);
 
     if (!customer) {
         return res.status(404).json({
@@ -31,7 +31,7 @@ function getProfile(req, res) {
 // =====================================
 // SAVE / UPDATE CUSTOMER PROFILE
 // =====================================
-function saveProfile(req, res) {
+async function saveProfile(req, res) {
     const {
         phone,
         name,
@@ -52,10 +52,10 @@ function saveProfile(req, res) {
     }
 
     const cleanPhone = String(phone).trim();
-    const existing = db.prepare("SELECT * FROM customers WHERE phone = ?").get(cleanPhone);
+    const existing = await db.prepare("SELECT * FROM customers WHERE phone = ?").get(cleanPhone);
 
     if (existing) {
-        db.prepare(`
+        await db.prepare(`
             UPDATE customers
             SET name = ?, address = ?, village_town = ?, city = ?, state = ?, pincode = ?, latitude = ?, longitude = ?
             WHERE phone = ?
@@ -71,7 +71,7 @@ function saveProfile(req, res) {
             cleanPhone
         );
     } else {
-        db.prepare(`
+        await db.prepare(`
             INSERT INTO customers (phone, name, address, village_town, city, state, pincode, latitude, longitude)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).run(
@@ -87,7 +87,7 @@ function saveProfile(req, res) {
         );
     }
 
-    const updated = db.prepare("SELECT * FROM customers WHERE phone = ?").get(cleanPhone);
+    const updated = await db.prepare("SELECT * FROM customers WHERE phone = ?").get(cleanPhone);
 
     return res.json({
         success: true,
@@ -99,7 +99,7 @@ function saveProfile(req, res) {
 // =====================================
 // UPDATE LOCATION
 // =====================================
-function updateLocation(req, res) {
+async function updateLocation(req, res) {
     const { phone, latitude, longitude, address, city, state, pincode } = req.body;
 
     if (!phone) {
@@ -109,7 +109,7 @@ function updateLocation(req, res) {
         });
     }
 
-    const customer = db.prepare("SELECT * FROM customers WHERE phone = ?").get(phone);
+    const customer = await db.prepare("SELECT * FROM customers WHERE phone = ?").get(phone);
 
     if (!customer) {
         return res.status(404).json({
@@ -118,7 +118,7 @@ function updateLocation(req, res) {
         });
     }
 
-    db.prepare(`
+    await db.prepare(`
         UPDATE customers
         SET latitude = ?, longitude = ?,
             address = COALESCE(?, address),
@@ -136,7 +136,7 @@ function updateLocation(req, res) {
         phone
     );
 
-    const updated = db.prepare("SELECT * FROM customers WHERE phone = ?").get(phone);
+    const updated = await db.prepare("SELECT * FROM customers WHERE phone = ?").get(phone);
 
     return res.json({
         success: true,
@@ -144,6 +144,7 @@ function updateLocation(req, res) {
         customer: updated
     });
 }
+
 
 module.exports = {
     getProfile,

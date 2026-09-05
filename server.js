@@ -19,9 +19,10 @@ const societiesRoute = require("./routes/societies");
 const analyticsRoute = require("./routes/analytics");
 const welfareRoute = require("./routes/welfare");
 const simulatorRoute = require("./routes/simulator");
+const db = require("./database");
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
@@ -142,6 +143,20 @@ app.use((req, res) => {
     });
 });
 
-app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
-});
+async function startServer() {
+    try {
+        await db.init();
+        app.listen(PORT, "0.0.0.0", () => {
+            console.log(`Server running at http://0.0.0.0:${PORT} (${db.isPg ? "PostgreSQL" : "SQLite"} mode)`);
+        });
+    } catch (err) {
+        console.error("Failed to start server:", err);
+        process.exit(1);
+    }
+}
+
+if (require.main === module) {
+    startServer();
+}
+
+module.exports = app;

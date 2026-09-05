@@ -36,7 +36,7 @@ function formatRatingRow(row) {
 // =========================
 // SUBMIT RATING & REVIEWS
 // =========================
-function addRating(req, res) {
+async function addRating(req, res) {
     const { bookingId, workerId, stars, comment, tags } = req.body;
 
     const numStars = Number(stars);
@@ -44,7 +44,7 @@ function addRating(req, res) {
         return res.status(400).json({ success: false, message: "bookingId and a star rating between 1 and 5 are required." });
     }
 
-    const booking = db.prepare("SELECT * FROM bookings WHERE id = ?").get(bookingId);
+    const booking = await db.prepare("SELECT * FROM bookings WHERE id = ?").get(bookingId);
     if (!booking) {
         return res.status(404).json({ success: false, message: "Booking not found." });
     }
@@ -58,7 +58,7 @@ function addRating(req, res) {
         return res.status(400).json({ success: false, message: "This booking has no assigned worker to rate." });
     }
 
-    const existing = db.prepare("SELECT * FROM ratings WHERE booking_id = ?").get(bookingId);
+    const existing = await db.prepare("SELECT * FROM ratings WHERE booking_id = ?").get(bookingId);
     if (existing) {
         return res.status(409).json({ success: false, message: "This booking has already been rated." });
     }
@@ -70,12 +70,12 @@ function addRating(req, res) {
         tagsStr = tags.trim();
     }
 
-    const result = db.prepare(`
+    const result = await db.prepare(`
         INSERT INTO ratings (booking_id, worker_id, stars, comment, tags)
         VALUES (?, ?, ?, ?, ?)
     `).run(bookingId, targetWorkerId, numStars, (comment || "").trim(), tagsStr);
 
-    const created = db.prepare(`
+    const created = await db.prepare(`
         SELECT r.*, b.customer_name, b.service, w.name AS worker_name
         FROM ratings r
         LEFT JOIN bookings b ON r.booking_id = b.id
@@ -93,12 +93,12 @@ function addRating(req, res) {
 // =========================
 // GET RATINGS & BREAKDOWNS
 // =========================
-function getRatings(req, res) {
+async function getRatings(req, res) {
     const { workerId, bookingId, limit } = req.query;
 
     // 1. Single booking rating check
     if (bookingId) {
-        const rating = db.prepare(`
+        const rating = await db.prepare(`
             SELECT r.*, b.customer_name, b.service, w.name AS worker_name
             FROM ratings r
             LEFT JOIN bookings b ON r.booking_id = b.id
@@ -119,7 +119,7 @@ function getRatings(req, res) {
     // 2. Specific worker ratings & distribution
     if (workerId) {
         const id = Number(workerId);
-        const rows = db.prepare(`
+        const rows = await db.prepare(`
             SELECT r.*, b.customer_name, b.service, w.name AS worker_name
             FROM ratings r
             LEFT JOIN bookings b ON r.booking_id = b.id
@@ -128,7 +128,7 @@ function getRatings(req, res) {
             ORDER BY r.id DESC
         `).all(id);
 
-        const avgRow = db.prepare(`
+        const avgRow = await db.prepare(`
             SELECT AVG(stars) AS avg, COUNT(*) AS count
             FROM ratings
             WHERE worker_id = ?
@@ -152,7 +152,7 @@ function getRatings(req, res) {
 
     // 3. Platform-wide latest reviews
     const max = Math.min(Number(limit) || 20, 100);
-    const allRows = db.prepare(`
+    const allRows = await db.prepare(`
         SELECT r.*, b.customer_name, b.service, w.name AS worker_name
         FROM ratings r
         LEFT JOIN bookings b ON r.booking_id = b.id
@@ -166,5 +166,6 @@ function getRatings(req, res) {
         ratings: allRows.map(formatRatingRow)
     });
 }
+
 
 module.exports = { addRating, getRatings };

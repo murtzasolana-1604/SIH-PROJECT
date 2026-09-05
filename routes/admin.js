@@ -3,27 +3,30 @@ const db = require("../database");
 // =========================
 // DASHBOARD STATS & COOPERATIVE METRICS
 // =========================
-function getStats(req, res) {
-    const totalWorkers = db.prepare("SELECT COUNT(*) AS c FROM workers").get().c;
-    const verifiedWorkers = db.prepare("SELECT COUNT(*) AS c FROM workers WHERE verified = 1").get().c;
-    const pendingWorkers = db.prepare("SELECT COUNT(*) AS c FROM workers WHERE verified = 0").get().c;
-    const availableWorkers = db.prepare("SELECT COUNT(*) AS c FROM workers WHERE is_available = 1").get().c;
+// =========================
+// DASHBOARD STATS & COOPERATIVE METRICS
+// =========================
+async function getStats(req, res) {
+    const totalWorkers = (await db.prepare("SELECT COUNT(*) AS c FROM workers").get())?.c || 0;
+    const verifiedWorkers = (await db.prepare("SELECT COUNT(*) AS c FROM workers WHERE verified = 1").get())?.c || 0;
+    const pendingWorkers = (await db.prepare("SELECT COUNT(*) AS c FROM workers WHERE verified = 0").get())?.c || 0;
+    const availableWorkers = (await db.prepare("SELECT COUNT(*) AS c FROM workers WHERE is_available = 1").get())?.c || 0;
 
-    const totalCustomers = db.prepare("SELECT COUNT(DISTINCT customer_phone) AS c FROM bookings").get().c;
-    const totalBookings = db.prepare("SELECT COUNT(*) AS c FROM bookings").get().c;
-    const pendingBookings = db.prepare("SELECT COUNT(*) AS c FROM bookings WHERE status = 'Pending'").get().c;
-    const inProgressBookings = db.prepare("SELECT COUNT(*) AS c FROM bookings WHERE status = 'In Progress'").get().c;
-    const completedBookings = db.prepare("SELECT COUNT(*) AS c FROM bookings WHERE status = 'Completed'").get().c;
-    const emergencyBookings = db.prepare("SELECT COUNT(*) AS c FROM bookings WHERE is_emergency = 1").get().c;
+    const totalCustomers = (await db.prepare("SELECT COUNT(DISTINCT customer_phone) AS c FROM bookings").get())?.c || 0;
+    const totalBookings = (await db.prepare("SELECT COUNT(*) AS c FROM bookings").get())?.c || 0;
+    const pendingBookings = (await db.prepare("SELECT COUNT(*) AS c FROM bookings WHERE status = 'Pending'").get())?.c || 0;
+    const inProgressBookings = (await db.prepare("SELECT COUNT(*) AS c FROM bookings WHERE status = 'In Progress'").get())?.c || 0;
+    const completedBookings = (await db.prepare("SELECT COUNT(*) AS c FROM bookings WHERE status = 'Completed'").get())?.c || 0;
+    const emergencyBookings = (await db.prepare("SELECT COUNT(*) AS c FROM bookings WHERE is_emergency = 1").get())?.c || 0;
 
     // Financial & Welfare aggregates from invoices
-    const financial = db.prepare(`
+    const financial = (await db.prepare(`
         SELECT
             COALESCE(SUM(total_amount), 0) AS total_gmv,
             COALESCE(SUM(cooperative_share), 0) AS total_welfare,
             COALESCE(SUM(worker_earning), 0) AS total_worker_payout
         FROM invoices
-    `).get();
+    `).get()) || { total_gmv: 0, total_welfare: 0, total_worker_payout: 0 };
 
     return res.json({
         success: true,
@@ -48,8 +51,8 @@ function getStats(req, res) {
 // =========================
 // ALL WORKERS (with rating & job metrics)
 // =========================
-function getAllWorkers(req, res) {
-    const workers = db.prepare(`
+async function getAllWorkers(req, res) {
+    const workers = await db.prepare(`
         SELECT w.*,
                s.name AS society_name,
                s.reg_number AS society_reg_number,
@@ -70,7 +73,7 @@ function getAllWorkers(req, res) {
 // =========================
 // ALL BOOKINGS (Admin view with filtering)
 // =========================
-function getAllBookings(req, res) {
+async function getAllBookings(req, res) {
     const { status, emergency } = req.query;
 
     let sql = `
@@ -103,21 +106,21 @@ function getAllBookings(req, res) {
 
     sql += " ORDER BY b.is_emergency DESC, b.id DESC";
 
-    const bookings = db.prepare(sql).all(...params);
+    const bookings = await db.prepare(sql).all(...params);
     return res.json({ success: true, bookings });
 }
 
 // =========================
 // APPROVE / REJECT A WORKER
 // =========================
-function verifyWorker(req, res) {
+async function verifyWorker(req, res) {
     const { workerId, action } = req.body;
 
     if (!workerId || !["approve", "reject"].includes(action)) {
         return res.status(400).json({ success: false, message: "workerId and a valid action ('approve' or 'reject') are required." });
     }
 
-    const worker = db.prepare("SELECT * FROM workers WHERE id = ?").get(workerId);
+    const worker = await db.prepare("SELECT * FROM workers WHERE id = ?").get(workerId);
     if (!worker) {
         return res.status(404).json({ success: false, message: "Worker not found." });
     }
@@ -131,7 +134,7 @@ function verifyWorker(req, res) {
             ? db.generateWorkerVerificationHash(worker.id, worker.phone, worker.skill, certId)
             : "5d1bb55f89860587527547cec71b9c9a99baebd1648267a28ba3805342f1615e";
 
-        db.prepare(`
+        await db.prepare(`
             UPDATE workers 
             SET verified = 1, 
                 ncct_cert_id = ?, 
@@ -143,12 +146,12 @@ function verifyWorker(req, res) {
             WHERE id = ?
         `).run(certId, badgeLevel, hash, adminName, workerId);
 
-        db.prepare(`
+        await db.prepare(`
             INSERT INTO worker_cert_audit (worker_id, action, badge_level, admin_name, notes)
             VALUES (?, 'ISSUED', ?, ?, 'Cooperative member verified and NCCT digital badge issued by federation admin.')
         `).run(workerId, badgeLevel, adminName);
 
-        const updated = db.prepare("SELECT * FROM workers WHERE id = ?").get(workerId);
+        const updated = await db.prepare("SELECT * FROM workers WHERE id = ?").get(workerId);
         return res.json({
             success: true,
             message: `Worker ${updated.name} verified as NCCT cooperative certified member (${certId}).`,
@@ -157,20 +160,21 @@ function verifyWorker(req, res) {
     }
 
     // Action === "reject"
-    db.prepare(`
+    await db.prepare(`
         UPDATE workers 
         SET verified = 0, badge_status = 'Revoked' 
         WHERE id = ?
     `).run(workerId);
 
-    db.prepare(`
+    await db.prepare(`
         INSERT INTO worker_cert_audit (worker_id, action, badge_level, admin_name, notes)
         VALUES (?, 'REVOKED', ?, ?, 'Verification and NCCT certification revoked by administrator.')
     `).run(workerId, worker.badge_level || "Unverified", adminName);
 
-    const hasBookings = db.prepare("SELECT COUNT(*) AS c FROM bookings WHERE assigned_worker_id = ?").get(workerId).c;
+    const hasBookingsRow = await db.prepare("SELECT COUNT(*) AS c FROM bookings WHERE assigned_worker_id = ?").get(workerId);
+    const hasBookings = hasBookingsRow ? hasBookingsRow.c : 0;
     if (hasBookings === 0) {
-        db.prepare("DELETE FROM workers WHERE id = ?").run(workerId);
+        await db.prepare("DELETE FROM workers WHERE id = ?").run(workerId);
         return res.json({ success: true, message: "Worker application rejected and removed." });
     }
 
@@ -180,14 +184,15 @@ function verifyWorker(req, res) {
     });
 }
 
+
 // =========================
 // ISSUE OR UPGRADE NCCT CERTIFICATION BADGE (Phase 17)
 // =========================
-function issueWorkerBadge(req, res) {
+async function issueWorkerBadge(req, res) {
     const workerId = Number(req.params.id);
     const { badgeLevel, kycDocType, kycDocNumber, notes } = req.body;
 
-    const worker = db.prepare("SELECT * FROM workers WHERE id = ?").get(workerId);
+    const worker = await db.prepare("SELECT * FROM workers WHERE id = ?").get(workerId);
     if (!worker) {
         return res.status(404).json({ success: false, message: "Worker not found." });
     }
@@ -202,7 +207,7 @@ function issueWorkerBadge(req, res) {
         ? db.generateWorkerVerificationHash(worker.id, worker.phone, worker.skill, certId)
         : "5d1bb55f89860587527547cec71b9c9a99baebd1648267a28ba3805342f1615e";
 
-    db.prepare(`
+    await db.prepare(`
         UPDATE workers 
         SET verified = 1,
             ncct_cert_id = ?,
@@ -217,12 +222,12 @@ function issueWorkerBadge(req, res) {
     `).run(certId, level, hash, adminName, docType, docNum, workerId);
 
     const auditAction = worker.verified === 1 ? "LEVEL_UPGRADED" : "ISSUED";
-    db.prepare(`
+    await db.prepare(`
         INSERT INTO worker_cert_audit (worker_id, action, badge_level, admin_name, notes)
         VALUES (?, ?, ?, ?, ?)
     `).run(workerId, auditAction, level, adminName, notes || "Statutory NCCT Certification credential issued.");
 
-    const updated = db.prepare("SELECT * FROM workers WHERE id = ?").get(workerId);
+    const updated = await db.prepare("SELECT * FROM workers WHERE id = ?").get(workerId);
     return res.json({
         success: true,
         message: `NCCT digital badge (${level}) successfully issued to ${updated.name}.`,
@@ -233,24 +238,24 @@ function issueWorkerBadge(req, res) {
 // =========================
 // REVOKE / SUSPEND NCCT BADGE (Phase 17)
 // =========================
-function revokeWorkerBadge(req, res) {
+async function revokeWorkerBadge(req, res) {
     const workerId = Number(req.params.id);
     const { reason } = req.body;
 
-    const worker = db.prepare("SELECT * FROM workers WHERE id = ?").get(workerId);
+    const worker = await db.prepare("SELECT * FROM workers WHERE id = ?").get(workerId);
     if (!worker) {
         return res.status(404).json({ success: false, message: "Worker not found." });
     }
 
     const adminName = req.admin ? req.admin.name : "Federation Administrator";
 
-    db.prepare(`
+    await db.prepare(`
         UPDATE workers 
         SET verified = 0, badge_status = 'Suspended'
         WHERE id = ?
     `).run(workerId);
 
-    db.prepare(`
+    await db.prepare(`
         INSERT INTO worker_cert_audit (worker_id, action, badge_level, admin_name, notes)
         VALUES (?, 'SUSPENDED', ?, ?, ?)
     `).run(workerId, worker.badge_level || "Level 1", adminName, reason || "Certification suspended by administrator.");
@@ -264,27 +269,27 @@ function revokeWorkerBadge(req, res) {
 // =========================
 // ADMIN MANUALLY ASSIGNS A WORKER TO A BOOKING
 // =========================
-function assignWorker(req, res) {
+async function assignWorker(req, res) {
     const { bookingId, workerId } = req.body;
 
     if (!bookingId || !workerId) {
         return res.status(400).json({ success: false, message: "bookingId and workerId are required." });
     }
 
-    const booking = db.prepare("SELECT * FROM bookings WHERE id = ?").get(bookingId);
+    const booking = await db.prepare("SELECT * FROM bookings WHERE id = ?").get(bookingId);
     if (!booking) {
         return res.status(404).json({ success: false, message: "Booking not found." });
     }
 
-    const worker = db.prepare("SELECT * FROM workers WHERE id = ?").get(workerId);
+    const worker = await db.prepare("SELECT * FROM workers WHERE id = ?").get(workerId);
     if (!worker) {
         return res.status(404).json({ success: false, message: "Worker not found." });
     }
 
-    db.prepare("UPDATE bookings SET assigned_worker_id = ?, status = 'Assigned' WHERE id = ?")
+    await db.prepare("UPDATE bookings SET assigned_worker_id = ?, status = 'Assigned' WHERE id = ?")
         .run(workerId, bookingId);
 
-    const updated = db.prepare(`
+    const updated = await db.prepare(`
         SELECT b.*, w.name AS worker_name, w.phone AS worker_phone
         FROM bookings b
         LEFT JOIN workers w ON b.assigned_worker_id = w.id
@@ -302,17 +307,17 @@ function assignWorker(req, res) {
 // RULE-BASED WORKER MATCHING
 // Scores: Verified (+50) + Rating (+10/star) + Online (+10) + Location (+20) + GPS Proximity (+15..+30) - Active Workload (-10/job)
 // =========================
-function matchWorkers(req, res) {
+async function matchWorkers(req, res) {
     const bookingId = Number(req.params.bookingId);
 
-    const booking = db.prepare("SELECT * FROM bookings WHERE id = ?").get(bookingId);
+    const booking = await db.prepare("SELECT * FROM bookings WHERE id = ?").get(bookingId);
     if (!booking) {
         return res.status(404).json({ success: false, message: "Booking not found." });
     }
 
-    const candidates = db.prepare("SELECT * FROM workers WHERE skill = ?").all(booking.service);
+    const candidates = await db.prepare("SELECT * FROM workers WHERE skill = ?").all(booking.service);
 
-    const scored = candidates.map(worker => {
+    const scored = await Promise.all(candidates.map(async worker => {
         let score = 0;
         const reasons = [];
 
@@ -325,13 +330,13 @@ function matchWorkers(req, res) {
         }
 
         // 2. Average Rating (+10 per star)
-        const avgRatingRow = db.prepare(`
+        const avgRatingRow = await db.prepare(`
             SELECT AVG(stars) AS avg, COUNT(*) AS cnt
             FROM ratings
             WHERE worker_id = ?
         `).get(worker.id);
 
-        const avgRating = avgRatingRow.avg || 4.5;
+        const avgRating = (avgRatingRow && avgRatingRow.avg !== null && avgRatingRow.avg !== undefined) ? Number(avgRatingRow.avg) : 4.5;
         score += avgRating * 10;
         reasons.push(`Rating ${avgRating.toFixed(1)}★ (+${Math.round(avgRating * 10)})`);
 
@@ -370,10 +375,11 @@ function matchWorkers(req, res) {
         }
 
         // 6. Current active workload
-        const activeJobs = db.prepare(`
+        const activeJobsRow = await db.prepare(`
             SELECT COUNT(*) AS c FROM bookings
             WHERE assigned_worker_id = ? AND status IN ('Assigned', 'In Progress')
-        `).get(worker.id).c;
+        `).get(worker.id);
+        const activeJobs = activeJobsRow ? Number(activeJobsRow.c) : 0;
 
         if (activeJobs > 0) {
             score -= activeJobs * 15;
@@ -384,7 +390,7 @@ function matchWorkers(req, res) {
         }
 
         return { ...worker, matchScore: Math.round(score), reasons };
-    });
+    }));
 
     scored.sort((a, b) => b.matchScore - a.matchScore);
 
@@ -399,8 +405,8 @@ function matchWorkers(req, res) {
 // PHASE 18: COOPERATIVE WELFARE & PMSBY POOL ADMIN HANDLERS
 // ============================================================
 
-function getAdminClaims(req, res) {
-    const claims = db.prepare(`
+async function getAdminClaims(req, res) {
+    const claims = await db.prepare(`
         SELECT c.*, 
                w.name as worker_name, 
                w.phone as worker_phone, 
@@ -419,7 +425,7 @@ function getAdminClaims(req, res) {
     });
 }
 
-function processAdminClaim(req, res) {
+async function processAdminClaim(req, res) {
     const claimId = Number(req.params.id);
     const { action, approvedAmount, remarks } = req.body;
 
@@ -427,7 +433,7 @@ function processAdminClaim(req, res) {
         return res.status(400).json({ success: false, message: "Claim ID and action are required." });
     }
 
-    const claim = db.prepare(`
+    const claim = await db.prepare(`
         SELECT c.*, w.society_id, w.name as worker_name 
         FROM welfare_claims c
         JOIN workers w ON c.worker_id = w.id
@@ -446,7 +452,7 @@ function processAdminClaim(req, res) {
             return res.status(400).json({ success: false, message: "Invalid approved amount." });
         }
 
-        db.prepare(`
+        await db.prepare(`
             UPDATE welfare_claims 
             SET status = 'DISBURSED', 
                 approved_amount = ?, 
@@ -457,7 +463,7 @@ function processAdminClaim(req, res) {
 
         // Record in welfare pool ledger
         const societyId = claim.society_id || 1;
-        db.prepare(`
+        await db.prepare(`
             INSERT INTO welfare_pool_ledger (society_id, entry_type, amount, worker_id, reference_id, description)
             VALUES (?, 'OUTFLOW_EMERGENCY_GRANT', ?, ?, ?, ?)
         `).run(
@@ -468,17 +474,17 @@ function processAdminClaim(req, res) {
             `Disbursed Emergency Welfare Grant for ${claim.claim_type}: ₹${amount}`
         );
 
-        // Deduct from society pool
-        db.prepare(`
-            UPDATE societies SET welfare_fund_pool = MAX(0, welfare_fund_pool - ?) WHERE id = ?
-        `).run(amount, societyId);
+        // Deduct from society pool safely
+        const society = await db.prepare("SELECT welfare_fund_pool FROM societies WHERE id = ?").get(societyId);
+        const newPool = Math.max(0, (society ? Number(society.welfare_fund_pool) : 0) - amount);
+        await db.prepare("UPDATE societies SET welfare_fund_pool = ? WHERE id = ?").run(newPool, societyId);
 
         return res.json({
             success: true,
             message: `Claim ${claim.claim_number} approved and ₹${amount} disbursed to ${claim.worker_name}.`
         });
     } else if (action === "REJECT") {
-        db.prepare(`
+        await db.prepare(`
             UPDATE welfare_claims 
             SET status = 'REJECTED', 
                 admin_remarks = ?, 
@@ -495,8 +501,8 @@ function processAdminClaim(req, res) {
     }
 }
 
-function batchRenewPmsby(req, res) {
-    const verifiedWorkers = db.prepare("SELECT * FROM workers WHERE verified = 1").all();
+async function batchRenewPmsby(req, res) {
+    const verifiedWorkers = await db.prepare("SELECT * FROM workers WHERE verified = 1").all();
     let renewedCount = 0;
     const now = new Date();
     const currentYear = now.getFullYear();
@@ -504,7 +510,7 @@ function batchRenewPmsby(req, res) {
     const validTo = `${currentYear + 1}-05-31`;
 
     for (const w of verifiedWorkers) {
-        const existingPolicy = db.prepare("SELECT * FROM worker_insurance_policies WHERE worker_id = ?").get(w.id);
+        const existingPolicy = await db.prepare("SELECT * FROM worker_insurance_policies WHERE worker_id = ?").get(w.id);
         const policyNumber = existingPolicy 
             ? existingPolicy.policy_number 
             : `PMSBY-2026-COOP-${String(w.id).padStart(4, "0")}`;
@@ -513,14 +519,14 @@ function batchRenewPmsby(req, res) {
             : "e9f7823cba992384102934";
 
         if (!existingPolicy) {
-            db.prepare(`
+            await db.prepare(`
                 INSERT INTO worker_insurance_policies 
                 (worker_id, policy_number, scheme_name, coverage_amount, premium_amount, valid_from, valid_to, policy_status, nominee_name, nominee_relationship, certificate_hash)
                 VALUES (?, ?, 'Pradhan Mantri Suraksha Bima Yojana (PMSBY)', 200000, 20, ?, ?, 'ACTIVE', 'Family Nominee', 'Spouse', ?)
             `).run(w.id, policyNumber, validFrom, validTo, certHash);
             renewedCount++;
         } else {
-            db.prepare(`
+            await db.prepare(`
                 UPDATE worker_insurance_policies 
                 SET valid_from = ?, valid_to = ?, policy_status = 'ACTIVE', certificate_hash = ?
                 WHERE id = ?
@@ -530,7 +536,7 @@ function batchRenewPmsby(req, res) {
 
         // Add ledger entry
         const societyId = w.society_id || 1;
-        db.prepare(`
+        await db.prepare(`
             INSERT INTO welfare_pool_ledger (society_id, entry_type, amount, worker_id, reference_id, description)
             VALUES (?, 'OUTFLOW_PMSBY_PREMIUM', 20.0, ?, ?, 'Cooperative subsidized annual PMSBY renewal')
         `).run(societyId, w.id, policyNumber);
@@ -544,8 +550,8 @@ function batchRenewPmsby(req, res) {
     });
 }
 
-function getWelfareLedger(req, res) {
-    const ledger = db.prepare(`
+async function getWelfareLedger(req, res) {
+    const ledger = await db.prepare(`
         SELECT l.*, s.name as society_name, w.name as worker_name
         FROM welfare_pool_ledger l
         LEFT JOIN societies s ON l.society_id = s.id

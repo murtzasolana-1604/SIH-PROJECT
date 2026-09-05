@@ -10,7 +10,7 @@ const db = require("../database");
 
 const activeTokens = new Map(); // token -> { adminId, phone, name }
 
-function adminLogin(req, res) {
+async function adminLogin(req, res) {
 
     const { phone, password } = req.body;
 
@@ -18,11 +18,12 @@ function adminLogin(req, res) {
         return res.status(400).json({ success: false, message: "Phone and password are required." });
     }
 
-    const admin = db.prepare("SELECT * FROM admins WHERE phone = ?").get(phone);
+    const admin = await db.prepare("SELECT * FROM admins WHERE phone = ?").get(phone);
 
     if (!admin || admin.demo_password !== password) {
         return res.status(401).json({ success: false, message: "Invalid admin credentials." });
     }
+
 
     const token = crypto.randomBytes(24).toString("hex");
     activeTokens.set(token, { adminId: admin.id, phone: admin.phone, name: admin.name });
