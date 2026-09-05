@@ -20,7 +20,6 @@
     },
     "android": {
       "package": "com.sahkaarconnect.app",
-      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#15803D"
@@ -41,6 +40,14 @@
         "expo-location",
         {
           "locationAlwaysAndWhenInUsePermission": "Allow Sahkaar Connect to access your location to find nearby verified cooperative tradespeople."
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "kotlinVersion": "1.9.25"
+          }
         }
       ]
     ],
