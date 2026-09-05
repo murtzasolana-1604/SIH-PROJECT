@@ -69,11 +69,11 @@ export const WorkerOnboardingScreen: React.FC<Props> = ({ onComplete }) => {
 
   const handleSave = async () => {
     if (!name.trim()) {
-      Alert.alert(t('error'), language === 'hi' ? 'कृपया अपना नाम दर्ज करें' : 'Please enter your name');
+      Alert.alert(t.error, language === 'hi' ? 'कृपया अपना नाम दर्ज करें' : 'Please enter your name');
       return;
     }
     if (selectedSkills.length === 0) {
-      Alert.alert(t('error'), language === 'hi' ? 'कृपया कम से कम एक हुनर चुनें' : 'Please select at least one skill');
+      Alert.alert(t.error, language === 'hi' ? 'कृपया कम से कम एक हुनर चुनें' : 'Please select at least one skill');
       return;
     }
 
@@ -89,7 +89,7 @@ export const WorkerOnboardingScreen: React.FC<Props> = ({ onComplete }) => {
       });
       onComplete();
     } catch {
-      Alert.alert(t('error'), 'Failed to save profile. Please try again.');
+      Alert.alert(t.error, 'Failed to save profile. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -125,7 +125,7 @@ export const WorkerOnboardingScreen: React.FC<Props> = ({ onComplete }) => {
 
         {/* Name input */}
         <Input
-          label={t('fullName')}
+          label={t.fullName}
           placeholder={language === 'hi' ? 'उदा. राजेश शर्मा' : 'e.g. Rajesh Sharma'}
           value={name}
           onChangeText={setName}

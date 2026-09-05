@@ -26,14 +26,14 @@ export const WorkerProfileScreen: React.FC<Props> = ({ onBack, onLogout }) => {
 
   const handleConfirmLogout = () => {
     Alert.alert(
-      t('logout'),
+      t.logout,
       language === 'hi'
         ? 'क्या आप सहकार कनेक्ट से लॉग आउट करना चाहते हैं?'
         : 'Are you sure you want to log out of Sahkaar Connect?',
       [
-        { text: t('cancel'), style: 'cancel' },
+        { text: t.cancel, style: 'cancel' },
         {
-          text: t('logout'),
+          text: t.logout,
           style: 'destructive',
           onPress: onLogout,
         },
@@ -44,7 +44,7 @@ export const WorkerProfileScreen: React.FC<Props> = ({ onBack, onLogout }) => {
   return (
     <View style={styles.container}>
       <Header
-        title={t('profile')}
+        title={t.profile}
         subtitle={workerProfile?.phone ? `+91 ${workerProfile.phone}` : undefined}
         onBack={onBack}
       />
@@ -57,7 +57,7 @@ export const WorkerProfileScreen: React.FC<Props> = ({ onBack, onLogout }) => {
               <Ionicons name="construct" size={36} color={COLORS.secondary} />
             </View>
             <View style={styles.infoCol}>
-              <Text style={styles.name}>{workerProfile?.name || t('worker')}</Text>
+              <Text style={styles.name}>{workerProfile?.name || t.worker}</Text>
               <Text style={styles.phone}>+91 {workerProfile?.phone}</Text>
               <View style={styles.ncctBadge}>
                 <Ionicons name="shield-checkmark" size={14} color={COLORS.primary} />
@@ -152,7 +152,7 @@ export const WorkerProfileScreen: React.FC<Props> = ({ onBack, onLogout }) => {
 
         {/* Sign Out Button */}
         <Button
-          title={t('logout')}
+          title={t.logout}
           variant="danger"
           onPress={handleConfirmLogout}
           style={styles.logoutBtn}

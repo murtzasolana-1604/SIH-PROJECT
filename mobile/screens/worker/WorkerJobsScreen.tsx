@@ -81,7 +81,7 @@ export const WorkerJobsScreen: React.FC<Props> = ({
       );
       fetchJobs();
     } catch {
-      Alert.alert(t('error'), 'Failed to accept job.');
+      Alert.alert(t.error, 'Failed to accept job.');
     }
   };
 
@@ -94,7 +94,7 @@ export const WorkerJobsScreen: React.FC<Props> = ({
       );
       fetchJobs();
     } catch {
-      Alert.alert(t('error'), 'Failed to update job status.');
+      Alert.alert(t.error, 'Failed to update job status.');
     }
   };
 
@@ -109,7 +109,7 @@ export const WorkerJobsScreen: React.FC<Props> = ({
       );
       fetchJobs();
     } catch {
-      Alert.alert(t('error'), 'Failed to complete job.');
+      Alert.alert(t.error, 'Failed to complete job.');
     }
   };
 
@@ -129,7 +129,7 @@ export const WorkerJobsScreen: React.FC<Props> = ({
   if (loading && !refreshing) {
     return (
       <View style={styles.container}>
-        <Header title={t('myJobs')} onBack={onBack} />
+        <Header title={t.myJobs} onBack={onBack} />
         <LoadingState />
       </View>
     );
@@ -137,7 +137,7 @@ export const WorkerJobsScreen: React.FC<Props> = ({
 
   return (
     <View style={styles.container}>
-      <Header title={t('myJobs')} onBack={onBack} />
+      <Header title={t.myJobs} onBack={onBack} />
 
       {/* Filter Tabs */}
       <View style={styles.tabBar}>

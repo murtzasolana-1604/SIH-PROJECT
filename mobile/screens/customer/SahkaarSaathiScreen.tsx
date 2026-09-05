@@ -177,7 +177,7 @@ export const SahkaarSaathiScreen: React.FC<Props> = ({
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
       <Header
-        title={t('sahkaarSaathi')}
+        title={t.sahkaarSaathi}
         subtitle={language === 'hi' ? 'एआई सहकार साथी • ऑनलाइन' : 'AI Assistant • Online'}
         onBack={onBack}
         rightElement={
@@ -236,7 +236,7 @@ export const SahkaarSaathiScreen: React.FC<Props> = ({
                         onPress={() => onNavigateToBooking()}
                       >
                         <Ionicons name="calendar-outline" size={16} color={COLORS.surface} />
-                        <Text style={styles.actionBtnText}>{t('bookNow')}</Text>
+                        <Text style={styles.actionBtnText}>{t.bookNow}</Text>
                       </TouchableOpacity>
                     )}
                     {(msg.action === 'emergency_sos' || (msg.action as any)?.type === 'OPEN_SOS') && onNavigateToEmergency && (
@@ -245,7 +245,7 @@ export const SahkaarSaathiScreen: React.FC<Props> = ({
                         onPress={onNavigateToEmergency}
                       >
                         <Ionicons name="warning-outline" size={16} color={COLORS.surface} />
-                        <Text style={styles.actionBtnText}>{t('emergencySos')}</Text>
+                        <Text style={styles.actionBtnText}>{t.triggerSos}</Text>
                       </TouchableOpacity>
                     )}
                   </View>
@@ -305,7 +305,7 @@ export const SahkaarSaathiScreen: React.FC<Props> = ({
             style={styles.cancelListeningBtn}
             onPress={() => setIsListening(false)}
           >
-            <Text style={styles.cancelListeningText}>{t('cancel')}</Text>
+            <Text style={styles.cancelListeningText}>{t.cancel}</Text>
           </TouchableOpacity>
         </View>
       )}

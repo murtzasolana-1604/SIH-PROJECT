@@ -101,10 +101,10 @@ const MainNavigator: React.FC = () => {
   // Render bottom bar for Customer
   const renderCustomerBottomBar = () => {
     const tabs: { key: CustomerTab; label: string; icon: any; iconActive: any }[] = [
-      { key: 'home', label: t('home'), icon: 'home-outline', iconActive: 'home' },
-      { key: 'bookings', label: t('bookings'), icon: 'calendar-outline', iconActive: 'calendar' },
+      { key: 'home', label: t.home, icon: 'home-outline', iconActive: 'home' },
+      { key: 'bookings', label: t.bookings, icon: 'calendar-outline', iconActive: 'calendar' },
       { key: 'saathi', label: 'सहकार साथी', icon: 'chatbubble-ellipses-outline', iconActive: 'chatbubble-ellipses' },
-      { key: 'profile', label: t('profile'), icon: 'person-outline', iconActive: 'person' },
+      { key: 'profile', label: t.profile, icon: 'person-outline', iconActive: 'person' },
     ];
 
     return (
@@ -135,10 +135,10 @@ const MainNavigator: React.FC = () => {
   // Render bottom bar for Worker
   const renderWorkerBottomBar = () => {
     const tabs: { key: WorkerTab; label: string; icon: any; iconActive: any }[] = [
-      { key: 'dashboard', label: t('dashboard'), icon: 'grid-outline', iconActive: 'grid' },
-      { key: 'jobs', label: t('myJobs'), icon: 'briefcase-outline', iconActive: 'briefcase' },
-      { key: 'earnings', label: t('earnings'), icon: 'wallet-outline', iconActive: 'wallet' },
-      { key: 'profile', label: t('profile'), icon: 'person-outline', iconActive: 'person' },
+      { key: 'dashboard', label: t.dashboard, icon: 'grid-outline', iconActive: 'grid' },
+      { key: 'jobs', label: t.myJobs, icon: 'briefcase-outline', iconActive: 'briefcase' },
+      { key: 'earnings', label: t.earnings, icon: 'wallet-outline', iconActive: 'wallet' },
+      { key: 'profile', label: t.profile, icon: 'person-outline', iconActive: 'person' },
     ];
 
     return (

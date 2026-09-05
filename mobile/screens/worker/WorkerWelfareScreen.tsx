@@ -72,11 +72,11 @@ export const WorkerWelfareScreen: React.FC<Props> = ({ onBack }) => {
   const handleClaimSubmit = async () => {
     const amt = parseFloat(claimAmount);
     if (!amt || amt <= 0) {
-      Alert.alert(t('error'), 'Please enter a valid claim amount.');
+      Alert.alert(t.error, 'Please enter a valid claim amount.');
       return;
     }
     if (!claimDescription.trim()) {
-      Alert.alert(t('error'), 'Please provide a brief description of the claim.');
+      Alert.alert(t.error, 'Please provide a brief description of the claim.');
       return;
     }
 
@@ -113,7 +113,7 @@ export const WorkerWelfareScreen: React.FC<Props> = ({ onBack }) => {
           : 'Your claim has been submitted to the Cooperative Welfare Committee for verification.'
       );
     } catch {
-      Alert.alert(t('error'), 'Failed to submit claim. Please try again.');
+      Alert.alert(t.error, 'Failed to submit claim. Please try again.');
     } finally {
       setSubmittingClaim(false);
     }
@@ -127,7 +127,7 @@ export const WorkerWelfareScreen: React.FC<Props> = ({ onBack }) => {
 
   return (
     <View style={styles.container}>
-      <Header title={t('welfarePmsby')} onBack={onBack} />
+      <Header title={t.welfarePmsby} onBack={onBack} />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* PMSBY Card */}
@@ -200,7 +200,7 @@ export const WorkerWelfareScreen: React.FC<Props> = ({ onBack }) => {
 
             <View style={styles.formActions}>
               <Button
-                title={t('cancel')}
+                title={t.cancel}
                 variant="outline"
                 onPress={() => setShowClaimForm(false)}
                 style={{ flex: 1 }}

@@ -42,7 +42,7 @@ export const CustomerProfileScreen: React.FC<Props> = ({ onBack, onLogout }) => 
         setAddress(loc.formattedAddress);
       }
     } catch {
-      Alert.alert(t('error'), 'Could not detect location. Please check GPS permissions.');
+      Alert.alert(t.error, 'Could not detect location. Please check GPS permissions.');
     } finally {
       setDetectingLocation(false);
     }
@@ -50,7 +50,7 @@ export const CustomerProfileScreen: React.FC<Props> = ({ onBack, onLogout }) => 
 
   const handleSave = async () => {
     if (!name.trim() || !address.trim()) {
-      Alert.alert(t('error'), 'Name and address cannot be empty.');
+      Alert.alert(t.error, 'Name and address cannot be empty.');
       return;
     }
     setSaving(true);
@@ -65,7 +65,7 @@ export const CustomerProfileScreen: React.FC<Props> = ({ onBack, onLogout }) => 
         language === 'hi' ? 'प्रोफ़ाइल सफलतापूर्वक अपडेट हो गई।' : 'Profile updated successfully.'
       );
     } catch {
-      Alert.alert(t('error'), 'Failed to save profile changes.');
+      Alert.alert(t.error, 'Failed to save profile changes.');
     } finally {
       setSaving(false);
     }
@@ -73,14 +73,14 @@ export const CustomerProfileScreen: React.FC<Props> = ({ onBack, onLogout }) => 
 
   const handleConfirmLogout = () => {
     Alert.alert(
-      t('logout'),
+      t.logout,
       language === 'hi'
         ? 'क्या आप सहकार कनेक्ट से लॉग आउट करना चाहते हैं?'
         : 'Are you sure you want to log out of Sahkaar Connect?',
       [
-        { text: t('cancel'), style: 'cancel' },
+        { text: t.cancel, style: 'cancel' },
         {
-          text: t('logout'),
+          text: t.logout,
           style: 'destructive',
           onPress: onLogout,
         },
@@ -91,7 +91,7 @@ export const CustomerProfileScreen: React.FC<Props> = ({ onBack, onLogout }) => 
   return (
     <View style={styles.container}>
       <Header
-        title={t('profile')}
+        title={t.profile}
         subtitle={customerProfile?.phone ? `+91 ${customerProfile.phone}` : undefined}
         onBack={onBack}
       />
@@ -104,7 +104,7 @@ export const CustomerProfileScreen: React.FC<Props> = ({ onBack, onLogout }) => 
               <Ionicons name="person" size={36} color={COLORS.primary} />
             </View>
             <View style={styles.userInfo}>
-              <Text style={styles.userName}>{customerProfile?.name || t('customer')}</Text>
+              <Text style={styles.userName}>{customerProfile?.name || t.customer}</Text>
               <Text style={styles.userPhone}>+91 {customerProfile?.phone}</Text>
               <View style={styles.badgeRow}>
                 <Ionicons name="shield-checkmark" size={14} color={COLORS.primary} />
@@ -132,14 +132,14 @@ export const CustomerProfileScreen: React.FC<Props> = ({ onBack, onLogout }) => 
           {isEditing ? (
             <View style={styles.editForm}>
               <Input
-                label={t('fullName')}
+                label={t.fullName}
                 value={name}
                 onChangeText={setName}
                 placeholder="Enter full name"
               />
 
               <Input
-                label={t('address')}
+                label={t.address}
                 value={address}
                 onChangeText={setAddress}
                 placeholder="Enter full address"
@@ -166,7 +166,7 @@ export const CustomerProfileScreen: React.FC<Props> = ({ onBack, onLogout }) => 
 
               <View style={styles.editActionRow}>
                 <Button
-                  title={t('cancel')}
+                  title={t.cancel}
                   variant="outline"
                   onPress={() => {
                     setName(customerProfile?.name || '');
@@ -176,7 +176,7 @@ export const CustomerProfileScreen: React.FC<Props> = ({ onBack, onLogout }) => 
                   style={{ flex: 1 }}
                 />
                 <Button
-                  title={t('save')}
+                  title={t.save}
                   onPress={handleSave}
                   loading={saving}
                   style={{ flex: 1 }}
@@ -186,15 +186,15 @@ export const CustomerProfileScreen: React.FC<Props> = ({ onBack, onLogout }) => 
           ) : (
             <View style={styles.infoList}>
               <View style={styles.infoItem}>
-                <Text style={styles.infoLabel}>{t('fullName')}</Text>
+                <Text style={styles.infoLabel}>{t.fullName}</Text>
                 <Text style={styles.infoValue}>{customerProfile?.name || '—'}</Text>
               </View>
               <View style={styles.infoItem}>
-                <Text style={styles.infoLabel}>{t('phone')}</Text>
+                <Text style={styles.infoLabel}>{t.phone}</Text>
                 <Text style={styles.infoValue}>+91 {customerProfile?.phone || '—'}</Text>
               </View>
               <View style={styles.infoItem}>
-                <Text style={styles.infoLabel}>{t('address')}</Text>
+                <Text style={styles.infoLabel}>{t.address}</Text>
                 <Text style={styles.infoValue}>{customerProfile?.address || '—'}</Text>
               </View>
             </View>
@@ -259,7 +259,7 @@ export const CustomerProfileScreen: React.FC<Props> = ({ onBack, onLogout }) => 
 
         {/* Sign Out Button */}
         <Button
-          title={t('logout')}
+          title={t.logout}
           variant="danger"
           onPress={handleConfirmLogout}
           style={styles.logoutBtn}

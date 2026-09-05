@@ -76,7 +76,7 @@ export const WorkerOtpScreen: React.FC<Props> = ({ phone, onBack, onSuccess }) =
           : 'A fresh OTP has been sent to your mobile.'
       );
     } catch {
-      Alert.alert(t('error'), 'Failed to resend OTP.');
+      Alert.alert(t.error, 'Failed to resend OTP.');
     } finally {
       setResending(false);
     }
@@ -92,7 +92,7 @@ export const WorkerOtpScreen: React.FC<Props> = ({ phone, onBack, onSuccess }) =
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <Header title={t('verifyOtp')} onBack={onBack} />
+      <Header title={t.verifyOtp} onBack={onBack} />
 
       <View style={styles.content}>
         <Card style={styles.card}>
@@ -100,7 +100,7 @@ export const WorkerOtpScreen: React.FC<Props> = ({ phone, onBack, onSuccess }) =
             <Ionicons name="key" size={28} color={COLORS.secondary} />
           </View>
 
-          <Text style={styles.title}>{t('verifyOtp')}</Text>
+          <Text style={styles.title}>{t.verifyOtp}</Text>
           <Text style={styles.subtitle}>
             {language === 'hi'
               ? `मोबाइल नंबर +91 ${phone} पर भेजा गया कोड दर्ज करें`
@@ -108,7 +108,7 @@ export const WorkerOtpScreen: React.FC<Props> = ({ phone, onBack, onSuccess }) =
           </Text>
 
           <Input
-            label={t('enterOtp')}
+            label={t.enterOtp}
             placeholder="• • • • • •"
             value={otp}
             onChangeText={(txt) => {
@@ -122,7 +122,7 @@ export const WorkerOtpScreen: React.FC<Props> = ({ phone, onBack, onSuccess }) =
           />
 
           <Button
-            title={t('verify')}
+            title={t.verify}
             onPress={handleVerify}
             loading={loading}
             style={styles.verifyBtn}
@@ -142,10 +142,10 @@ export const WorkerOtpScreen: React.FC<Props> = ({ phone, onBack, onSuccess }) =
             <TouchableOpacity onPress={handleResend} disabled={timer > 0 || resending}>
               <Text style={[styles.resendLink, timer > 0 && styles.resendDisabled]}>
                 {timer > 0
-                  ? `${t('resendOtp')} (${timer}s)`
+                  ? `${t.resendOtp} (${timer}s)`
                   : resending
                   ? '...'
-                  : t('resendOtp')}
+                  : t.resendOtp}
               </Text>
             </TouchableOpacity>
           </View>

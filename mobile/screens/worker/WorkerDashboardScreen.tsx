@@ -97,7 +97,7 @@ export const WorkerDashboardScreen: React.FC<Props> = ({
       await updateWorkerProfile({ isAvailable: value ? 1 : 0 });
     } catch {
       setIsOnline(!value);
-      Alert.alert(t('error'), 'Could not update online status. Please check your connection.');
+      Alert.alert(t.error, 'Could not update online status. Please check your connection.');
     } finally {
       setTogglingOnline(false);
     }
@@ -112,7 +112,7 @@ export const WorkerDashboardScreen: React.FC<Props> = ({
       );
       loadDashboardData();
     } catch {
-      Alert.alert(t('error'), 'Failed to accept booking.');
+      Alert.alert(t.error, 'Failed to accept booking.');
     }
   };
 
@@ -127,7 +127,7 @@ export const WorkerDashboardScreen: React.FC<Props> = ({
   return (
     <View style={styles.container}>
       <Header
-        title={t('workerDashboard')}
+        title={t.workerDashboard}
         subtitle={workerProfile?.name ? `${workerProfile.name} • NCCT` : 'Co-op Worker'}
         showBack={false}
       />
@@ -153,7 +153,7 @@ export const WorkerDashboardScreen: React.FC<Props> = ({
                   ]}
                 />
                 <Text style={styles.statusTitle}>
-                  {isOnline ? t('online') : t('offline')}
+                  {isOnline ? t.online : t.offline}
                 </Text>
               </View>
               <Text style={styles.statusSubtitle}>
@@ -197,7 +197,7 @@ export const WorkerDashboardScreen: React.FC<Props> = ({
               {earnings.completedJobsCount} {language === 'hi' ? 'कार्य पूर्ण' : 'Jobs Completed'}
             </Text>
             <View style={styles.arrowRow}>
-              <Text style={styles.viewDetailsText}>{t('viewDetails')}</Text>
+              <Text style={styles.viewDetailsText}>{t.viewDetails}</Text>
               <Ionicons name="arrow-forward" size={14} color={COLORS.primary} />
             </View>
           </View>
@@ -212,7 +212,7 @@ export const WorkerDashboardScreen: React.FC<Props> = ({
             <View style={[styles.gridIcon, { backgroundColor: COLORS.primaryLight }]}>
               <Ionicons name="briefcase" size={24} color={COLORS.primary} />
             </View>
-            <Text style={styles.gridBtnTitle}>{t('myJobs')}</Text>
+            <Text style={styles.gridBtnTitle}>{t.myJobs}</Text>
             {pendingCount > 0 && (
               <View style={styles.counterBadge}>
                 <Text style={styles.counterText}>{pendingCount}</Text>
@@ -227,7 +227,7 @@ export const WorkerDashboardScreen: React.FC<Props> = ({
             <View style={[styles.gridIcon, { backgroundColor: COLORS.secondaryLight }]}>
               <Ionicons name="shield-checkmark" size={24} color={COLORS.secondary} />
             </View>
-            <Text style={styles.gridBtnTitle}>{t('welfarePmsby')}</Text>
+            <Text style={styles.gridBtnTitle}>{t.welfarePmsby}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity

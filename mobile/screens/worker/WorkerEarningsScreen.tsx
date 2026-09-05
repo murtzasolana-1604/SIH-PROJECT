@@ -92,7 +92,7 @@ export const WorkerEarningsScreen: React.FC<Props> = ({ onBack }) => {
 
   return (
     <View style={styles.container}>
-      <Header title={t('earnings')} onBack={onBack} />
+      <Header title={t.earnings} onBack={onBack} />
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}

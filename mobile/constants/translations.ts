@@ -162,7 +162,25 @@ export const TRANSLATIONS = {
     totalAmount: "Total Payable",
     mockUpiNote: "DEMO UPI SETTLEMENT — Prototype Simulator",
     payWithUpi: "Pay via Demo UPI",
-    paymentSuccess: "Payment Settled Successfully!"
+    paymentSuccess: "Payment Settled Successfully!",
+
+    // Navigation & Screen Titles
+    home: "Home",
+    bookings: "Bookings",
+    profile: "Profile",
+    dashboard: "Dashboard",
+    myJobs: "My Jobs",
+    earnings: "Earnings",
+    jobDetails: "Job Details",
+    workerLogin: "Worker Login",
+    enterMobile: "Enter Mobile Number",
+    phone: "Phone Number",
+    verify: "Verify",
+    worker: "Worker",
+    customer: "Citizen",
+    welfarePmsby: "Welfare & PMSBY",
+    sahkaarSaathi: "Sahkaar Saathi",
+    error: "Error",
   },
 
   hi: {
@@ -321,6 +339,24 @@ export const TRANSLATIONS = {
     totalAmount: "कुल देय राशि",
     mockUpiNote: "डेमो यूपीआई निपटान — प्रोटोटाइप सिम्युलेटर",
     payWithUpi: "डेमो यूपीआई से भुगतान करें",
-    paymentSuccess: "भुगतान सफलतापूर्वक संपन्न हुआ!"
+    paymentSuccess: "भुगतान सफलतापूर्वक संपन्न हुआ!",
+
+    // Navigation & Screen Titles
+    home: "होम",
+    bookings: "बुकिंग",
+    profile: "प्रोफाइल",
+    dashboard: "डैशबोर्ड",
+    myJobs: "मेरे कार्य",
+    earnings: "कमाई",
+    jobDetails: "कार्य विवरण",
+    workerLogin: "कामगार लॉगिन",
+    enterMobile: "मोबाइल नंबर दर्ज करें",
+    phone: "फोन नंबर",
+    verify: "सत्यापित करें",
+    worker: "कामगार",
+    customer: "नागरिक",
+    welfarePmsby: "कल्याण एवं PMSBY",
+    sahkaarSaathi: "सहकार साथी",
+    error: "त्रुटि",
   }
 };

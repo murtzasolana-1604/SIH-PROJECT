@@ -1,19 +1,20 @@
 /**
  * Language Context
  * Reactive bilingual translation provider (English & Hindi)
+ * Uses plain object property access (t.key) — no Proxy, fully Hermes-safe
  */
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Language, TRANSLATIONS } from "../constants/translations";
 import { StorageService } from "../services/storage";
 
-export type TranslationFunction = ((key: string) => string) & typeof TRANSLATIONS["en"];
+export type Translations = typeof TRANSLATIONS["en"];
 
 interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => Promise<void>;
   toggleLanguage: () => Promise<void>;
-  t: TranslationFunction;
+  t: Translations;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -35,23 +36,11 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     await setLanguage(nextLang);
   };
 
-  const dict = TRANSLATIONS[language] || TRANSLATIONS["en"];
-  const tFunc = (key: string): string => {
-    return (dict as any)[key] ?? (TRANSLATIONS["en"] as any)[key] ?? key;
+  // Plain object merge — fully Hermes compatible, no Proxy needed
+  const t: Translations = {
+    ...TRANSLATIONS["en"],
+    ...(TRANSLATIONS[language] || {}),
   };
-
-  const t = new Proxy(tFunc, {
-    get(target, prop: string) {
-      if (prop in target) {
-        return (target as any)[prop];
-      }
-      return (dict as any)[prop] ?? (TRANSLATIONS["en"] as any)[prop] ?? prop;
-    },
-    apply(target, thisArg, argArray) {
-      const key = argArray[0];
-      return (dict as any)[key] ?? (TRANSLATIONS["en"] as any)[key] ?? key;
-    },
-  }) as TranslationFunction;
 
   return (
     <LanguageContext.Provider value={{ language, setLanguage, toggleLanguage, t }}>

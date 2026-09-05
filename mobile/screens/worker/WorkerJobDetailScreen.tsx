@@ -57,7 +57,7 @@ export const WorkerJobDetailScreen: React.FC<Props> = ({ bookingId, onBack }) =>
         language === 'hi' ? `कार्य की स्थिति: ${newStatus}` : `Job status updated to ${newStatus}`
       );
     } catch {
-      Alert.alert(t('error'), 'Failed to update job status.');
+      Alert.alert(t.error, 'Failed to update job status.');
     } finally {
       setActionLoading(false);
     }
@@ -72,7 +72,7 @@ export const WorkerJobDetailScreen: React.FC<Props> = ({ bookingId, onBack }) =>
   if (loading) {
     return (
       <View style={styles.container}>
-        <Header title={t('jobDetails')} onBack={onBack} />
+        <Header title={t.jobDetails} onBack={onBack} />
         <LoadingState />
       </View>
     );
@@ -81,12 +81,12 @@ export const WorkerJobDetailScreen: React.FC<Props> = ({ bookingId, onBack }) =>
   if (!booking) {
     return (
       <View style={styles.container}>
-        <Header title={t('jobDetails')} onBack={onBack} />
+        <Header title={t.jobDetails} onBack={onBack} />
         <View style={styles.centered}>
           <Text style={styles.errorText}>
             {language === 'hi' ? 'कार्य विवरण नहीं मिला' : 'Job details not found'}
           </Text>
-          <Button title={t('retry')} onPress={fetchJob} style={{ marginTop: SPACING.md }} />
+          <Button title={t.retry} onPress={fetchJob} style={{ marginTop: SPACING.md }} />
         </View>
       </View>
     );
@@ -99,7 +99,7 @@ export const WorkerJobDetailScreen: React.FC<Props> = ({ bookingId, onBack }) =>
   return (
     <View style={styles.container}>
       <Header
-        title={t('jobDetails')}
+        title={t.jobDetails}
         subtitle={`ID: #${booking.id.slice(0, 8)}`}
         onBack={onBack}
       />

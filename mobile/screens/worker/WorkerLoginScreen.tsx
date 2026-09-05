@@ -59,7 +59,7 @@ export const WorkerLoginScreen: React.FC<Props> = ({ onBack, onOtpSent }) => {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <Header title={t('workerLogin')} onBack={onBack} />
+      <Header title={t.workerLogin} onBack={onBack} />
 
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         {/* Worker Badge Banner */}
@@ -79,7 +79,7 @@ export const WorkerLoginScreen: React.FC<Props> = ({ onBack, onOtpSent }) => {
 
         {/* Form Card */}
         <Card style={styles.formCard}>
-          <Text style={styles.formTitle}>{t('enterMobile')}</Text>
+          <Text style={styles.formTitle}>{t.enterMobile}</Text>
           <Text style={styles.formSubtitle}>
             {language === 'hi'
               ? 'हम आपके पंजीकृत मोबाइल नंबर पर 6-अंकीय सत्यापन कोड भेजेंगे'
@@ -87,7 +87,7 @@ export const WorkerLoginScreen: React.FC<Props> = ({ onBack, onOtpSent }) => {
           </Text>
 
           <Input
-            label={t('phone')}
+            label={t.phone}
             placeholder="98765 43210"
             value={phone}
             onChangeText={(text) => {
@@ -101,7 +101,7 @@ export const WorkerLoginScreen: React.FC<Props> = ({ onBack, onOtpSent }) => {
           />
 
           <Button
-            title={t('sendOtp')}
+            title={t.sendOtp}
             onPress={handleSendOtp}
             loading={loading}
             style={styles.actionBtn}
