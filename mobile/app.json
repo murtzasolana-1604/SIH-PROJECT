@@ -28,7 +28,9 @@
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
-        "RECORD_AUDIO"
+        "RECORD_AUDIO",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
       ]
     },
     "web": {
@@ -41,6 +43,11 @@
           "locationAlwaysAndWhenInUsePermission": "Allow Sahkaar Connect to access your location to find nearby verified cooperative tradespeople."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "27bb99dd-c137-4e0a-920d-b6e90df815c0"
+      }
+    }
   }
 }

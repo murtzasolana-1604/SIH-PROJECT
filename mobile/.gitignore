@@ -14,3 +14,5 @@ npm-debug.*
 *.orig.*
 *.apk
 *.aab
+android/
+ios/
