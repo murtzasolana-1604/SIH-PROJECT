@@ -74,7 +74,8 @@ export const WorkerJobsScreen: React.FC<Props> = ({
 
   const handleAcceptJob = async (bookingId: string) => {
     try {
-      await apiService.updateBookingStatus(bookingId, 'confirmed');
+      const workerId = workerProfile?.id || 1;
+      await apiService.acceptBooking(bookingId, workerId);
       Alert.alert(
         language === 'hi' ? 'स्वीकृत' : 'Accepted',
         language === 'hi' ? 'आपने कार्य स्वीकार कर लिया है।' : 'Job accepted successfully.'
@@ -87,7 +88,7 @@ export const WorkerJobsScreen: React.FC<Props> = ({
 
   const handleStartJob = async (bookingId: string) => {
     try {
-      await apiService.updateBookingStatus(bookingId, 'in_progress');
+      await apiService.startBooking(bookingId);
       Alert.alert(
         language === 'hi' ? 'कार्य शुरू हुआ' : 'Job Started',
         language === 'hi' ? 'कार्य अब प्रगति पर है।' : 'Job marked as in-progress.'
@@ -100,12 +101,12 @@ export const WorkerJobsScreen: React.FC<Props> = ({
 
   const handleCompleteJob = async (bookingId: string) => {
     try {
-      await apiService.updateBookingStatus(bookingId, 'completed');
+      await apiService.completeBooking(bookingId);
       Alert.alert(
         language === 'hi' ? 'कार्य पूर्ण' : 'Job Completed',
         language === 'hi'
-          ? 'कार्य सफलतापूर्वक पूर्ण हुआ! 85% कमाई आपके खाते में दर्ज कर दी गई है।'
-          : 'Job completed! 85% living wage payout credited to your balance.'
+          ? 'कार्य सफलतापूर्वक पूर्ण हुआ! 93% कमाई आपके खाते में दर्ज कर दी गई है।'
+          : 'Job completed! 93% living wage payout credited to your balance.'
       );
       fetchJobs();
     } catch {

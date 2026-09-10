@@ -258,8 +258,8 @@ export const WorkerWelfareScreen: React.FC<Props> = ({ onBack }) => {
           <Ionicons name="information-circle-outline" size={20} color={COLORS.primary} />
           <Text style={styles.trustText}>
             {language === 'hi'
-              ? 'सहकार कनेक्ट का 15% कल्याण कोष सीधे भारत सरकार के सामाजिक सुरक्षा मानकों के तहत कामगार सुरक्षा सुनिश्चित करता है।'
-              : 'The 15% Cooperative Welfare Reserve strictly funds social security, PMSBY coverage, and emergency distress aid for all verified workers.'}
+              ? 'सहकार कनेक्ट का 7% कल्याण कोष सीधे भारत सरकार के सामाजिक सुरक्षा मानकों के तहत कामगार सुरक्षा सुनिश्चित करता है।'
+              : 'The 7% Cooperative Welfare Reserve strictly funds social security, PMSBY coverage, and emergency distress aid for all verified workers.'}
           </Text>
         </Card>
       </ScrollView>

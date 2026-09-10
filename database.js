@@ -405,6 +405,11 @@ function initSQLite() {
             status TEXT DEFAULT 'Active',
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
+
+        CREATE INDEX IF NOT EXISTS idx_workers_skill_avail ON workers (skill, is_available, verified);
+        CREATE INDEX IF NOT EXISTS idx_workers_coords ON workers (latitude, longitude);
+        CREATE INDEX IF NOT EXISTS idx_bookings_status_worker ON bookings (status, assigned_worker_id);
+        CREATE INDEX IF NOT EXISTS idx_bookings_phone ON bookings (customer_phone);
     `);
 
     // Seed admin if empty
@@ -690,6 +695,11 @@ async function initPostgreSQL() {
             status TEXT DEFAULT 'Active',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
+
+        CREATE INDEX IF NOT EXISTS idx_workers_skill_avail ON workers (skill, is_available, verified);
+        CREATE INDEX IF NOT EXISTS idx_workers_coords ON workers (latitude, longitude);
+        CREATE INDEX IF NOT EXISTS idx_bookings_status_worker ON bookings (status, assigned_worker_id);
+        CREATE INDEX IF NOT EXISTS idx_bookings_phone ON bookings (customer_phone);
     `);
 
     // Seed Admin

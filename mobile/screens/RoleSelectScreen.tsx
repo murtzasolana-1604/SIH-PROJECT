@@ -13,9 +13,10 @@ import { UserRole } from "../types/auth";
 
 interface RoleSelectScreenProps {
   onSelectRole: (role: UserRole) => void;
+  onBrowseGuest?: () => void;
 }
 
-export const RoleSelectScreen: React.FC<RoleSelectScreenProps> = ({ onSelectRole }) => {
+export const RoleSelectScreen: React.FC<RoleSelectScreenProps> = ({ onSelectRole, onBrowseGuest }) => {
   const { t } = useLanguage();
 
   return (
@@ -78,7 +79,7 @@ export const RoleSelectScreen: React.FC<RoleSelectScreenProps> = ({ onSelectRole
           </View>
           <Text style={styles.roleDesc}>{t.workerRoleDesc}</Text>
           <View style={styles.featureList}>
-            <Text style={styles.featureItem}>✓ 85% Direct Living Wage Take-Home</Text>
+            <Text style={styles.featureItem}>✓ 93% Direct Living Wage Take-Home</Text>
             <Text style={styles.featureItem}>✓ ₹2,00,000 PMSBY Accidental Insurance Cover</Text>
             <Text style={styles.featureItem}>✓ Democratic Cooperative Society Membership</Text>
           </View>
@@ -89,6 +90,28 @@ export const RoleSelectScreen: React.FC<RoleSelectScreenProps> = ({ onSelectRole
             <Text style={styles.continueButtonText}>{t.continueAsWorker} →</Text>
           </TouchableOpacity>
         </Card>
+
+        {/* Guest Service Browsing Button */}
+        {onBrowseGuest && (
+          <TouchableOpacity
+            style={styles.guestBrowseBtn}
+            onPress={onBrowseGuest}
+            activeOpacity={0.85}
+          >
+            <View style={styles.guestBrowseIconBox}>
+              <Text style={{ fontSize: 20 }}>🔎</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.guestBrowseTitle}>
+                {t.browseAsGuest || "Browse Services as Guest"}
+              </Text>
+              <Text style={styles.guestBrowseDesc}>
+                {t.browseAsGuestDesc || "Explore verified cooperative trades without logging in"}
+              </Text>
+            </View>
+            <Text style={styles.guestBrowseArrow}>→</Text>
+          </TouchableOpacity>
+        )}
 
         {/* SIH Governance Footer */}
         <View style={styles.governanceFooter}>
@@ -196,6 +219,41 @@ const styles = StyleSheet.create({
     fontSize: THEME.typography.sizes.body,
     fontWeight: "700",
     color: THEME.colors.textInverse,
+  },
+  guestBrowseBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: THEME.colors.surface,
+    borderRadius: THEME.borderRadius.lg,
+    padding: THEME.spacing.md,
+    marginTop: THEME.spacing.md,
+    borderWidth: 1.5,
+    borderColor: THEME.colors.primary,
+    borderStyle: "dashed",
+    gap: THEME.spacing.sm,
+  },
+  guestBrowseIconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: THEME.borderRadius.full,
+    backgroundColor: THEME.colors.primaryMuted,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  guestBrowseTitle: {
+    fontSize: THEME.typography.sizes.body,
+    fontWeight: "700",
+    color: THEME.colors.primary,
+  },
+  guestBrowseDesc: {
+    fontSize: 12,
+    color: THEME.colors.textSecondary,
+    marginTop: 2,
+  },
+  guestBrowseArrow: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: THEME.colors.primary,
   },
   governanceFooter: {
     marginTop: THEME.spacing.xl,

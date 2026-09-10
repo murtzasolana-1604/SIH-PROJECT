@@ -63,6 +63,9 @@ const MainNavigator: React.FC = () => {
   const [customerTab, setCustomerTab] = useState<CustomerTab>('home');
   const [workerTab, setWorkerTab] = useState<WorkerTab>('dashboard');
 
+  // Guest Browsing Context Preservation
+  const [pendingGuestBooking, setPendingGuestBooking] = useState<{ serviceName: string; worker?: WorkerProfile } | null>(null);
+
   // Customer Navigation Params
   const [customerPhone, setCustomerPhone] = useState('');
   const [selectedService, setSelectedService] = useState('');
@@ -202,6 +205,10 @@ const MainNavigator: React.FC = () => {
                 setScreen('worker_login');
               }
             }}
+            onBrowseGuest={() => {
+              setScreen('customer_main');
+              setCustomerTab('home');
+            }}
           />
         )}
 
@@ -223,6 +230,11 @@ const MainNavigator: React.FC = () => {
             onSuccess={(needsOnboarding) => {
               if (needsOnboarding) {
                 setScreen('customer_onboarding');
+              } else if (pendingGuestBooking) {
+                setSelectedService(pendingGuestBooking.serviceName);
+                setSelectedWorker(pendingGuestBooking.worker || null);
+                setPendingGuestBooking(null);
+                setScreen('customer_book');
               } else {
                 setScreen('customer_main');
                 setCustomerTab('home');
@@ -234,8 +246,15 @@ const MainNavigator: React.FC = () => {
         {screen === 'customer_onboarding' && (
           <CustomerOnboardingScreen
             onComplete={() => {
-              setScreen('customer_main');
-              setCustomerTab('home');
+              if (pendingGuestBooking) {
+                setSelectedService(pendingGuestBooking.serviceName);
+                setSelectedWorker(pendingGuestBooking.worker || null);
+                setPendingGuestBooking(null);
+                setScreen('customer_book');
+              } else {
+                setScreen('customer_main');
+                setCustomerTab('home');
+              }
             }}
           />
         )}
@@ -284,8 +303,37 @@ const MainNavigator: React.FC = () => {
               setSelectedWorker(w);
               setScreen('customer_worker_detail');
             }}
+            onBookWorker={(w) => {
+              setSelectedWorker(w);
+              setSelectedService(w.skills?.[0] || w.skill || selectedService || 'General');
+              if (!isAuthenticated) {
+                setPendingGuestBooking({ serviceName: w.skills?.[0] || w.skill || selectedService || 'General', worker: w });
+                Alert.alert(
+                  language === 'hi' ? 'लॉगिन आवश्यक है' : 'Citizen Login Required',
+                  language === 'hi' ? 'सेवा बुक करने के लिए कृपया मोबाइल नंबर दर्ज करें।' : 'Please verify your phone number to complete booking.',
+                  [
+                    { text: language === 'hi' ? 'रद्द करें' : 'Cancel', style: 'cancel' },
+                    { text: language === 'hi' ? 'लॉगिन करें' : 'Login Now', onPress: () => setScreen('customer_login') }
+                  ]
+                );
+              } else {
+                setScreen('customer_book');
+              }
+            }}
             onBookService={() => {
-              setScreen('customer_book');
+              if (!isAuthenticated) {
+                setPendingGuestBooking({ serviceName: selectedService || 'General' });
+                Alert.alert(
+                  language === 'hi' ? 'लॉगिन आवश्यक है' : 'Citizen Login Required',
+                  language === 'hi' ? 'सेवा बुक करने के लिए कृपया मोबाइल नंबर दर्ज करें।' : 'Please verify your phone number to complete booking.',
+                  [
+                    { text: language === 'hi' ? 'रद्द करें' : 'Cancel', style: 'cancel' },
+                    { text: language === 'hi' ? 'लॉगिन करें' : 'Login Now', onPress: () => setScreen('customer_login') }
+                  ]
+                );
+              } else {
+                setScreen('customer_book');
+              }
             }}
           />
         )}
@@ -294,7 +342,21 @@ const MainNavigator: React.FC = () => {
           <WorkerDetailScreen
             worker={selectedWorker}
             onBack={() => setScreen('customer_workers')}
-            onBook={() => setScreen('customer_book')}
+            onBook={() => {
+              if (!isAuthenticated) {
+                setPendingGuestBooking({ serviceName: selectedService || selectedWorker?.skill || 'General', worker: selectedWorker });
+                Alert.alert(
+                  language === 'hi' ? 'लॉगिन आवश्यक है' : 'Citizen Login Required',
+                  language === 'hi' ? 'सेवा बुक करने के लिए कृपया मोबाइल नंबर दर्ज करें।' : 'Please verify your phone number to complete booking.',
+                  [
+                    { text: language === 'hi' ? 'रद्द करें' : 'Cancel', style: 'cancel' },
+                    { text: language === 'hi' ? 'लॉगिन करें' : 'Login Now', onPress: () => setScreen('customer_login') }
+                  ]
+                );
+              } else {
+                setScreen('customer_book');
+              }
+            }}
           />
         )}
 

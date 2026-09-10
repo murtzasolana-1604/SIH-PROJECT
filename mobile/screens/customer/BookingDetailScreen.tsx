@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, ScrollView, Alert } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity, Linking } from "react-native";
 import { THEME } from "../../constants/theme";
 import { useLanguage } from "../../context/LanguageContext";
 import { Header } from "../../components/common/Header";
@@ -14,7 +14,7 @@ import { Input } from "../../components/common/Input";
 import { StatusBadge } from "../../components/common/StatusBadge";
 import { RatingStars } from "../../components/common/RatingStars";
 import { Booking, Invoice } from "../../types/booking";
-import { api } from "../../services/api";
+import { api, apiService } from "../../services/api";
 
 interface BookingDetailScreenProps {
   booking?: Booking;
@@ -99,10 +99,12 @@ export const BookingDetailScreen: React.FC<BookingDetailScreenProps> = ({
     if (!activeBooking?.id) return;
     setSubmittingRating(true);
     try {
-      const res = await api.post(`/api/bookings/${activeBooking.id}/rate`, {
-        rating: stars,
+      const res = await apiService.rateBooking({
+        bookingId: activeBooking.id,
+        workerId: activeBooking.assigned_worker_id || undefined,
+        stars: stars,
         comment: comment.trim(),
-        workerId: activeBooking.assigned_worker_id,
+        tags: [],
       });
 
       if (res && res.success) {
@@ -181,7 +183,23 @@ export const BookingDetailScreen: React.FC<BookingDetailScreenProps> = ({
                   {activeBooking.worker_skill || (activeBooking as any).workerSkill || activeBooking.service} • NCCT Skill Certified
                 </Text>
                 {(activeBooking.worker_phone || (activeBooking as any).workerPhone) && (
-                  <Text style={styles.workerPhone}>📞 Phone: +91 {activeBooking.worker_phone || (activeBooking as any).workerPhone}</Text>
+                  <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 4, flexWrap: "wrap", gap: 6 }}>
+                    <Text style={styles.workerPhone}>📞 +91 {activeBooking.worker_phone || (activeBooking as any).workerPhone}</Text>
+                    <TouchableOpacity
+                      style={{ backgroundColor: "#E8F5E9", paddingHorizontal: 10, paddingVertical: 5, borderRadius: 6, borderWidth: 1, borderColor: "#81C784" }}
+                      onPress={() => {
+                        const ph = activeBooking.worker_phone || (activeBooking as any).workerPhone;
+                        if (ph) Linking.openURL(`tel:${ph}`);
+                      }}
+                    >
+                      <Text style={{ fontSize: 12, fontWeight: "700", color: "#1B5E20" }}>📞 Call Worker</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+                {(activeBooking.distance_km !== undefined && activeBooking.distance_km !== null) && (
+                  <Text style={{ fontSize: 12, color: THEME.colors.primary, fontWeight: "700", marginTop: 4 }}>
+                    📍 {activeBooking.distance_km} km away
+                  </Text>
                 )}
               </View>
             </View>
@@ -205,11 +223,11 @@ export const BookingDetailScreen: React.FC<BookingDetailScreenProps> = ({
               <Text style={styles.invoiceVal}>₹{invoice.service_charge}</Text>
             </View>
             <View style={styles.invoiceRow}>
-              <Text style={styles.invoiceLabel}>Worker Direct Living Wage (85%)</Text>
+              <Text style={styles.invoiceLabel}>Worker Direct Living Wage (93%)</Text>
               <Text style={styles.invoiceVal}>₹{invoice.worker_earning}</Text>
             </View>
             <View style={styles.invoiceRow}>
-              <Text style={styles.invoiceLabel}>NCCT Welfare & PMSBY Fund (15%)</Text>
+              <Text style={styles.invoiceLabel}>NCCT Welfare & PMSBY Fund (7%)</Text>
               <Text style={styles.invoiceVal}>₹{invoice.cooperative_share}</Text>
             </View>
             <View style={[styles.invoiceRow, styles.invoiceTotalRow]}>

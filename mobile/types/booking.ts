@@ -57,6 +57,10 @@ export interface Booking {
   worker_location?: string;
   customer_lat?: number | null;
   customer_lng?: number | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  distance_km?: number | null;
+  worker_distance_km?: number | null;
   created_at?: string;
 }
 

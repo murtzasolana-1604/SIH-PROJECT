@@ -19,10 +19,13 @@ import { useAuth } from "../../context/AuthContext";
 import { Header } from "../../components/common/Header";
 import { ServiceCard } from "../../components/customer/ServiceCard";
 import { WorkerCard } from "../../components/customer/WorkerCard";
+import { Card } from "../../components/common/Card";
 import { LoadingState } from "../../components/common/LoadingState";
 import { ServiceItem } from "../../types/booking";
 import { WorkerProfile } from "../../types/auth";
 import { api } from "../../services/api";
+import { LocationService } from "../../services/location";
+import { CONFIG } from "../../constants/config";
 
 interface CustomerHomeScreenProps {
   onSelectService: (serviceName: string) => void;
@@ -50,9 +53,11 @@ export const CustomerHomeScreen: React.FC<CustomerHomeScreenProps> = ({
 
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [workers, setWorkers] = useState<WorkerProfile[]>([]);
+  const [locationRequired, setLocationRequired] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [selectedRadius, setSelectedRadius] = useState<number>(CONFIG.DEFAULT_CUSTOMER_RADIUS_KM || 20);
 
   const fetchData = async () => {
     try {
@@ -62,12 +67,32 @@ export const CustomerHomeScreen: React.FC<CustomerHomeScreenProps> = ({
         setServices(servicesRes.services);
       }
 
-      // Fetch verified workers
-      const workersRes = await api.get("/api/workers");
-      if (workersRes && Array.isArray(workersRes)) {
-        setWorkers(workersRes.slice(0, 5));
-      } else if (workersRes && workersRes.workers) {
-        setWorkers(workersRes.workers.slice(0, 5));
+      // Fetch verified workers with real Haversine location matching
+      let coords = null;
+      try {
+        coords = await LocationService.getCurrentLocation();
+      } catch (locErr) {
+        console.warn("Location error:", locErr);
+      }
+
+      const lat = coords?.latitude || customer?.latitude;
+      const lng = coords?.longitude || customer?.longitude;
+
+      if (!lat || !lng) {
+        setLocationRequired(true);
+        setWorkers([]);
+      } else {
+        setLocationRequired(false);
+        const workersRes = await api.get("/api/workers/nearby", {
+          lat,
+          lng,
+          radiusKm: selectedRadius,
+        });
+        if (workersRes && workersRes.workers) {
+          setWorkers(workersRes.workers.slice(0, 6));
+        } else if (workersRes && Array.isArray(workersRes)) {
+          setWorkers(workersRes.slice(0, 6));
+        }
       }
     } catch (err) {
       console.warn("Failed to load customer home data:", err);
@@ -79,7 +104,7 @@ export const CustomerHomeScreen: React.FC<CustomerHomeScreenProps> = ({
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [selectedRadius]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -170,20 +195,69 @@ export const CustomerHomeScreen: React.FC<CustomerHomeScreenProps> = ({
 
         {/* Nearby Verified Workers */}
         <View style={[styles.sectionHeader, { marginTop: THEME.spacing.lg }]}>
-          <Text style={styles.sectionTitle}>{t.nearbyWorkers}</Text>
+          <View>
+            <Text style={styles.sectionTitle}>{t.nearbyWorkers}</Text>
+            <Text style={{ fontSize: 11, color: THEME.colors.textMuted, marginTop: 2 }}>
+              {workers.length} verified tradespeople within {selectedRadius} KM
+            </Text>
+          </View>
           <TouchableOpacity onPress={() => onSelectService("")}>
             <Text style={styles.viewAllText}>{t.viewAll}</Text>
           </TouchableOpacity>
         </View>
 
-        {workers.map((worker) => (
-          <WorkerCard
-            key={worker.id}
-            worker={worker}
-            onPress={() => onSelectWorker(worker)}
-            onBook={() => onSelectWorker(worker)}
-          />
-        ))}
+        {/* Radius Filter Pills */}
+        <View style={styles.radiusPillsRow}>
+          {[5, 10, 20, 30, 50].map((r) => (
+            <TouchableOpacity
+              key={r}
+              style={[
+                styles.radiusPill,
+                selectedRadius === r && styles.radiusPillActive,
+              ]}
+              onPress={() => setSelectedRadius(r)}
+            >
+              <Text
+                style={[
+                  styles.radiusPillText,
+                  selectedRadius === r && styles.radiusPillTextActive,
+                ]}
+              >
+                {r === 20 ? "20 KM (Default)" : `${r} KM`}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {locationRequired ? (
+          <Card variant="outlined" style={styles.locationRequiredCard}>
+            <Text style={styles.locationRequiredIcon}>📍</Text>
+            <Text style={styles.locationRequiredTitle}>Location Required</Text>
+            <Text style={styles.locationRequiredDesc}>
+              Please enable GPS or update your profile address to discover verified cooperative tradespeople within your radius. Fake coordinates are never used.
+            </Text>
+            <TouchableOpacity
+              style={styles.locationEnableBtn}
+              activeOpacity={0.85}
+              onPress={fetchData}
+            >
+              <Text style={styles.locationEnableBtnText}>📍 Detect My Location</Text>
+            </TouchableOpacity>
+          </Card>
+        ) : workers.length === 0 ? (
+          <Card variant="outlined" style={{ padding: 18, alignItems: "center", marginVertical: 8 }}>
+            <Text style={{ fontSize: 13, color: THEME.colors.textMuted }}>No cooperative workers found within {selectedRadius} KM.</Text>
+          </Card>
+        ) : (
+          workers.map((worker) => (
+            <WorkerCard
+              key={worker.id}
+              worker={worker}
+              onPress={() => onSelectWorker(worker)}
+              onBook={() => onSelectWorker(worker)}
+            />
+          ))
+        )}
 
         {/* Sahkaar Saathi Floating Promo */}
         <TouchableOpacity
@@ -307,6 +381,34 @@ const styles = StyleSheet.create({
     color: THEME.colors.primaryDark,
     marginTop: 2,
   },
+  radiusPillsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    marginVertical: THEME.spacing.xs,
+    paddingHorizontal: 2,
+  },
+  radiusPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: THEME.borderRadius.full,
+    backgroundColor: THEME.colors.surface,
+    borderWidth: 1,
+    borderColor: THEME.colors.border,
+  },
+  radiusPillActive: {
+    backgroundColor: THEME.colors.primary,
+    borderColor: THEME.colors.primary,
+  },
+  radiusPillText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: THEME.colors.textSecondary,
+  },
+  radiusPillTextActive: {
+    color: THEME.colors.textInverse,
+    fontWeight: "700",
+  },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -362,5 +464,39 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "700",
     color: THEME.colors.secondary,
+  },
+  locationRequiredCard: {
+    padding: THEME.spacing.lg,
+    alignItems: "center",
+    marginVertical: THEME.spacing.md,
+    backgroundColor: THEME.colors.surface,
+  },
+  locationRequiredIcon: {
+    fontSize: 32,
+    marginBottom: 6,
+  },
+  locationRequiredTitle: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: THEME.colors.text,
+    marginBottom: 6,
+  },
+  locationRequiredDesc: {
+    fontSize: 12,
+    color: THEME.colors.textSecondary,
+    textAlign: "center",
+    lineHeight: 17,
+    marginBottom: THEME.spacing.md,
+  },
+  locationEnableBtn: {
+    backgroundColor: THEME.colors.primary,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: THEME.borderRadius.md,
+  },
+  locationEnableBtnText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#FFFFFF",
   },
 });

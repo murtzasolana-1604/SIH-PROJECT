@@ -604,11 +604,11 @@ async function fetchMyBookings() {
                                     </div>` : ""}
                                     <div class="inv-row divider"></div>
                                     <div class="inv-row highlight">
-                                        <span>${t('workerDirectEarning', '👷 Worker Direct Earning (85%):')}</span>
+                                        <span>${t('workerDirectEarning', '👷 Worker Direct Earning (93%):')}</span>
                                         <span class="worker-earning-text">₹${inv.worker_earning}</span>
                                     </div>
                                     <div class="inv-row coop-share">
-                                        <span>${t('coopWelfareShareText', '🏛️ Cooperative Welfare & Training Fund (15%):')}</span>
+                                        <span>${t('coopWelfareShareText', '🏛️ Cooperative Welfare & Training Fund (7%):')}</span>
                                         <span class="coop-share-text">₹${inv.cooperative_share}</span>
                                     </div>
                                     <div class="inv-row total-row">
@@ -651,11 +651,11 @@ async function fetchMyBookings() {
                                     </div>` : ""}
                                     <div class="inv-row divider"></div>
                                     <div class="inv-row highlight">
-                                        <span>${t('workerDirectEarning', '👷 Worker Direct Earning (85%):')}</span>
+                                        <span>${t('workerDirectEarning', '👷 Worker Direct Earning (93%):')}</span>
                                         <span class="worker-earning-text">₹${inv.worker_earning}</span>
                                     </div>
                                     <div class="inv-row coop-share">
-                                        <span>${t('coopWelfareShareText', '🏛️ Cooperative Welfare & Training Fund (15%):')}</span>
+                                        <span>${t('coopWelfareShareText', '🏛️ Cooperative Welfare & Training Fund (7%):')}</span>
                                         <span class="coop-share-text">₹${inv.cooperative_share}</span>
                                     </div>
                                     <div class="inv-row total-row">
@@ -1115,12 +1115,12 @@ async function openPrintableReceipt(bookingId) {
                 </tr>` : ''}
                 <tr class="highlight">
                     <td>Worker Direct Earning (Zero Middleman Cut)</td>
-                    <td>85%</td>
+                    <td>93%</td>
                     <td>₹${inv.worker_earning}</td>
                 </tr>
                 <tr>
                     <td>Cooperative Society Welfare & Training Fund (NCCT)</td>
-                    <td>15%</td>
+                    <td>7%</td>
                     <td>₹${inv.cooperative_share}</td>
                 </tr>
                 <tr class="total">
@@ -1274,7 +1274,7 @@ async function fetchWorkerDashboard() {
 
                     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                         <small style="color:#2E7D32; font-size:11.5px; font-weight:600;">
-                            ✓ Funded by your 15% cooperative platform welfare share • Zero out-of-pocket deduction
+                            ✓ Funded by your 7% cooperative platform welfare share • Zero out-of-pocket deduction
                         </small>
                         <button type="button" class="primary cta-gold btn-sm" onclick="openWorkerInsuranceModal(${worker.id})">
                             🛡️ View Policy Certificate & Claim Form
@@ -1299,7 +1299,7 @@ async function fetchWorkerDashboard() {
                         <span class="stat-val">₹${earnings.week}</span>
                     </div>
                     <div class="earnings-stat-card">
-                        <span class="stat-label">Coop Share (15%)</span>
+                        <span class="stat-label">Coop Share (7%)</span>
                         <span class="stat-val coop">₹${earnings.cooperativeShare}</span>
                     </div>
                     <div class="earnings-stat-card highlight">
@@ -1307,7 +1307,7 @@ async function fetchWorkerDashboard() {
                         <span class="stat-val">₹${earnings.total}</span>
                     </div>
                 </div>
-                <small class="hint">Transparent cooperative ledger: zero private middleman commission — 85% directly to you, 15% to NCCT welfare fund.</small>
+                <small class="hint">Transparent cooperative ledger: zero private middleman commission — 93% directly to you, 7% to NCCT welfare fund.</small>
             </div>
 
             <!-- Cooperative Fair Wage Advantage Card (Phase 15) -->
@@ -1323,7 +1323,7 @@ async function fetchWorkerDashboard() {
                     </div>
                 </div>
                 <p class="fwa-desc">
-                    Unlike private gig platforms deducting 25–35% middleman commission plus customer booking fees, <strong>Sahkaar Connect</strong> guarantees you keep <strong>85% net take-home</strong>, with the remaining 15% funding your own accidental social security.
+                    Unlike private gig platforms deducting 25–35% middleman commission plus customer booking fees, <strong>Sahkaar Connect</strong> guarantees you keep <strong>93% net take-home</strong>, with the remaining 7% funding your own accidental social security.
                 </p>
                 <div class="fwa-pills">
                     <span class="fwa-pill">🛡️ 1.5x Above Statutory Min Wage</span>
@@ -1398,8 +1398,8 @@ async function fetchWorkerDashboard() {
                                 <strong>Address:</strong> ${inv.customer.address || 'Customer Location'}
                             </div>
                             <div class="settlement-earning-split">
-                                <div>Your Net Take-Home (85%): <strong class="earning-amt">₹${inv.worker_earning}</strong></div>
-                                <div style="font-size:12px; color:var(--muted);">Cooperative Welfare (15%): ₹${inv.cooperative_share} | Total: ₹${inv.total_amount}</div>
+                                <div>Your Net Take-Home (93%): <strong class="earning-amt">₹${inv.worker_earning}</strong></div>
+                                <div style="font-size:12px; color:var(--muted);">Cooperative Welfare (7%): ₹${inv.cooperative_share} | Total: ₹${inv.total_amount}</div>
                             </div>
                             ${isPaid ? `<div style="font-size:11.5px; color:var(--teal); margin-top:5px; font-family:var(--font-mono);">Settlement Ref: <code>${inv.transaction_id || 'SETTLED'}</code></div>` : ''}
                         </div>
@@ -1412,7 +1412,7 @@ async function fetchWorkerDashboard() {
         }
 
         // Available Jobs
-        const jobsRes = await fetch(`/api/bookings?service=${encodeURIComponent(worker.skill)}&status=Pending`);
+        const jobsRes = await fetch(`/api/bookings?service=${encodeURIComponent(worker.skill)}&status=Pending&workerLat=${worker.latitude || 28.4744}&workerLng=${worker.longitude || 77.5040}`);
         const jobsData = await jobsRes.json();
         const unpassedJobs = (jobsData.bookings || []).filter(b => !window.dismissedJobIds.has(b.id));
 
@@ -1457,7 +1457,7 @@ async function fetchWorkerDashboard() {
                         <strong>Date & Time:</strong> ${booking.booking_date} ${booking.booking_time}<br>
                         ${isEmerg ? `
                             <div class="emergency-incentive-chip">
-                                ⚡ Includes +₹50 Rapid Mobilization Bonus (85% to you)
+                                ⚡ Includes +₹50 Rapid Mobilization Bonus (93% to you)
                             </div>
                         ` : ''}
                         <div class="job-actions-row" style="margin-top:12px; display:flex; gap:10px;">
@@ -1696,7 +1696,7 @@ async function loadAdminStats() {
                 <small class="subtext">High priority dispatch</small>
             </div>
             <div class="stat-card highlight-teal">
-                <div class="lbl">NCCT Welfare Pool (15%)</div>
+                <div class="lbl">NCCT Welfare Pool (7%)</div>
                 <strong>₹${s.totalWelfareFund}</strong>
                 <small class="subtext">Social security & insurance</small>
             </div>
@@ -1706,7 +1706,7 @@ async function loadAdminStats() {
                 <small class="subtext">Zero exploitative commission</small>
             </div>
             <div class="stat-card highlight-gold">
-                <div class="lbl">Direct Worker Payout (85%)</div>
+                <div class="lbl">Direct Worker Payout (93%)</div>
                 <strong>₹${s.totalWorkerPayout}</strong>
                 <small class="subtext">Fair wage take-home</small>
             </div>
@@ -2073,8 +2073,8 @@ async function loadAdminForecastAndAnalytics() {
                 </div>
                 <div class="kpi-card highlight-teal">
                     <div class="kpi-lbl">Guaranteed Worker Share</div>
-                    <div class="kpi-val">85%</div>
-                    <div class="kpi-sub">15% Social Security • 0% Middleman Profit</div>
+                    <div class="kpi-val">93%</div>
+                    <div class="kpi-sub">7% Social Security • 0% Middleman Profit</div>
                 </div>
                 <div class="kpi-card">
                     <div class="kpi-lbl">Demand Forecast Season</div>
@@ -2138,7 +2138,7 @@ async function loadAdminForecastAndAnalytics() {
                         <thead>
                             <tr>
                                 <th>Trade Service</th>
-                                <th>Sahkaar 85% Take-Home</th>
+                                <th>Sahkaar 93% Take-Home</th>
                                 <th>Commercial Net (68%)</th>
                                 <th>Statutory Min Wage</th>
                                 <th>Member Surplus (+₹)</th>
@@ -2156,7 +2156,7 @@ async function loadAdminForecastAndAnalytics() {
                         </td>
                         <td>
                             <strong style="color:var(--teal-deep); font-size:14.5px;">₹${bm.sahkaar.workerTakeHome}</strong><br>
-                            <small style="color:var(--muted);">₹${bm.sahkaar.hourlyYield}/hr (85%)</small>
+                            <small style="color:var(--muted);">₹${bm.sahkaar.hourlyYield}/hr (93%)</small>
                         </td>
                         <td>
                             <span style="color:#C62828; text-decoration:line-through;">₹${bm.commercialAggregator.workerTakeHome}</span><br>
@@ -2310,8 +2310,8 @@ async function openCooperativeAuditModal() {
                         <h4 style="margin:12px 0 6px; font-size:14px; border-bottom:1px solid var(--line); padding-bottom:4px;">2. Transparent Economic Value Distribution</h4>
                         <div class="audit-grid-2">
                             <div><strong>Gross Service Volume (GMV):</strong> ₹${audit.economicMetrics.grossMerchandiseValue.toLocaleString()}</div>
-                            <div><strong>Direct Worker Payout (85%):</strong> <strong style="color:var(--teal-deep);">₹${audit.economicMetrics.directWorkerEarningsPaid.toLocaleString()}</strong></div>
-                            <div><strong>Cooperative Welfare Reserves (15%):</strong> ₹${audit.economicMetrics.cooperativeWelfarePoolAccrued.toLocaleString()}</div>
+                            <div><strong>Direct Worker Payout (93%):</strong> <strong style="color:var(--teal-deep);">₹${audit.economicMetrics.directWorkerEarningsPaid.toLocaleString()}</strong></div>
+                            <div><strong>Cooperative Welfare Reserves (7%):</strong> ₹${audit.economicMetrics.cooperativeWelfarePoolAccrued.toLocaleString()}</div>
                             <div><strong>Private Middleman Commissions:</strong> <span style="color:#2E7D32; font-weight:700;">${audit.economicMetrics.privateMiddlemanExtraction}</span></div>
                         </div>
                     </div>
@@ -2739,7 +2739,7 @@ async function loadAdminSocieties() {
                     </div>
                     <div class="society-metric-chip highlight">
                         <span class="metric-num">₹${s.welfare_fund_pool}</span>
-                        <span class="metric-lbl">Welfare Pool (15%)</span>
+                        <span class="metric-lbl">Welfare Pool (7%)</span>
                     </div>
                 </div>
             </div>
@@ -3373,7 +3373,7 @@ function renderWorkerPolicyCertificateHtml(w) {
                     </div>
                     <div class="pmsby-field">
                         <span class="p-lbl">Welfare Contribution Pool:</span>
-                        <span class="p-val">₹${w.metrics.totalContribution} Generated (15% Share)</span>
+                        <span class="p-val">₹${w.metrics.totalContribution} Generated (7% Share)</span>
                     </div>
                 </div>
 
@@ -3560,7 +3560,7 @@ async function loadAdminWelfarePool() {
                 <div class="stat-card highlight-teal">
                     <div class="lbl">Federation Welfare Reserve</div>
                     <strong>₹${Number(s.totalWelfareReserves || 0).toLocaleString()}</strong>
-                    <small class="subtext">15% accumulated booking share</small>
+                    <small class="subtext">7% accumulated booking share</small>
                 </div>
                 <div class="stat-card highlight-green">
                     <div class="lbl">PMSBY Active Coverage</div>
@@ -3722,7 +3722,7 @@ async function processAdminClaim(claimId, action, defaultAmount) {
 }
 
 async function triggerBatchPmsbyRenewal() {
-    if (!confirm("Are you sure you want to batch-sponsor PMSBY annual renewals for all verified cooperative workers? Premium (₹20/worker) will be deducted from the accumulated 15% welfare reserve.")) {
+    if (!confirm("Are you sure you want to batch-sponsor PMSBY annual renewals for all verified cooperative workers? Premium (₹20/worker) will be deducted from the accumulated 7% welfare reserve.")) {
         return;
     }
 
@@ -3825,7 +3825,7 @@ async function loadAdminServices() {
                         <th>Base Price</th>
                         <th>Supply vs Demand</th>
                         <th>Scarcity Status</th>
-                        <th>Effective Bill & 85% Earning</th>
+                        <th>Effective Bill & 93% Earning</th>
                         <th style="text-align:right;">Actions</th>
                     </tr>
                 </thead>
@@ -3864,7 +3864,7 @@ async function loadAdminServices() {
                                 </td>
                                 <td>
                                     <strong style="font-size:15px; color:#1B5E20;">₹${s.effectivePrice}</strong><br>
-                                    <small style="color:#2E7D32;">Worker 85%: ₹${s.workerEarning85}</small>
+                                    <small style="color:#2E7D32;">Worker 93%: ₹${s.workerEarning93 || s.workerEarning || s.workerEarning85}</small>
                                 </td>
                                 <td style="text-align:right; white-space:nowrap;">
                                     <button type="button" class="secondary btn-sm" onclick="openEditServicePriceModal(${s.id})" title="Change Base Price & Demand Multiplier">✏️ Edit Price</button>
@@ -3969,8 +3969,8 @@ function updatePriceCalculationPreview() {
     const bonus = isHighDemand ? (Number(document.getElementById("editPriceScarcityBonus")?.value) || 0) : 0;
 
     const total = Math.round((base * mult) + bonus);
-    const workerEarning = Math.round(total * 0.85 * 100) / 100;
-    const coopWelfare = Math.round(total * 0.15 * 100) / 100;
+    const workerEarning = Math.round(total * 0.93 * 100) / 100;
+    const coopWelfare = Math.round(total * 0.07 * 100) / 100;
 
     const preview = document.getElementById("priceSplitPreviewBox");
     if (preview) {
@@ -3980,8 +3980,8 @@ function updatePriceCalculationPreview() {
                 <span style="font-size:16px; font-weight:800; color:#1B5E20;">₹${total}</span>
             </div>
             <div style="font-size:12px; color:var(--text); line-height:1.4;">
-                • Worker Living Wage (85%): <strong>₹${workerEarning}</strong><br>
-                • Cooperative Welfare Reserve (15%): <strong>₹${coopWelfare}</strong><br>
+                • Worker Living Wage (93%): <strong>₹${workerEarning}</strong><br>
+                • Cooperative Welfare Reserve (7%): <strong>₹${coopWelfare}</strong><br>
                 • Scarcity Premium: ${isHighDemand ? `<strong>+${Math.round((mult - 1)*100)}% + ₹${bonus} allowance</strong>` : '<em>None (Normal off-peak rate)</em>'}
             </div>
         `;
@@ -4041,4 +4041,181 @@ async function toggleServiceHighDemand(serviceId) {
         console.error("toggleServiceHighDemand error:", err);
         alert("Server request failed.");
     }
+}
+
+
+// ===================================================
+// PHASE 21: PUBLIC SERVICE CATALOG & RADIUS MATCHING
+// ===================================================
+
+let currentCustomerRadiusKm = 20;
+
+async function loadPublicLandingServices() {
+    const grid = document.getElementById("publicServicesGrid");
+    if (!grid) return;
+
+    try {
+        const res = await fetch("/api/services");
+        const data = await res.json();
+        const services = data.services || [];
+
+        grid.innerHTML = "";
+        services.forEach(srv => {
+            const card = document.createElement("div");
+            card.className = "public-service-card";
+            card.innerHTML = `
+                <div>
+                    <div class="public-service-icon">${srv.icon || '🛠️'}</div>
+                    <div class="public-service-name">${srv.name}</div>
+                    <div class="public-service-price">${srv.fairWageLabel || '₹249 Starting Fair Wage'}</div>
+                    <div class="public-service-points">
+                        <div>✓ NCCT Certified & Verified</div>
+                        <div>✓ 93% Worker Living Wage</div>
+                        <div>✓ Zero Surge Guarantee</div>
+                    </div>
+                </div>
+                <button type="button" class="primary cta-gold btn-sm" style="width:100%; margin-top:6px;" onclick="handlePublicServiceBook('${srv.name}', '${srv.fairWageLabel || '₹299'}')">
+                    Book Service →
+                </button>
+            `;
+            grid.appendChild(card);
+        });
+    } catch (err) {
+        console.warn("Unable to load public services:", err);
+    }
+}
+
+function handlePublicServiceBook(serviceName, priceLabel) {
+    const authed = localStorage.getItem("sahkaar_customer_authed");
+    if (authed === "true") {
+        showCustomerDashboard();
+        setTimeout(() => {
+            openBooking(serviceName, priceLabel);
+        }, 200);
+    } else {
+        // Save pending booking context for post-login redirection
+        localStorage.setItem("sahkaar_pending_booking", JSON.stringify({ serviceName, priceLabel }));
+        selectRole("customer");
+        const banner = document.getElementById("customerPendingBookingBanner");
+        if (banner) {
+            banner.innerHTML = `📌 <strong>Booking: ${serviceName}</strong> (${priceLabel})<br><span style="font-size:12px; font-weight:normal;">Enter your phone number to continue with 1-click verification.</span>`;
+            banner.classList.remove("hidden");
+        }
+    }
+}
+
+function setCustomerSearchRadius(radiusKm) {
+    currentCustomerRadiusKm = radiusKm;
+    const pills = document.querySelectorAll("#webRadiusFilterStrip .radius-pill");
+    pills.forEach(p => {
+        if (parseInt(p.getAttribute("data-radius"), 10) === radiusKm) {
+            p.classList.add("active");
+        } else {
+            p.classList.remove("active");
+        }
+    });
+    fetchNearbyWorkers();
+}
+
+function filterWebNearbyWorkers() {
+    fetchNearbyWorkers();
+}
+
+async function fetchNearbyWorkers() {
+    const listEl = document.getElementById("nearbyWorkersList");
+    const statusEl = document.getElementById("nearbyWorkerCountStatus");
+    if (!listEl) return;
+
+    listEl.innerHTML = `<div class="skeleton" style="height:120px; grid-column: 1 / -1;"></div>`;
+
+    // Customer GPS or fallback to Greater Noida
+    const lat = parseFloat(document.getElementById("customerLat")?.value || localStorage.getItem("sahkaar_customer_lat") || "28.4744");
+    const lng = parseFloat(document.getElementById("customerLng")?.value || localStorage.getItem("sahkaar_customer_lng") || "77.5040");
+    const skill = document.getElementById("webWorkerSkillFilter")?.value || "";
+
+    try {
+        const queryParams = new URLSearchParams({
+            lat: lat.toString(),
+            lng: lng.toString(),
+            radiusKm: currentCustomerRadiusKm.toString()
+        });
+        if (skill) queryParams.append("skill", skill);
+
+        const res = await fetch(`/api/workers/nearby?${queryParams.toString()}`);
+        const data = await res.json();
+        const workers = (data.success && data.workers) ? data.workers : [];
+
+        if (statusEl) {
+            statusEl.textContent = `${workers.length} verified worker(s) within ${currentCustomerRadiusKm} KM`;
+        }
+
+        if (workers.length === 0) {
+            listEl.innerHTML = `
+                <div style="grid-column: 1 / -1; text-align:center; padding:30px 16px; background:white; border-radius:12px; border:1px dashed var(--line);">
+                    <div style="font-size:28px; margin-bottom:8px;">🔍</div>
+                    <strong style="color:var(--ink);">No cooperative workers found within ${currentCustomerRadiusKm} KM.</strong>
+                    <p style="font-size:13px; color:var(--muted); margin:4px 0 12px;">Try selecting a larger search radius (e.g. 30 KM or 50 KM) or choosing "All Trades".</p>
+                    <button type="button" class="secondary btn-sm" onclick="setCustomerSearchRadius(50)">Expand to 50 KM Radius</button>
+                </div>
+            `;
+            return;
+        }
+
+        listEl.innerHTML = "";
+        workers.forEach(w => {
+            const card = document.createElement("div");
+            card.className = "nearby-worker-card";
+            const distText = (w.distance_km !== undefined && w.distance_km !== null)
+                ? `📍 ${w.distance_km} km away`
+                : "📍 In Service Zone";
+
+            card.innerHTML = `
+                <div>
+                    <div class="nw-header">
+                        <div class="nw-avatar">👷</div>
+                        <div style="flex:1;">
+                            <div class="nw-name">${w.name}</div>
+                            <div class="nw-skill">${w.skill} • ${w.experience || '1+ yrs exp'}</div>
+                        </div>
+                        <span class="badge" style="background:#E8F5E9; color:#2E7D32; font-size:11px; font-weight:700;">● Available</span>
+                    </div>
+                    <div class="nw-distance-badge">${distText}</div>
+                    <div class="nw-meta">
+                        <div>⭐ ${w.avg_rating || 4.8} (${w.rating_count || 12} reviews)</div>
+                        <div>🛡️ ${w.badge_level || 'Level 1: Certified Tradesperson'}</div>
+                        <div style="color:var(--muted); font-size:11.5px;">🏛️ ${w.society_name || 'Navodaya Labour Cooperative Society'}</div>
+                        <div style="font-size:12px; color:var(--muted); margin-top:2px;">📞 Phone: ${w.phone || '+91 98765*****'}</div>
+                    </div>
+                </div>
+                <button type="button" class="primary cta-gold btn-sm" style="width:100%; margin-top:8px;" onclick="selectWorkerForBooking('${w.skill}', '${w.id}', '${w.name}')">
+                    Book This Worker →
+                </button>
+            `;
+            listEl.appendChild(card);
+        });
+    } catch (err) {
+        console.error("Failed to fetch nearby workers:", err);
+        listEl.innerHTML = `<div class="error" style="grid-column: 1 / -1;">Failed to load nearby workers.</div>`;
+    }
+}
+
+function selectWorkerForBooking(skill, workerId, workerName) {
+    openBooking(skill, SERVICE_PRICE_MAP[skill] || "₹299");
+    const statusBox = document.getElementById("bookingResult");
+    if (statusBox) {
+        statusBox.innerHTML = `
+            <div class="hint" style="background:#E8F5E9; border:1px solid #81C784; padding:8px 12px; border-radius:8px; color:#1B5E20; margin-bottom:12px;">
+                ✓ Pre-selected Preferred Worker: <strong>${workerName}</strong> (ID #${workerId})
+            </div>
+        `;
+    }
+}
+
+// Auto-initialize public landing catalog on document load
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => {
+        loadPublicLandingServices();
+    });
+} else {
+    loadPublicLandingServices();
 }

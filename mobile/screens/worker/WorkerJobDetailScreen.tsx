@@ -17,6 +17,7 @@ import { Button } from '../../components/common/Button';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { LoadingState } from '../../components/common/LoadingState';
 import { COLORS, SPACING, RADIUS, TYPOGRAPHY } from '../../constants/theme';
+import { useAuth } from '../../context/AuthContext';
 import { apiService } from '../../services/api';
 import { Booking } from '../../types/booking';
 
@@ -27,6 +28,7 @@ interface Props {
 
 export const WorkerJobDetailScreen: React.FC<Props> = ({ bookingId, onBack }) => {
   const { t, language } = useLanguage();
+  const { workerProfile } = useAuth();
   const [booking, setBooking] = useState<Booking | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
@@ -49,7 +51,16 @@ export const WorkerJobDetailScreen: React.FC<Props> = ({ bookingId, onBack }) =>
   const handleUpdateStatus = async (newStatus: 'confirmed' | 'in_progress' | 'completed' | 'cancelled') => {
     setActionLoading(true);
     try {
-      await apiService.updateBookingStatus(bookingId, newStatus);
+      if (newStatus === 'confirmed') {
+        const workerId = workerProfile?.id || 1;
+        await apiService.acceptBooking(bookingId, workerId);
+      } else if (newStatus === 'in_progress') {
+        await apiService.startBooking(bookingId);
+      } else if (newStatus === 'completed') {
+        await apiService.completeBooking(bookingId);
+      } else if (newStatus === 'cancelled') {
+        await apiService.cancelBooking(bookingId);
+      }
       const updated = await apiService.getBookingById(bookingId);
       setBooking(updated);
       Alert.alert(
@@ -93,7 +104,7 @@ export const WorkerJobDetailScreen: React.FC<Props> = ({ bookingId, onBack }) =>
   }
 
   const basePrice = booking.price || 499;
-  const workerCut = Math.round(basePrice * 0.85);
+  const workerCut = Math.round(basePrice * 0.93);
   const coopCut = basePrice - workerCut;
 
   return (
@@ -150,7 +161,26 @@ export const WorkerJobDetailScreen: React.FC<Props> = ({ bookingId, onBack }) =>
 
           <View style={styles.addressBox}>
             <Ionicons name="location-outline" size={20} color={COLORS.primary} />
-            <Text style={styles.addressText}>{booking.address}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.addressText}>{booking.address}</Text>
+              {booking.distance_km !== undefined && booking.distance_km !== null && (
+                <Text style={{ fontSize: 12, color: COLORS.primaryDark, fontWeight: '700', marginTop: 3 }}>
+                  📍 {booking.distance_km} km away from your base
+                </Text>
+              )}
+            </View>
+            <TouchableOpacity
+              style={{ backgroundColor: COLORS.primaryLight, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6, flexDirection: 'row', alignItems: 'center', gap: 4 }}
+              onPress={() => {
+                const lat = (booking as any).customer_lat || (booking as any).latitude;
+                const lng = (booking as any).customer_lng || (booking as any).longitude;
+                const dest = (lat && lng) ? `${lat},${lng}` : encodeURIComponent(booking.address || '');
+                Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${dest}`);
+              }}
+            >
+              <Ionicons name="navigate" size={16} color={COLORS.primaryDark} />
+              <Text style={{ fontSize: 12, fontWeight: '700', color: COLORS.primaryDark }}>Map</Text>
+            </TouchableOpacity>
           </View>
         </Card>
 
@@ -171,7 +201,7 @@ export const WorkerJobDetailScreen: React.FC<Props> = ({ bookingId, onBack }) =>
             <View style={styles.badgeLabelRow}>
               <Ionicons name="wallet-outline" size={16} color={COLORS.primary} />
               <Text style={[styles.payoutLabel, { color: COLORS.primary, fontWeight: '700' }]}>
-                {language === 'hi' ? 'आपकी सीधी कमाई (85%)' : 'Your Direct Payout (85%)'}
+                {language === 'hi' ? 'आपकी सीधी कमाई (93%)' : 'Your Direct Payout (93%)'}
               </Text>
             </View>
             <Text style={[styles.payoutValue, { color: COLORS.primary, fontWeight: '700' }]}>
@@ -183,7 +213,7 @@ export const WorkerJobDetailScreen: React.FC<Props> = ({ bookingId, onBack }) =>
             <View style={styles.badgeLabelRow}>
               <Ionicons name="shield-outline" size={16} color={COLORS.secondary} />
               <Text style={styles.payoutLabel}>
-                {language === 'hi' ? 'सहकारी कल्याण एवं सुरक्षा कोष (15%)' : 'Co-op Welfare Reserve (15%)'}
+                {language === 'hi' ? 'सहकारी कल्याण एवं सुरक्षा कोष (7%)' : 'Co-op Welfare Reserve (7%)'}
               </Text>
             </View>
             <Text style={styles.payoutValue}>₹{coopCut}</Text>
@@ -229,7 +259,7 @@ export const WorkerJobDetailScreen: React.FC<Props> = ({ bookingId, onBack }) =>
 
           {booking.status === 'in_progress' && (
             <Button
-              title={language === 'hi' ? 'कार्य पूर्ण घोषित करें (85% भुगतान प्राप्त करें)' : 'Complete Job (Claim Payout)'}
+              title={language === 'hi' ? 'कार्य पूर्ण घोषित करें (93% भुगतान प्राप्त करें)' : 'Complete Job (Claim Payout)'}
               onPress={() => handleUpdateStatus('completed')}
               loading={actionLoading}
               leftIcon="checkmark-done"

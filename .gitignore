@@ -2,6 +2,12 @@ node_modules/
 .env
 sahkaar.db
 *.db
+*.db-shm
+*.db-wal
 *.sqlite
 *.sqlite3
-scratch/
+scratch/
+*.apk
+*.aab
+.expo/
+

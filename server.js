@@ -19,6 +19,7 @@ const societiesRoute = require("./routes/societies");
 const analyticsRoute = require("./routes/analytics");
 const welfareRoute = require("./routes/welfare");
 const simulatorRoute = require("./routes/simulator");
+const businessRules = require("./config/businessRules");
 const db = require("./database");
 
 const app = express();
@@ -47,8 +48,21 @@ app.get("/index.html", (req, res) => {
     res.sendFile(path.join(__dirname, "index.html"));
 });
 
-// Status
+// Status & Configuration
 app.get("/api/status", statusRoute);
+app.get("/api/config/business-rules", (req, res) => {
+    res.json({
+        success: true,
+        rules: {
+            defaultCustomerRadiusKm: businessRules.DEFAULT_CUSTOMER_RADIUS_KM,
+            defaultWorkerRadiusKm: businessRules.DEFAULT_WORKER_RADIUS_KM,
+            cooperativeCommissionRate: businessRules.COOPERATIVE_COMMISSION_RATE,
+            workerPayoutRate: businessRules.WORKER_PAYOUT_RATE,
+            allowedRadiiKm: businessRules.ALLOWED_RADII_KM,
+            emergencySurcharge: businessRules.EMERGENCY_SURCHARGE
+        }
+    });
+});
 
 // Services
 app.use("/api/services", servicesRoute);
@@ -60,6 +74,7 @@ app.post("/api/customer/location", customerRoute.updateLocation);
 
 // Workers
 app.get("/api/workers", workersRoute);
+app.get("/api/workers/nearby", workersRoute.getNearbyWorkers);
 app.post("/api/workers", workersRoute);
 app.post("/api/workers/:id/availability", workersRoute.updateAvailability);
 app.get("/api/workers/:id/earnings", workersRoute.getEarnings);
@@ -73,9 +88,17 @@ app.post("/api/bookings/:id/accept", bookings.acceptBooking);
 app.post("/api/bookings/:id/start", bookings.startBooking);
 app.post("/api/bookings/:id/complete", bookings.completeBooking);
 app.post("/api/bookings/:id/cancel", bookings.cancelBooking);
+app.post("/api/bookings/:id/rate", (req, res) => {
+    req.body = req.body || {};
+    req.body.bookingId = req.body.bookingId || Number(req.params.id);
+    req.body.stars = req.body.stars || req.body.rating;
+    req.body.comment = req.body.comment || req.body.review;
+    return ratingsRoute.addRating(req, res);
+});
 
 // Emergency Rapid Dispatch (Phase 11)
 app.post("/api/emergency/sos", emergencyRoute.triggerEmergencySOS);
+app.post("/api/emergency/request", emergencyRoute.triggerEmergencySOS); // Compatibility alias
 app.get("/api/emergency/queue", emergencyRoute.getEmergencyQueue);
 app.post("/api/emergency/:id/reassign", adminAuth.requireAdminAuth, emergencyRoute.reassignEmergency);
 

@@ -142,9 +142,30 @@ export const apiService = {
     return Array.isArray(res) ? res : res.services || [];
   },
 
-  getWorkers: async (service?: string): Promise<WorkerProfile[]> => {
-    const res = await api.get("/api/workers", service ? { service } : undefined);
+  getWorkers: async (service?: string, params?: Record<string, any>): Promise<WorkerProfile[]> => {
+    const query = { ...(params || {}) };
+    if (service) query.skill = service;
+    const res = await api.get("/api/workers", query);
     return Array.isArray(res) ? res : res.workers || [];
+  },
+
+  getNearbyWorkers: async (params: {
+    lat?: number;
+    lng?: number;
+    radiusKm?: number;
+    skill?: string;
+    sort?: string;
+  }): Promise<WorkerProfile[]> => {
+    try {
+      const res = await api.get("/api/workers/nearby", params);
+      const list: WorkerProfile[] = Array.isArray(res) ? res : res.workers || [];
+      if (list.length > 0) return list;
+      const fallback = await api.get("/api/workers", params);
+      return Array.isArray(fallback) ? fallback : fallback.workers || [];
+    } catch {
+      const fallback = await api.get("/api/workers", params);
+      return Array.isArray(fallback) ? fallback : fallback.workers || [];
+    }
   },
 
   getBookings: async (): Promise<Booking[]> => {
@@ -169,29 +190,109 @@ export const apiService = {
     return api.post("/api/bookings", payload);
   },
 
+  acceptBooking: async (id: string | number, workerId: string | number): Promise<any> => {
+    return api.post(`/api/bookings/${id}/accept`, { workerId: Number(workerId) });
+  },
+
+  startBooking: async (id: string | number): Promise<any> => {
+    return api.post(`/api/bookings/${id}/start`, {});
+  },
+
+  completeBooking: async (id: string | number): Promise<any> => {
+    return api.post(`/api/bookings/${id}/complete`, {});
+  },
+
+  cancelBooking: async (id: string | number): Promise<any> => {
+    return api.post(`/api/bookings/${id}/cancel`, {});
+  },
+
   updateBookingStatus: async (
     id: string | number,
-    status: "pending" | "confirmed" | "in_progress" | "completed" | "cancelled"
+    status: "pending" | "confirmed" | "in_progress" | "completed" | "cancelled",
+    workerId?: string | number
   ): Promise<any> => {
-    return api.post(`/api/bookings/${id}/status`, { status });
+    if (status === "confirmed") {
+      return api.post(`/api/bookings/${id}/accept`, { workerId: Number(workerId || 1) });
+    } else if (status === "in_progress") {
+      return api.post(`/api/bookings/${id}/start`, {});
+    } else if (status === "completed") {
+      return api.post(`/api/bookings/${id}/complete`, {});
+    } else if (status === "cancelled") {
+      return api.post(`/api/bookings/${id}/cancel`, {});
+    }
+    return { success: true };
   },
 
   rateBooking: async (
-    id: string | number,
-    payload: { rating: number; review?: string }
+    bookingIdOrPayload:
+      | string
+      | number
+      | {
+          bookingId: string | number;
+          workerId?: string | number;
+          stars: number;
+          comment?: string;
+          tags?: string[];
+        },
+    legacyPayload?: {
+      rating?: number;
+      stars?: number;
+      review?: string;
+      comment?: string;
+      workerId?: string | number;
+      tags?: string[];
+    }
   ): Promise<any> => {
-    return api.post(`/api/bookings/${id}/rate`, payload);
+    let body: {
+      bookingId: string | number;
+      workerId?: string | number;
+      stars: number;
+      comment: string;
+      tags: string[];
+    };
+    if (typeof bookingIdOrPayload === "object") {
+      body = {
+        bookingId: bookingIdOrPayload.bookingId,
+        workerId: bookingIdOrPayload.workerId,
+        stars: Number(bookingIdOrPayload.stars),
+        comment: bookingIdOrPayload.comment || "",
+        tags: bookingIdOrPayload.tags || [],
+      };
+    } else {
+      body = {
+        bookingId: bookingIdOrPayload,
+        workerId: legacyPayload?.workerId,
+        stars: Number(legacyPayload?.stars ?? legacyPayload?.rating ?? 5),
+        comment: legacyPayload?.comment ?? legacyPayload?.review ?? "",
+        tags: legacyPayload?.tags || [],
+      };
+    }
+    return api.post("/api/ratings", body);
   },
 
   requestEmergency: async (payload: {
-    hazardType: string;
+    service?: string;
     customerName: string;
     customerPhone: string;
     address: string;
-    lat?: number;
-    lng?: number;
+    customerLat?: number | null;
+    customerLng?: number | null;
+    emergencyType?: string;
+    targetResponseMins?: number;
+    hazardType?: string;
+    lat?: number | null;
+    lng?: number | null;
   }): Promise<any> => {
-    return api.post("/api/emergency/request", payload);
+    return api.post("/api/emergency/sos", {
+      service: payload.service || payload.hazardType || "Electrician",
+      customerName: payload.customerName,
+      customerPhone: payload.customerPhone,
+      address: payload.address,
+      customerLat: payload.customerLat ?? payload.lat ?? null,
+      customerLng: payload.customerLng ?? payload.lng ?? null,
+      emergencyType: payload.emergencyType || payload.hazardType || "Critical Emergency Immediate Assistance",
+      targetResponseMins: payload.targetResponseMins || 15,
+    });
   },
 
   postChatbotMessage: async (
@@ -257,3 +358,6 @@ export const apiService = {
     return api.post("/api/welfare/claims", payload);
   },
 };
+
+export const SahkaarApi = apiService;
+

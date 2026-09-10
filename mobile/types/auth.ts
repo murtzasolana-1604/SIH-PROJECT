@@ -27,6 +27,9 @@ export interface WorkerProfile {
   experience?: string | number;
   experienceYears?: number;
   location?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  distance_km?: number;
   availability?: string;
   is_available?: number;
   isAvailable?: number;

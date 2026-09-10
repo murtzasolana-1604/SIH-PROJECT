@@ -4880,3 +4880,151 @@ body.theme-high-contrast .scarcity-badge.active {
     color: #FF3333 !important;
     border: 1.5px solid #FF3333 !important;
 }
+
+/* ===================================================
+   PHASE 21: REAL LOCATION-AWARE MATCHING & RADIUS
+   =================================================== */
+
+.radius-filter-strip {
+    display: inline-flex;
+    background: #E0F2F1;
+    border: 1px solid var(--teal);
+    border-radius: 24px;
+    padding: 2px;
+    gap: 2px;
+}
+
+.radius-pill {
+    background: transparent;
+    border: none;
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--teal-deep);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.radius-pill:hover {
+    background: rgba(0, 105, 92, 0.1);
+}
+
+.radius-pill.active {
+    background: var(--teal-deep);
+    color: white;
+    box-shadow: 0 2px 6px rgba(0, 77, 64, 0.25);
+}
+
+.nearby-worker-card {
+    background: white;
+    border: 1.5px solid var(--line);
+    border-radius: 14px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.nearby-worker-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    border-color: var(--teal);
+}
+
+.nearby-worker-card .nw-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.nearby-worker-card .nw-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #E8F5E9;
+    border: 2px solid #81C784;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+}
+
+.nearby-worker-card .nw-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--ink);
+}
+
+.nearby-worker-card .nw-skill {
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.nearby-worker-card .nw-distance-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #E0F7FA;
+    color: #006064;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 12px;
+    margin-bottom: 8px;
+}
+
+.nearby-worker-card .nw-meta {
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--ink);
+    margin-bottom: 12px;
+}
+
+.public-service-card {
+    background: white;
+    border: 1.5px solid var(--line);
+    border-radius: 14px;
+    padding: 16px;
+    text-align: center;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.public-service-card:hover {
+    border-color: var(--gold-deep);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    transform: translateY(-2px);
+}
+
+.public-service-icon {
+    font-size: 32px;
+    margin-bottom: 8px;
+}
+
+.public-service-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 4px;
+}
+
+.public-service-price {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--teal-deep);
+    margin-bottom: 8px;
+}
+
+.public-service-points {
+    font-size: 11.5px;
+    color: var(--muted);
+    text-align: left;
+    margin-bottom: 12px;
+    line-height: 1.5;
+}
+

@@ -17,7 +17,7 @@ The **Sahkaar Connect** Android application is a native mobile client built stri
 ### Architecture Highlights:
 - **Zero Local SQLite Lock-in**: All mobile operations communicate via REST APIs with the persistent PostgreSQL backend deployed on Render.
 - **Strict Credential Separation**: No database credentials, secrets, or `DATABASE_URL` exist inside the mobile codebase.
-- **Cooperative Fair-Wage Guarantee**: Transparent 85% living wage direct worker payout with 15% cooperative welfare & PMSBY insurance reserve.
+- **Cooperative Fair-Wage Guarantee**: Transparent 93% living wage direct worker payout with 7% cooperative welfare & PMSBY insurance reserve.
 - **True Bilingual Experience**: Instant reactive switching between English and Hindi across 100% of screens.
 - **Voice-Enabled AI Assistant**: Sahkaar Saathi voice and text assistant for hands-free local service dispatch.
 
@@ -201,7 +201,7 @@ For evaluators, hackathon judges, and test users:
 1. **Frictionless OTP Authentication**: Quick 10-digit phone login with auto-fill demo button.
 2. **Cooperative Service Discovery**: Transparent pricing for Electrician, Plumber, Carpenter, Cleaning, Painting, and Appliance Repair.
 3. **Verified Worker Directory**: View NCCT cooperative trust badges, experience, ratings, and member societies.
-4. **Instant Fair-Wage Booking**: Select date, time slot, service address, and view transparent 85/15 living wage breakdown.
+4. **Instant Fair-Wage Booking**: Select date, time slot, service address, and view transparent 93/7 living wage breakdown.
 5. **1-Click Emergency SOS Dispatch**: Rapid emergency request targeting a 15-minute response SLA for critical hazards (water burst, electrical sparks).
 6. **Sahkaar Saathi AI Assistant**: Bilingual voice and text assistant for scheduling jobs and receiving co-op rate advice.
 7. **Complete Lifecycle Tracking & UPI Settlement**: Real-time status updates (Pending -> Scheduled -> In Progress -> Completed), tax invoice download, and 1-5 star feedback.
@@ -209,10 +209,9 @@ For evaluators, hackathon judges, and test users:
 ### For Cooperative Workers:
 1. **Duty On / Off Availability Toggle**: Real-time toggle synced directly to the backend (`POST /api/workers/:id/availability`).
 2. **Job Management Lifecycle**: Full visibility of incoming requests with one-tap Accept, Start (on-site check-in), and Complete actions.
-3. **85/15 Living Wage Transparency**: Real-time earnings dashboard displaying:
-   - 85% Direct living wage payout.
-   - 10% Worker welfare & PMSBY insurance allocation.
-   - 5% Platform operations & dispatch network.
+3. **93/7 Living Wage Transparency**: Real-time earnings dashboard displaying:
+   - 93% Direct living wage payout to member.
+   - 7% Worker welfare, PMSBY insurance & dispatch reserve.
 4. **Instant Payout Settlement**: One-click transfer of completed job earnings to registered bank accounts.
 5. **Pradhan Mantri Suraksha Bima Yojana (PMSBY)**:
    - ₹2,00,000 accidental death & disability insurance policy certificate with SHA-256 hash.
@@ -234,14 +233,18 @@ All network calls are strictly directed to `https://sih-project-v7qg.onrender.co
 | Worker OTP Verify | `POST` | `/api/auth/worker/verify-otp` | Validates worker OTP and returns JWT |
 | Get Services | `GET` | `/api/services` | Fetches services with live base pricing |
 | Get Workers | `GET` | `/api/workers` | Fetches verified NCCT cooperative workers |
+| Nearby Workers | `GET` | `/api/workers/nearby` | Haversine proximity filtered workers |
 | Get Bookings | `GET` | `/api/bookings` | Fetches bookings list |
 | Create Booking | `POST` | `/api/bookings` | Creates a new citizen service booking |
-| Update Status | `POST` | `/api/bookings/:id/status` | Updates status (`confirmed`, `in_progress`, `completed`) |
-| Submit Rating | `POST` | `/api/bookings/:id/rate` | Citizen 1-5 star rating and review |
-| Emergency SOS | `POST` | `/api/emergency/request` | Dispatches 15-minute emergency alert |
+| Accept Booking | `POST` | `/api/bookings/:id/accept` | Worker accepts booking |
+| Start Booking | `POST` | `/api/bookings/:id/start` | Worker begins service |
+| Complete Booking | `POST` | `/api/bookings/:id/complete` | Generates 93/7 invoice |
+| Cancel Booking | `POST` | `/api/bookings/:id/cancel` | Cancels pending/assigned booking |
+| Submit Rating | `POST` | `/api/ratings` | Citizen 1-5 star rating and review |
+| Emergency SOS | `POST` | `/api/emergency/sos` | Dispatches 15-minute emergency alert |
 | AI Chatbot | `POST` | `/api/chatbot/message` | Sahkaar Saathi bilingual LLM assistant |
 | Worker Availability | `POST` | `/api/workers/:id/availability` | Toggles worker duty On / Off |
-| Worker Earnings | `GET` | `/api/workers/:id/earnings` | 85/15 living wage calculations |
+| Worker Earnings | `GET` | `/api/workers/:id/earnings` | 93/7 living wage calculations |
 | Worker Welfare | `GET` | `/api/welfare/worker/:id` | PMSBY insurance certificate & claims |
 | Welfare Claims | `POST` | `/api/welfare/claims` | Submits emergency relief grant claim |
 
@@ -251,6 +254,6 @@ All network calls are strictly directed to `https://sih-project-v7qg.onrender.co
 
 Sahkaar Connect Android App adheres strictly to:
 - **National Policy on Cooperatives**: Democratic control, economic worker participation, and zero platform exploitation.
-- **Fair Living Wages**: Mandated 85% worker revenue share, outperforming commercial aggregators that deduct 25-35%.
+- **Fair Living Wages**: Mandated 93% worker revenue share, outperforming commercial aggregators that deduct 25-35%.
 - **Digital NCCT Badging**: Identity verification preventing unauthorized contractors.
 - **Accessibility & Inclusion**: Designed with high-contrast UI, $\ge 48\text{px}$ touch targets, and full Hindi vernacular support for workers with varying literacy levels.

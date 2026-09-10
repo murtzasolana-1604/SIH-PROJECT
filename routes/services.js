@@ -1,6 +1,11 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../database");
+const {
+    COOPERATIVE_COMMISSION_RATE,
+    WORKER_PAYOUT_RATE,
+    calculatePricingBreakdown
+} = require("../config/businessRules");
 
 /**
  * Calculates dynamic effective price: (base_price * demand_multiplier) + (is_high_demand ? scarcity_bonus : 0)
@@ -35,7 +40,7 @@ router.get("/", async (req, res) => {
                 fairWagePrice: effectivePrice,
                 fairWageLabel: `₹${effectivePrice} ${isHighDemand ? '⚡ Peak Fair Wage' : 'Fair Wage Estimate'}`,
                 benefitNote: isHighDemand 
-                    ? "🔥 High Scarcity Incentive: 85% goes directly to worker living wage" 
+                    ? "🔥 High Scarcity Incentive: 93% goes directly to worker living wage" 
                     : "Fair wages, verified worker, community owned",
                 isHighDemand: isHighDemand,
                 demandMultiplier: s.demand_multiplier,
@@ -86,8 +91,8 @@ router.get("/analytics", async (req, res) => {
             const completedBookings = cbRow ? cbRow.c : 0;
 
             const effectivePrice = calculateEffectivePrice(s);
-            const workerEarning85 = Math.round(effectivePrice * 0.85 * 100) / 100;
-            const coopShare15 = Math.round(effectivePrice * 0.15 * 100) / 100;
+            const workerEarning = Math.round(effectivePrice * WORKER_PAYOUT_RATE * 100) / 100;
+            const coopShare = Math.round(effectivePrice * COOPERATIVE_COMMISSION_RATE * 100) / 100;
 
             // Scarcity alert if active bookings > available workers or available workers == 0 with pending bookings
             const isScarcityAlert = (activeBookings > availableWorkers) || (availableWorkers === 0 && activeBookings > 0);
@@ -104,8 +109,12 @@ router.get("/analytics", async (req, res) => {
                 scarcityBonus: s.scarcity_bonus,
                 status: s.status,
                 effectivePrice,
-                workerEarning85,
-                coopShare15,
+                workerEarning,
+                coopShare,
+                workerEarning93: workerEarning,
+                coopShare7: coopShare,
+                workerEarning85: workerEarning,
+                coopShare15: coopShare,
                 availableWorkers,
                 totalWorkers,
                 activeBookings,

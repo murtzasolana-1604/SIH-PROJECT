@@ -1,6 +1,6 @@
 /**
  * Worker Earnings Breakdown Card
- * Displays 85% living wage take-home vs 15% cooperative welfare & PMSBY allocation
+ * Displays 93% living wage take-home vs 7% cooperative welfare & PMSBY allocation
  */
 
 import React from "react";
@@ -25,7 +25,7 @@ export const EarningsCard: React.FC<EarningsCardProps> = ({
   return (
     <View style={[styles.card, THEME.shadows.md]}>
       <View style={styles.topSection}>
-        <Text style={styles.label}>Today's Direct Take-Home (85%)</Text>
+        <Text style={styles.label}>Today's Direct Take-Home (93%)</Text>
         <Text style={styles.todayAmount}>₹{(todayEarnings ?? 0).toFixed(2)}</Text>
         <Text style={styles.zeroCommission}>0% Exploitative Private Platform Cut</Text>
       </View>

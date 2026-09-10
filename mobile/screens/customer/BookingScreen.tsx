@@ -24,6 +24,7 @@ import { Card } from "../../components/common/Card";
 import { WorkerProfile } from "../../types/auth";
 import { LocationService } from "../../services/location";
 import { api } from "../../services/api";
+import { CONFIG } from "../../constants/config";
 
 interface BookingScreenProps {
   initialService?: string;
@@ -62,9 +63,9 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
   const timeSlots = ["09:00 AM", "11:00 AM", "02:00 PM", "04:00 PM", "06:00 PM"];
 
   const basePrice = 249;
-  const emergencyFee = isEmergency ? 50 : 0;
+  const emergencyFee = isEmergency ? (CONFIG.EMERGENCY_SURCHARGE || 50) : 0;
   const totalAmount = basePrice + emergencyFee;
-  const workerShare = Math.round(totalAmount * 0.85 * 100) / 100;
+  const workerShare = Math.round(totalAmount * CONFIG.WORKER_PAYOUT_RATE * 100) / 100;
   const coopShare = Math.round((totalAmount - workerShare) * 100) / 100;
 
   const handleUseGps = async () => {
@@ -248,10 +249,10 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
           </View>
           <View style={styles.breakdownNotice}>
             <Text style={styles.breakdownText}>
-              • 85% Take-Home to Member: ₹{workerShare}
+              • 93% Take-Home to Member: ₹{workerShare}
             </Text>
             <Text style={styles.breakdownText}>
-              • 15% NCCT Welfare & PMSBY Fund: ₹{coopShare}
+              • 7% NCCT Welfare & PMSBY Fund: ₹{coopShare}
             </Text>
             <Text style={styles.zeroCut}>0% Private Middleman Cut</Text>
           </View>

@@ -1,6 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../database');
+const {
+    COOPERATIVE_COMMISSION_RATE,
+    WORKER_PAYOUT_RATE,
+    calculatePricingBreakdown
+} = require('../config/businessRules');
 
 /**
  * GET /api/simulator/pitch-deck
@@ -61,24 +66,24 @@ router.get('/pitch-deck', async (req, res) => {
                     ],
                     stats: [
                         { label: "Commercial Cut", value: "20-30%", note: "Extracted by middlemen" },
-                        { label: "Cooperative Worker Share", value: "85%", note: "Guaranteed Living Wage" },
-                        { label: "Welfare Reserve", value: "15%", note: "Member Social Protection" }
+                        { label: "Cooperative Worker Share", value: "93%", note: "Guaranteed Living Wage" },
+                        { label: "Welfare Reserve", value: "7%", note: "Member Social Protection" }
                     ]
                 },
                 {
                     id: 2,
                     tag: "SLIDE 2: COOPERATIVE FINANCIAL DIVIDEND",
-                    title: "85 / 15 Transparent Revenue Split Model",
+                    title: "93 / 7 Transparent Revenue Split Model",
                     subtitle: "Transforming middleman profits into worker living wages and social security shields.",
                     bulletPoints: [
-                        "85% Immediate Living Wage: Disbursed directly into worker's verified cooperative account without hidden deductions.",
-                        "15% Statutory Cooperative Reserve: Channeled directly into member welfare, tool replacement grants, and PMSBY insurance.",
+                        "93% Immediate Living Wage: Disbursed directly into worker's verified cooperative account without hidden deductions.",
+                        "7% Statutory Cooperative Reserve: Channeled directly into member welfare, tool replacement grants, and PMSBY insurance.",
                         "Predictive living-wage price floor calculated dynamically using NCCT regional wage indexes.",
                         "Real-time verifiable QR invoices generated for every job with immutable cryptographic billing breakdown."
                     ],
                     stats: [
-                        { label: "Worker Payout", value: "85.0%", note: "Direct living wage" },
-                        { label: "Welfare Pool", value: "15.0%", note: "Member social safety net" },
+                        { label: "Worker Payout", value: "93.0%", note: "Direct living wage" },
+                        { label: "Welfare Pool", value: "7.0%", note: "Member social safety net" },
                         { label: "Middleman Fee", value: "0.0%", note: "Completely eliminated" }
                     ]
                 },
@@ -278,7 +283,7 @@ router.post('/run', async (req, res) => {
         }
 
         // ==========================================
-        // STAGE 4: Completion & 85/15 Cooperative Financial Split
+        // STAGE 4: Completion & 93/7 Cooperative Financial Split
         // ==========================================
         let invoice = null;
         if (targetStep === 'all' || targetStep === 4) {
@@ -287,8 +292,8 @@ router.post('/run', async (req, res) => {
             const basePrice = 249; // Electrician base
             const emergencyFee = 50; // Emergency priority surcharge
             const totalBill = basePrice + emergencyFee; // ₹299
-            const coopShare = Math.round(totalBill * 0.15 * 100) / 100; // ₹44.85
-            const workerEarning = Math.round((totalBill - coopShare) * 100) / 100; // ₹254.15
+            const coopShare = Math.round(totalBill * COOPERATIVE_COMMISSION_RATE * 100) / 100; // ₹20.93 (7%)
+            const workerEarning = Math.round((totalBill - coopShare) * 100) / 100; // ₹278.07 (93%)
 
             let existingInv = await db.prepare("SELECT * FROM invoices WHERE booking_id = ?").get(simBooking.id);
             if (!existingInv) {
@@ -304,14 +309,14 @@ router.post('/run', async (req, res) => {
             simBooking = await db.prepare("SELECT * FROM bookings WHERE id = ?").get(simBooking.id);
             stagesExecuted.push({
                 stage: 4,
-                name: "Work Completed & 85/15 Cooperative Dividend Split",
+                name: "Work Completed & 93/7 Cooperative Dividend Split",
                 status: "Completed",
                 details: {
                     bookingId: simBooking.id,
                     invoiceId: invoice.id,
                     totalBill: "₹" + totalBill,
-                    workerLivingWage: "₹" + workerEarning + " (85%)",
-                    cooperativeWelfareReserve: "₹" + coopShare + " (15%)",
+                    workerLivingWage: "₹" + workerEarning + " (93%)",
+                    cooperativeWelfareReserve: "₹" + coopShare + " (7%)",
                     middlemanCommission: "₹0.00 (0% Elimination)"
                 }
             });
@@ -325,7 +330,7 @@ router.post('/run', async (req, res) => {
         // STAGE 5: Welfare Reserve Inflow & PMSBY Insurance Shield
         // ==========================================
         if (targetStep === 'all' || targetStep === 5) {
-            const coopShare = invoice ? invoice.cooperative_share : 44.85;
+            const coopShare = invoice ? invoice.cooperative_share : 20.93;
 
             // Log welfare inflow in ledger
             const refId = "SIM-INV-" + (invoice ? invoice.id : simBooking.id);
@@ -336,7 +341,7 @@ router.post('/run', async (req, res) => {
                     INSERT INTO welfare_pool_ledger 
                     (society_id, entry_type, amount, worker_id, reference_id, description)
                     VALUES 
-                    (1, 'INFLOW_BOOKING_SHARE', ?, ?, ?, 'Simulated 15% booking welfare reserve dividend allocation.')
+                    (1, 'INFLOW_BOOKING_SHARE', ?, ?, ?, 'Simulated 7% booking welfare reserve dividend allocation.')
                 `).run(coopShare, worker.id, refId);
 
                 // Update society welfare reserve

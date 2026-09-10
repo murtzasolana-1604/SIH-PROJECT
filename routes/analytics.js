@@ -1,6 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../database");
+const {
+    COOPERATIVE_COMMISSION_RATE,
+    WORKER_PAYOUT_RATE
+} = require("../config/businessRules");
 
 // ============================================================
 // STATUTORY COOPERATIVE FAIR WAGE & TRADE BENCHMARKS
@@ -270,9 +274,9 @@ router.get("/fair-wage", async (req, res) => {
             const bench = TRADE_BENCHMARKS[trade];
             const baseRate = bench.baseRate;
             
-            // Sahkaar Cooperative (85% worker take-home, 15% cooperative welfare)
-            const sahkaarWorkerTakeHome = Math.round(baseRate * 0.85 * 100) / 100;
-            const sahkaarCoopShare = Math.round(baseRate * 0.15 * 100) / 100;
+            // Sahkaar Cooperative (93% worker take-home, 7% cooperative welfare)
+            const sahkaarWorkerTakeHome = Math.round(baseRate * WORKER_PAYOUT_RATE * 100) / 100;
+            const sahkaarCoopShare = Math.round(baseRate * COOPERATIVE_COMMISSION_RATE * 100) / 100;
             const sahkaarHourlyYield = Math.round((sahkaarWorkerTakeHome / bench.avgDurationHours) * 100) / 100;
             const statutoryMinHourly = Math.round((bench.delhiGovtMinDailyWage / 8) * 100) / 100;
 
@@ -486,9 +490,9 @@ router.get("/export", async (req, res) => {
             economicMetrics: {
                 grossMerchandiseValue: Math.round(financial.total_gmv * 100) / 100,
                 directWorkerEarningsPaid: Math.round(financial.total_worker_payout * 100) / 100,
-                workerTakeHomeSharePct: "85.0%",
+                workerTakeHomeSharePct: "93.0%",
                 cooperativeWelfarePoolAccrued: Math.round(financial.total_welfare_fund * 100) / 100,
-                cooperativeWelfareSharePct: "15.0%",
+                cooperativeWelfareSharePct: "7.0%",
                 privateMiddlemanExtraction: "₹0.00 (Zero Corporate Take Rate)"
             },
             fairWageAdvantage: {

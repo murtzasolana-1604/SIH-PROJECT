@@ -1,4 +1,13 @@
 const db = require("../database");
+const {
+    DEFAULT_CUSTOMER_RADIUS_KM,
+    DEFAULT_WORKER_RADIUS_KM,
+    COOPERATIVE_COMMISSION_RATE,
+    WORKER_PAYOUT_RATE,
+    ALLOWED_RADII_KM,
+    calculateHaversineDistance,
+    calculatePricingBreakdown
+} = require("../config/businessRules");
 
 // Flat local pricing table (kept here so we never have to touch
 // or guess at routes/services.js).
@@ -21,14 +30,16 @@ async function bookingsRoute(req, res) {
 
     if (req.method === "GET") {
 
-        const { phone, service, status, assignedWorkerId } = req.query;
+        const { phone, service, status, assignedWorkerId, workerId, workerPhone, lat, lng, radiusKm } = req.query;
 
         let query = `
             SELECT b.*,
                    w.name AS worker_name,
                    w.phone AS worker_phone,
                    w.skill AS worker_skill,
-                   w.location AS worker_location
+                   w.location AS worker_location,
+                   w.latitude AS worker_lat,
+                   w.longitude AS worker_lng
             FROM bookings b
             LEFT JOIN workers w ON b.assigned_worker_id = w.id
             WHERE 1=1
@@ -42,9 +53,77 @@ async function bookingsRoute(req, res) {
 
         query += " ORDER BY b.is_emergency DESC, b.id DESC";
 
-        const bookings = await db.prepare(query).all(...params);
+        let bookings = await db.prepare(query).all(...params);
 
-        return res.json({ success: true, bookings });
+        // Location-aware filtering for workers looking at available jobs
+        let workerLocation = null;
+        if (workerId || workerPhone) {
+            const wSql = workerId ? "SELECT * FROM workers WHERE id = ?" : "SELECT * FROM workers WHERE phone = ?";
+            const wParam = workerId ? Number(workerId) : workerPhone;
+            const wRow = await db.prepare(wSql).get(wParam);
+            if (wRow && wRow.latitude && wRow.longitude) {
+                workerLocation = { lat: Number(wRow.latitude), lng: Number(wRow.longitude), radiusKm: Number(radiusKm) || DEFAULT_WORKER_RADIUS_KM };
+            }
+        } else if (lat !== undefined && lng !== undefined && String(lat).trim() !== "" && String(lng).trim() !== "") {
+            workerLocation = { lat: Number(lat), lng: Number(lng), radiusKm: Number(radiusKm) || DEFAULT_WORKER_RADIUS_KM };
+        }
+
+        // Process distance and worker-side customer radius filtering
+        if (workerLocation && !isNaN(workerLocation.lat) && !isNaN(workerLocation.lng)) {
+            const filteredBookings = [];
+            for (const b of bookings) {
+                let distKm = null;
+                if (b.customer_lat && b.customer_lng) {
+                    distKm = calculateHaversineDistance(workerLocation.lat, workerLocation.lng, b.customer_lat, b.customer_lng);
+                }
+
+                // If job is pending and distance is known, enforce worker service radius (default 20 km)
+                // Emergency bookings allow expanded radius up to 50 km
+                const maxAllowedRadius = b.is_emergency == 1 ? Math.max(workerLocation.radiusKm, 50) : workerLocation.radiusKm;
+                
+                if (b.status === "Pending") {
+                    if (distKm !== null && distKm > maxAllowedRadius) {
+                        continue; // Exclude jobs outside worker radius
+                    }
+                }
+
+                const bWithDist = {
+                    ...b,
+                    distance_km: distKm,
+                    distance_m: distKm !== null ? Math.round(distKm * 1000) : null,
+                    distance_label: distKm !== null ? `${distKm} km away` : null
+                };
+
+                // Privacy protection: Mask customer phone if job is pending (not yet assigned to this worker)
+                const isAssignedToThisWorker = assignedWorkerId && String(b.assigned_worker_id) === String(assignedWorkerId);
+                if (b.status === "Pending" && !isAssignedToThisWorker) {
+                    const rawPh = String(b.customer_phone || "");
+                    bWithDist.customer_phone_masked = rawPh.length >= 10 
+                        ? `+91 ${rawPh.slice(0, 2)}******${rawPh.slice(-2)}` 
+                        : "Masked for Privacy";
+                    // Only mask public phone on pending list
+                    bWithDist.customer_phone = bWithDist.customer_phone_masked;
+                }
+
+                filteredBookings.push(bWithDist);
+            }
+            bookings = filteredBookings;
+        } else {
+            // Even without worker coords, calculate distance between assigned worker and customer if both exist
+            bookings = bookings.map(b => {
+                let distKm = null;
+                if (b.customer_lat && b.customer_lng && b.worker_lat && b.worker_lng) {
+                    distKm = calculateHaversineDistance(b.worker_lat, b.worker_lng, b.customer_lat, b.customer_lng);
+                }
+                return {
+                    ...b,
+                    distance_km: distKm,
+                    distance_label: distKm !== null ? `${distKm} km away` : null
+                };
+            });
+        }
+
+        return res.json({ success: true, count: bookings.length, bookings });
     }
 
     if (req.method === "POST") {
@@ -202,10 +281,10 @@ async function completeBooking(req, res) {
             console.warn("Service price dynamic lookup fallback:", e.message);
         }
 
-        const emergencySurcharge = (booking.is_emergency == 1) ? 50 : 0;
-        const serviceCharge = basePrice + emergencySurcharge;
-        const cooperativeShare = Math.round(serviceCharge * 0.15 * 100) / 100;
-        const workerEarning = Math.round((serviceCharge - cooperativeShare) * 100) / 100;
+        const pricing = calculatePricingBreakdown(basePrice, booking.is_emergency == 1);
+        const serviceCharge = pricing.totalAmount;
+        const cooperativeShare = pricing.cooperativeShare;
+        const workerEarning = pricing.workerEarning;
 
         const result = await db.prepare(`
             INSERT INTO invoices (booking_id, service_charge, cooperative_share, worker_earning, total_amount)

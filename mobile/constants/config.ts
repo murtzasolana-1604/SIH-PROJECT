@@ -27,6 +27,14 @@ export const CONFIG = {
     OFFLINE_CACHE: "@sahkaar_offline_cache"
   },
 
+  // Centralized Business Rules (aligned with backend config/businessRules.js)
+  DEFAULT_CUSTOMER_RADIUS_KM: 20,
+  DEFAULT_WORKER_RADIUS_KM: 20,
+  COOPERATIVE_COMMISSION_RATE: 0.07,
+  WORKER_PAYOUT_RATE: 0.93,
+  ALLOWED_RADII_KM: [5, 10, 20, 30, 50],
+  EMERGENCY_SURCHARGE: 50,
+
   // SLA Timings
   EMERGENCY_DISPATCH_MINUTES: 15,
   REQUEST_TIMEOUT_MS: 15000,

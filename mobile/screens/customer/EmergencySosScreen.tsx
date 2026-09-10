@@ -83,10 +83,10 @@ export const EmergencySosScreen: React.FC<EmergencySosScreenProps> = ({
         customerName,
         customerPhone,
         address,
-        emergencyCategory: selectedType,
-        severity: "CRITICAL",
-        latitude,
-        longitude,
+        customerLat: latitude,
+        customerLng: longitude,
+        emergencyType: selected?.label || selectedType || "Critical Emergency",
+        targetResponseMins: 15,
       });
 
       if (res && res.success && res.booking) {

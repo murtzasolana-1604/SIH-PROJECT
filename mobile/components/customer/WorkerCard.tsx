@@ -48,7 +48,9 @@ export const WorkerCard: React.FC<WorkerCardProps> = ({
           </View>
           <Text style={styles.skill}>{worker.skill} • {worker.experience || "1+ years"}</Text>
           <Text style={styles.location} numberOfLines={1}>
-            📍 {worker.location || "City Center"}
+            {worker.distance_km !== undefined && worker.distance_km !== null
+              ? `📍 ${worker.distance_km} km away • ${worker.location || "Local Area"}`
+              : `📍 ${worker.location || "City Center"}`}
           </Text>
         </View>
         <StatusBadge

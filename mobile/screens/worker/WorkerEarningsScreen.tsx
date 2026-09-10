@@ -15,6 +15,7 @@ import { Header } from '../../components/common/Header';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { COLORS, SPACING, RADIUS, SHADOWS, TYPOGRAPHY } from '../../constants/theme';
+import { CONFIG } from '../../constants/config';
 import { apiService } from '../../services/api';
 import { Booking, WorkerEarningsSummary } from '../../types/booking';
 
@@ -101,7 +102,7 @@ export const WorkerEarningsScreen: React.FC<Props> = ({ onBack }) => {
         {/* Total Living Wage Banner */}
         <Card style={styles.summaryCard}>
           <Text style={styles.summaryLabel}>
-            {language === 'hi' ? 'कुल अर्जित जीवन वेतन (85%)' : 'Net Worker Payout (85% Living Wage)'}
+            {language === 'hi' ? 'कुल अर्जित जीवन वेतन (93%)' : 'Net Worker Payout (93% Living Wage)'}
           </Text>
           <Text style={styles.summaryValue}>₹{(stats?.livingWageShare ?? 0).toLocaleString()}</Text>
 
@@ -113,7 +114,7 @@ export const WorkerEarningsScreen: React.FC<Props> = ({ onBack }) => {
               <Text style={styles.metricNum}>{stats?.completedJobsCount ?? 0}</Text>
             </View>
             <View style={styles.metricCol}>
-              <Text style={styles.metricSub}>{language === 'hi' ? 'सहकार 15% कोष' : '15% Co-op Fund'}</Text>
+              <Text style={styles.metricSub}>{language === 'hi' ? 'सहकार 7% कोष' : '7% Co-op Fund'}</Text>
               <Text style={styles.metricNum}>₹{(stats?.cooperativeFundShare ?? 0).toLocaleString()}</Text>
             </View>
             <View style={styles.metricCol}>
@@ -139,12 +140,12 @@ export const WorkerEarningsScreen: React.FC<Props> = ({ onBack }) => {
           />
         )}
 
-        {/* Cooperative 85/15 Fair-Wage Breakdown Explainer */}
+        {/* Cooperative 93/7 Fair-Wage Breakdown Explainer */}
         <Card style={styles.explainerCard}>
           <View style={styles.explainerHeader}>
             <Ionicons name="pie-chart" size={20} color={COLORS.primary} />
             <Text style={styles.explainerTitle}>
-              {language === 'hi' ? 'सहकारी 85/15 पारिश्रमिक मॉडल' : 'The 85/15 Cooperative Payout Model'}
+              {language === 'hi' ? 'सहकारी 93/7 पारिश्रमिक मॉडल' : 'The 93/7 Cooperative Payout Model'}
             </Text>
           </View>
 
@@ -157,7 +158,7 @@ export const WorkerEarningsScreen: React.FC<Props> = ({ onBack }) => {
           <View style={styles.shareItem}>
             <View style={[styles.shareDot, { backgroundColor: COLORS.primary }]} />
             <View style={{ flex: 1 }}>
-              <Text style={styles.shareItemTitle}>85% {language === 'hi' ? 'सीधा जीवन वेतन' : 'Direct Living Wage'}</Text>
+              <Text style={styles.shareItemTitle}>93% {language === 'hi' ? 'सीधा जीवन वेतन' : 'Direct Living Wage'}</Text>
               <Text style={styles.shareItemDesc}>
                 {language === 'hi'
                   ? 'बिना किसी कटौती के सीधे कामगार के बैंक खाते में।'
@@ -169,23 +170,11 @@ export const WorkerEarningsScreen: React.FC<Props> = ({ onBack }) => {
           <View style={styles.shareItem}>
             <View style={[styles.shareDot, { backgroundColor: COLORS.secondary }]} />
             <View style={{ flex: 1 }}>
-              <Text style={styles.shareItemTitle}>10% {language === 'hi' ? 'कल्याण एवं पीएमएसबीवाई बीमा' : 'Welfare & Insurance'}</Text>
+              <Text style={styles.shareItemTitle}>7% {language === 'hi' ? 'कल्याण, बीमा एवं संचालन कोष' : 'Welfare, PMSBY Shield & Operations'}</Text>
               <Text style={styles.shareItemDesc}>
                 {language === 'hi'
-                  ? '₹2 लाख दुर्घटना बीमा एवं कामगार आपातकालीन राहत कोष हेतु।'
-                  : 'Funds your ₹2,00,000 PMSBY insurance and worker relief grant.'}
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.shareItem}>
-            <View style={[styles.shareDot, { backgroundColor: COLORS.textTertiary }]} />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.shareItemTitle}>5% {language === 'hi' ? 'प्रशासनिक संचालन' : 'Cooperative Operations'}</Text>
-              <Text style={styles.shareItemDesc}>
-                {language === 'hi'
-                  ? 'सर्वर, डिस्पैच नेटवर्क और टोल-फ्री हेल्पलाइन रखरखाव।'
-                  : 'Covers cloud servers, toll-free dispatch, and auditing.'}
+                  ? '₹2 लाख PMSBY दुर्घटना बीमा, राहत अनुदान और डिस्पैच नेटवर्क रखरखाव।'
+                  : 'Funds your ₹2,00,000 PMSBY insurance, relief grants, and local dispatch.'}
               </Text>
             </View>
           </View>
@@ -208,7 +197,7 @@ export const WorkerEarningsScreen: React.FC<Props> = ({ onBack }) => {
         ) : (
           completedJobs.map((item) => {
             const price = item.price || 499;
-            const net = Math.round(price * 0.85);
+            const net = Math.round(price * CONFIG.WORKER_PAYOUT_RATE);
             return (
               <Card key={item.id} style={styles.historyCard}>
                 <View style={styles.historyTop}>

@@ -72,8 +72,8 @@ export const WorkerLoginScreen: React.FC<Props> = ({ onBack, onOtpSent }) => {
           </Text>
           <Text style={styles.bannerSubtitle}>
             {language === 'hi'
-              ? '85% सीधी कमाई, पीएम सुरक्षा बीमा योजना और सहकारी कल्याण लाभ'
-              : '85% Direct Living Wage, PMSBY Insurance & Cooperative Welfare'}
+              ? '93% सीधी कमाई, पीएम सुरक्षा बीमा योजना और सहकारी कल्याण लाभ'
+              : '93% Direct Living Wage, PMSBY Insurance & Cooperative Welfare'}
           </Text>
         </View>
 
@@ -135,8 +135,8 @@ export const WorkerLoginScreen: React.FC<Props> = ({ onBack, onOtpSent }) => {
             <Ionicons name="wallet-outline" size={20} color={COLORS.primary} />
             <Text style={styles.benefitText}>
               {language === 'hi'
-                ? 'कोई बिचौलिया कमीशन नहीं — 85% कमाई सीधे आपके खाते में'
-                : 'Zero predatory commissions — 85% direct fair-wage payout'}
+                ? 'कोई बिचौलिया कमीशन नहीं — 93% कमाई सीधे आपके खाते में'
+                : 'Zero predatory commissions — 93% direct fair-wage payout'}
             </Text>
           </View>
 

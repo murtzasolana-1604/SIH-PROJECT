@@ -76,7 +76,7 @@ const EMERGENCY_KEYWORDS = {
  * Cooperative Pricing / Fair Wage Keywords
  */
 const FAIR_WAGE_KEYWORDS = {
-    en: ["fair wage", "pricing", "price", "rate", "cost", "charge", "commission", "middleman", "cooperative", "ncct", "surge", "welfare fund", "85%"],
+    en: ["fair wage", "pricing", "price", "rate", "cost", "charge", "commission", "middleman", "cooperative", "ncct", "surge", "welfare fund", "93%"],
     hi: ["उचित मजदूरी", "दर", "कीमत", "लागत", "शुल्क", "कमीशन", "बिचौलिया", "सहकारी", "एनसीसीटी", "कल्याण कोष", "सर्ज"]
 };
 
@@ -242,7 +242,7 @@ function processUserMessage(message, preferredLang = "en", role = "customer") {
     if (isPricingQuery) {
         if (lang === "hi") {
             return {
-                reply: `🤝 **सहकार कनेक्ट का पारदर्शी सहकारी मॉडल:**\n\n1. **शून्य निजी बिचौलिया कमीशन:** निजी ऐप 25-35% तक भारी कमीशन काटते हैं। सहकार कनेक्ट पर 100% पारदर्शी दरें हैं।\n2. **85/15 पारदर्शी विभाजन:** ग्राहक द्वारा दिए गए प्रत्येक भुगतान का **85% सीधे कामगार को मिलता है**, और **15% NCCT कामगार कल्याण एवं पीएम सुरक्षा बीमा कोष** में जाता है।\n3. **शून्य सर्ज शुल्क:** बारिश, त्योहार या पीक ऑवर में कोई मनमाना सर्ज मल्टीप्लायर नहीं!`,
+                reply: `🤝 **सहकार कनेक्ट का पारदर्शी सहकारी मॉडल:**\n\n1. **शून्य निजी बिचौलिया कमीशन:** निजी ऐप 25-35% तक भारी कमीशन काटते हैं। सहकार कनेक्ट पर 100% पारदर्शी दरें हैं।\n2. **93/7 पारदर्शी विभाजन:** ग्राहक द्वारा दिए गए प्रत्येक भुगतान का **93% सीधे कामगार को मिलता है**, और **7% NCCT कामगार कल्याण एवं पीएम सुरक्षा बीमा कोष** में जाता है।\n3. **शून्य सर्ज शुल्क:** बारिश, त्योहार या पीक ऑवर में कोई मनमाना सर्ज मल्टीप्लायर नहीं!`,
                 intent: "COOPERATIVE_MODEL_FAQ",
                 suggestions: ["🔎 उपलब्ध सेवाएं देखें", "🚨 आपातकालीन दरें", "👷 कामगार लाभ"],
                 action: {
@@ -252,7 +252,7 @@ function processUserMessage(message, preferredLang = "en", role = "customer") {
             };
         } else {
             return {
-                reply: `🤝 **The Sahkaar Connect Cooperative Advantage:**\n\n1. **Zero Exploitative Middleman:** Unlike private platforms taking 25–35% cut, Sahkaar runs on a democratic cooperative framework.\n2. **85% / 15% Transparent Ledger:** 85% of total payment goes directly to the tradesperson's account. 15% funds the NCCT Welfare, Skills Training & PM Suraksha Bima insurance pool.\n3. **No Surge Multipliers:** Predictable fair wages across standard hours with zero demand inflation!`,
+                reply: `🤝 **The Sahkaar Connect Cooperative Advantage:**\n\n1. **Zero Exploitative Middleman:** Unlike private platforms taking 25–35% cut, Sahkaar runs on a democratic cooperative framework.\n2. **93% / 7% Transparent Ledger:** 93% of total payment goes directly to the tradesperson's account (living wage). 7% funds the NCCT Welfare, Skills Training & PM Suraksha Bima insurance pool.\n3. **No Surge Multipliers:** Predictable fair wages across standard hours with zero demand inflation!`,
                 intent: "COOPERATIVE_MODEL_FAQ",
                 suggestions: ["🔎 Browse Services", "🚨 Emergency SOS Fees", "👷 Worker Rights"],
                 action: {
@@ -268,7 +268,7 @@ function processUserMessage(message, preferredLang = "en", role = "customer") {
     if (matchedService) {
         if (lang === "hi") {
             return {
-                reply: `🛠️ आपकी समस्या के लिए **${matchedService.nameHi}** सबसे उपयुक्त सहकारी सेवा है।\n\n- **उचित सहकारी मजदूरी:** ₹${matchedService.basePrice} (पारदर्शी मानक दर)\n- **सत्यापन:** 100% NCCT प्रमाणित एवं पुलिस सत्यापित सदस्य\n- **कमीशन:** 0% निजी बिचौलिया शुल्क — 85% सीधे कामगार को\n\nक्या आप अभी बुकिंग फॉर्म खोलना चाहते हैं?`,
+                reply: `🛠️ आपकी समस्या के लिए **${matchedService.nameHi}** सबसे उपयुक्त सहकारी सेवा है।\n\n- **उचित सहकारी मजदूरी:** ₹${matchedService.basePrice} (पारदर्शी मानक दर)\n- **सत्यापन:** 100% NCCT प्रमाणित एवं पुलिस सत्यापित सदस्य\n- **कमीशन:** 0% निजी बिचौलिया शुल्क — 93% सीधे कामगार को\n\nक्या आप अभी बुकिंग फॉर्म खोलना चाहते हैं?`,
                 intent: "SERVICE_RECOMMENDATION",
                 suggestions: [`📅 ${matchedService.name} बुक करें`, "💰 मूल्य विवरण", "📖 मेरी बुकिंग"],
                 action: {
@@ -279,7 +279,7 @@ function processUserMessage(message, preferredLang = "en", role = "customer") {
             };
         } else {
             return {
-                reply: `🛠️ Based on your description, you need a verified **${matchedService.name}**.\n\n- **Cooperative Fair Wage:** ₹${matchedService.basePrice} (guaranteed standard estimate)\n- **Verification:** NCCT skill certified & background verified member\n- **Zero Exploitation:** 85% direct take-home to the worker; zero middleman fees\n\nWould you like to open the cooperative booking form now?`,
+                reply: `🛠️ Based on your description, you need a verified **${matchedService.name}**.\n\n- **Cooperative Fair Wage:** ₹${matchedService.basePrice} (guaranteed standard estimate)\n- **Verification:** NCCT skill certified & background verified member\n- **Zero Exploitation:** 93% direct take-home to the worker; zero middleman fees\n\nWould you like to open the cooperative booking form now?`,
                 intent: "SERVICE_RECOMMENDATION",
                 suggestions: [`📅 Book ${matchedService.name}`, "💡 How pricing works", "📖 Check Bookings"],
                 action: {
@@ -298,7 +298,7 @@ function processUserMessage(message, preferredLang = "en", role = "customer") {
     if (isWorkerQuery || role === "worker") {
         if (lang === "hi") {
             return {
-                reply: `👷 **सहकारी कामगार पोर्टल व सुविधाएं:**\n\n- **85% सीधी कमाई:** बिचौलिया रहित प्रत्यक्ष बैंक/यूपीआई निपटान।\n- **उपलब्धता नियंत्रण:** अपनी सुविधानुसार 'उपलब्ध' या 'व्यस्त' मोड में स्विच करें।\n- **सामाजिक सुरक्षा:** पीएम सुरक्षा बीमा, NCCT कौशल विकास एवं उपकरण ऋण सहायता।\n\nडैशबोर्ड देखने के लिए नीचे क्लिक करें:`,
+                reply: `👷 **सहकारी कामगार पोर्टल व सुविधाएं:**\n\n- **93% सीधी कमाई:** बिचौलिया रहित प्रत्यक्ष बैंक/यूपीआई निपटान।\n- **उपलब्धता नियंत्रण:** अपनी सुविधानुसार 'उपलब्ध' या 'व्यस्त' मोड में स्विच करें।\n- **सामाजिक सुरक्षा:** पीएम सुरक्षा बीमा, NCCT कौशल विकास एवं उपकरण ऋण सहायता।\n\nडैशबोर्ड देखने के लिए नीचे क्लिक करें:`,
                 intent: "WORKER_PORTAL",
                 suggestions: ["🛠️ कामगार डैशबोर्ड", "💰 बहीखाता विवरण", "🔄 उपलब्धता बदलें"],
                 action: {
@@ -308,7 +308,7 @@ function processUserMessage(message, preferredLang = "en", role = "customer") {
             };
         } else {
             return {
-                reply: `👷 **Cooperative Worker Portal & Welfare Protections:**\n\n- **85% Direct Take-Home:** Direct cooperative settlement with zero private agency commission cuts.\n- **Flexible Status:** Easily toggle Live Availability between AVAILABLE and BUSY.\n- **Social Safety Net:** PM Suraksha Bima insurance cover and NCCT trade certification.\n\nClick below to access your worker dashboard:`,
+                reply: `👷 **Cooperative Worker Portal & Welfare Protections:**\n\n- **93% Direct Take-Home:** Direct cooperative settlement with zero private agency commission cuts.\n- **Flexible Status:** Easily toggle Live Availability between AVAILABLE and BUSY.\n- **Social Safety Net:** PM Suraksha Bima insurance cover and NCCT trade certification.\n\nClick below to access your worker dashboard:`,
                 intent: "WORKER_PORTAL",
                 suggestions: ["🛠️ Worker Dashboard", "💰 Earnings Ledger", "🔄 Toggle Availability"],
                 action: {
@@ -322,14 +322,14 @@ function processUserMessage(message, preferredLang = "en", role = "customer") {
     // 7. General Fallback
     if (lang === "hi") {
         return {
-            reply: `मैं आपकी बात पूरी तरह समझ नहीं पाया। मैं इन मामलों में तुरंत सहायता कर सकता हूँ:\n\n1. **सेवा सुझाव:** समस्या बताएं (जैसे: "पाइप से पानी टपक रहा है" या "पंखा खराब है")\n2. **आपातकाल:** संकट के लिए तुरंत 1-क्लिक एसओएस सहायता\n3. **सहकारी मॉडल:** उचित मजदूरी और 85/15 नीति की जानकारी\n4. **बुकिंग जांच:** अपनी सक्रिय बुकिंग ट्रैक करें`,
+            reply: `मैं आपकी बात पूरी तरह समझ नहीं पाया। मैं इन मामलों में तुरंत सहायता कर सकता हूँ:\n\n1. **सेवा सुझाव:** समस्या बताएं (जैसे: "पाइप से पानी टपक रहा है" या "पंखा खराब है")\n2. **आपातकाल:** संकट के लिए तुरंत 1-क्लिक एसओएस सहायता\n3. **सहकारी मॉडल:** उचित मजदूरी और 93/7 नीति की जानकारी\n4. **बुकिंग जांच:** अपनी सक्रिय बुकिंग ट्रैक करें`,
             intent: "UNKNOWN_FALLBACK",
             suggestions: ["🚰 नल ठीक करना", "⚡ बिजली का काम", "🚨 आपातकालीन एसओएस", "💰 उचित दरें"],
             action: null
         };
     } else {
         return {
-            reply: `I'm not sure I understood completely. Here is what I can help you with right away:\n\n1. **Service Diagnosis:** Describe your problem (e.g., "water leaking under sink", "ceiling fan sparking")\n2. **Emergency SOS:** Rapid response dispatch for urgent crises\n3. **Cooperative Pricing:** Learn about our zero-middleman, 85/15 fair wage policy\n4. **Bookings & Receipts:** Track bookings and view settled invoices`,
+            reply: `I'm not sure I understood completely. Here is what I can help you with right away:\n\n1. **Service Diagnosis:** Describe your problem (e.g., "water leaking under sink", "ceiling fan sparking")\n2. **Emergency SOS:** Rapid response dispatch for urgent crises\n3. **Cooperative Pricing:** Learn about our zero-middleman, 93/7 fair wage policy\n4. **Bookings & Receipts:** Track bookings and view settled invoices`,
             intent: "UNKNOWN_FALLBACK",
             suggestions: ["🚰 Leaking Pipe (Plumber)", "⚡ Sparking Wire (Electrician)", "🚨 Emergency SOS", "💰 Fair Pricing FAQ"],
             action: null
@@ -378,11 +378,11 @@ router.get("/prompts", (req, res) => {
     if (role === "worker") {
         const prompts = lang === "hi" ? [
             "🛠️ मैं अपनी कार्य स्थिति 'उपलब्ध' कैसे करूँ?",
-            "💰 85% सीधी कमाई और बहीखाता कैसे काम करता है?",
+            "💰 93% सीधी कमाई और बहीखाता कैसे काम करता है?",
             "🛡️ पीएम सुरक्षा बीमा और NCCT कल्याण कोष क्या है?"
         ] : [
             "🛠️ How do I toggle my availability status?",
-            "💰 How does the 85% direct take-home earnings ledger work?",
+            "💰 How does the 93% direct take-home earnings ledger work?",
             "🛡️ What are the NCCT welfare and insurance benefits?"
         ];
         return res.json({ prompts });

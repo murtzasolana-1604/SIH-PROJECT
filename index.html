@@ -121,6 +121,7 @@
                 <button class="lang-toggle" onclick="toggleLanguage()" aria-label="Switch language">हिंदी</button>
             </div>
 
+                        <div id="customerPendingBookingBanner" class="hidden" style="margin-bottom:14px; background:#E8F5E9; border:1.5px solid #81C784; border-radius:10px; padding:10px 12px; font-size:13px; color:#1B5E20; font-weight:600;"></div>
             <div id="customerPhoneStep">
                 <label data-i18n="phoneLabel">Mobile Number</label>
                 <div class="phone-input-row">
@@ -631,6 +632,53 @@
                 </div>
             </section>
 
+            <!-- Nearby Verified Workers & Haversine Proximity Filter -->
+            <section id="nearbyWorkersSection" class="section" style="margin-top:28px;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
+                    <div>
+                        <h2 style="margin:0; font-size:20px; color:var(--teal-deep);">📍 Nearby Verified Tradespeople</h2>
+                        <p style="margin:2px 0 0; font-size:13px; color:var(--muted);">
+                            Real-time GPS Haversine proximity matching • NCCT Certified members
+                        </p>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                        <span style="font-size:12.5px; font-weight:600; color:var(--ink);">Search Radius:</span>
+                        <div class="radius-filter-strip" id="webRadiusFilterStrip">
+                            <button type="button" class="radius-pill" data-radius="5" onclick="setCustomerSearchRadius(5)">5 KM</button>
+                            <button type="button" class="radius-pill" data-radius="10" onclick="setCustomerSearchRadius(10)">10 KM</button>
+                            <button type="button" class="radius-pill active" data-radius="20" onclick="setCustomerSearchRadius(20)">20 KM (Default)</button>
+                            <button type="button" class="radius-pill" data-radius="30" onclick="setCustomerSearchRadius(30)">30 KM</button>
+                            <button type="button" class="radius-pill" data-radius="50" onclick="setCustomerSearchRadius(50)">50 KM</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Skill Filter & Count Strip -->
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px; background:var(--sand-light); padding:10px 14px; border-radius:10px; border:1px solid var(--line);">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <label for="webWorkerSkillFilter" style="font-size:12.5px; font-weight:600; margin:0;">Filter Trade:</label>
+                        <select id="webWorkerSkillFilter" onchange="filterWebNearbyWorkers()" style="padding:5px 10px; border-radius:6px; font-size:13px; border:1px solid var(--line);">
+                            <option value="">All Trades</option>
+                            <option value="Electrician">Electrician</option>
+                            <option value="Plumber">Plumber</option>
+                            <option value="Carpenter">Carpenter</option>
+                            <option value="Painter">Painter</option>
+                            <option value="Cleaner">Cleaner</option>
+                            <option value="Driver">Driver</option>
+                            <option value="Caregiver">Caregiver</option>
+                            <option value="Technician">Technician</option>
+                        </select>
+                    </div>
+                    <div id="nearbyWorkerCountStatus" style="font-size:12.5px; color:var(--teal-deep); font-weight:600;">
+                        Loading nearby workers...
+                    </div>
+                </div>
+
+                <div id="nearbyWorkersList" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:14px;">
+                    <!-- Worker cards with distance_km -->
+                </div>
+            </section>
+
             <!-- Booking -->
             <section id="bookingSection" class="section hidden">
                 <h2 data-i18n="bookService">📅 Book Service</h2>
@@ -644,7 +692,7 @@
                         </div>
                         <span class="coop-badge" data-i18n="coopVerified">🤝 NCCT Cooperative Verified</span>
                     </div>
-                    <p class="coop-note" data-i18n="coopPricingNote">Zero exploitative private middleman commission — platform runs on a transparent cooperative model: 85% to worker, 15% to NCCT welfare fund.</p>
+                    <p class="coop-note" data-i18n="coopPricingNote">Zero exploitative private middleman commission — platform runs on a transparent cooperative model: 93% to worker, 7% to NCCT welfare fund.</p>
                 </div>
 
                 <form id="bookingForm">
@@ -902,7 +950,7 @@
                     <div class="sim-step-connector"></div>
                     <div class="sim-step-item">
                         <div id="simStepNode4" class="sim-step-node pending">4</div>
-                        <strong class="sim-step-label" data-i18n="simStep4Title">85/15 Split</strong>
+                        <strong class="sim-step-label" data-i18n="simStep4Title">93/7 Split</strong>
                         <small id="simStepStatus4" class="sim-step-status">Waiting...</small>
                     </div>
                     <div class="sim-step-connector"></div>
@@ -1111,7 +1159,7 @@
                             <strong>Transparent Cooperative Value Flow Model</strong>
                         </div>
                         <p style="font-size:13px; line-height:1.6; color:var(--ink); margin-top:6px;">
-                            Unlike commercial aggregator platforms charging 25-35% private middleman commissions, <strong>Sahkaar Connect</strong> operates under the NCCT cooperative framework: <strong>85% goes directly to the service worker</strong>, and <strong>15% funds member social security</strong> (PM Suraksha Bima accidental insurance, emergency welfare fund, and local federation operation).
+                            Unlike commercial aggregator platforms charging 25-35% private middleman commissions, <strong>Sahkaar Connect</strong> operates under the NCCT cooperative framework: <strong>93% goes directly to the service worker</strong>, and <strong>7% funds member social security</strong> (PM Suraksha Bima accidental insurance, emergency welfare fund, and local federation operation).
                         </p>
                     </div>
                 </div>
@@ -1204,7 +1252,7 @@
                             <div class="panel-card-header">
                                 <div>
                                     <h4 style="margin:0;" data-i18n="fairWageTitle">⚖️ Fair Wage & Aggregator Elimination Matrix</h4>
-                                    <small style="color:var(--muted);">Sahkaar Connect (85% worker share) vs Commercial Aggregators vs Statutory Minimum Wage.</small>
+                                    <small style="color:var(--muted);">Sahkaar Connect (93% worker share) vs Commercial Aggregators vs Statutory Minimum Wage.</small>
                                 </div>
                                 <span class="badge verified">🛡️ 0% Middleman Cut</span>
                             </div>
@@ -1263,7 +1311,7 @@
                     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
                         <div>
                             <h3 style="margin:0;" data-i18n="welfareHeader">🛡️ Cooperative Welfare & PMSBY Insurance Pool</h3>
-                            <p style="margin:2px 0 0; font-size:12.5px; color:var(--muted);" data-i18n="welfareSub">15% booking welfare reserve allocations, PMSBY policy subsidies, and emergency member relief claims.</p>
+                            <p style="margin:2px 0 0; font-size:12.5px; color:var(--muted);" data-i18n="welfareSub">7% booking welfare reserve allocations, PMSBY policy subsidies, and emergency member relief claims.</p>
                         </div>
                         <div style="display:flex; gap:8px; flex-wrap:wrap;">
                             <button class="secondary" style="font-size:12px; padding:6px 14px;" onclick="loadAdminWelfarePool()">🔄 Refresh Pool</button>
@@ -1287,7 +1335,7 @@
                     <div class="admin-table-wrap">
                         <div style="margin-bottom:10px; padding:0 4px;">
                             <h4 style="margin:0; font-size:15px; color:var(--teal-deep);">💰 Cooperative Welfare Reserve Audit Ledger</h4>
-                            <small style="color:var(--muted);">Immutable audit of 15% booking inflows, PMSBY sponsored premiums, and disbursed relief grants.</small>
+                            <small style="color:var(--muted);">Immutable audit of 7% booking inflows, PMSBY sponsored premiums, and disbursed relief grants.</small>
                         </div>
                         <div id="adminWelfareLedgerTable"></div>
                     </div>

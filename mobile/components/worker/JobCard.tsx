@@ -70,6 +70,11 @@ export const JobCard: React.FC<JobCardProps> = ({
         <Text style={styles.address} numberOfLines={2}>
           📍 {address}
         </Text>
+        {b.distance_km !== undefined && b.distance_km !== null && (
+          <Text style={{ fontSize: 11, color: COLORS.primaryDark, fontWeight: '700', marginTop: 2 }}>
+            🧭 {b.distance_km} km away from your base
+          </Text>
+        )}
         <Text style={styles.timeSlot}>
           📅 {dateStr} • ⏰ {timeStr}
         </Text>

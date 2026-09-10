@@ -176,10 +176,10 @@ function renderPitchDeckOfflineFallback() {
         <div class="pitch-slide-card">
             <span class="pitch-tag">SMART INDIA HACKATHON 2026 • SIH26089</span>
             <h2 class="pitch-title">Sahkaar Connect: Cooperative Gig Platform</h2>
-            <p class="pitch-sub">Empowering India's informal tradespeople through MSCS Act cooperative federation, 85% fair living wage, and 100% subsidized PMSBY social security.</p>
+            <p class="pitch-sub">Empowering India's informal tradespeople through MSCS Act cooperative federation, 93% fair living wage, and 100% subsidized PMSBY social security.</p>
             <div class="pitch-stats-row">
-                <div class="pitch-stat-box"><div class="pitch-stat-val">85%</div><div class="pitch-stat-label">Worker Share</div></div>
-                <div class="pitch-stat-box"><div class="pitch-stat-val">15%</div><div class="pitch-stat-label">Welfare Pool</div></div>
+                <div class="pitch-stat-box"><div class="pitch-stat-val">93%</div><div class="pitch-stat-label">Worker Share</div></div>
+                <div class="pitch-stat-box"><div class="pitch-stat-val">7%</div><div class="pitch-stat-label">Welfare Pool</div></div>
                 <div class="pitch-stat-box"><div class="pitch-stat-val">₹2 Lakh</div><div class="pitch-stat-label">PMSBY Cover</div></div>
             </div>
         </div>
@@ -338,10 +338,10 @@ async function executeSimulatorStep(stepNum) {
         } else if (stepNum === 3) {
             logSimMessage(`[Stage 3] Worker accepted job. OTP handshake verified $\to$ On-site diagnostics started`, "info");
         } else if (stepNum === 4) {
-            logSimMessage(`[Stage 4] Job completed! Total Bill: ₹299. 85% Worker Living Wage: ₹254.15 | 15% Co-op Share: ₹44.85`, "success");
+            logSimMessage(`[Stage 4] Job completed! Total Bill: ₹299. 93% Worker Living Wage: ₹278.07 | 7% Co-op Share: ₹20.93`, "success");
             renderSimulatorDividendCard(data.invoice);
         } else if (stepNum === 5) {
-            logSimMessage(`[Stage 5] ₹44.85 credited to Welfare Reserve. Active ₹2,00,000 PMSBY Accidental Shield verified!`, "success");
+            logSimMessage(`[Stage 5] ₹20.93 credited to Welfare Reserve. Active ₹2,00,000 PMSBY Accidental Shield verified!`, "success");
             renderSimulationCompleteSummary(data);
         }
 
@@ -390,16 +390,16 @@ function renderSimulatorDividendCard(invoice) {
     const liveCard = document.getElementById("simLiveDividendCard");
     if (!liveCard) return;
 
-    const workerEarning = invoice ? invoice.worker_earning : 254.15;
-    const coopShare = invoice ? invoice.cooperative_share : 44.85;
+    const workerEarning = invoice ? invoice.worker_earning : 278.07;
+    const coopShare = invoice ? invoice.cooperative_share : 20.93;
     const total = invoice ? invoice.total_amount : 299.00;
 
     liveCard.innerHTML = `
         <div class="sim-dividend-box">
             <h4 style="margin:0 0 10px; color:var(--teal-deep); font-size:15px;">⚖️ Cooperative Revenue Dividend Split (Invoice #${invoice ? invoice.id : 'SIM'})</h4>
             <div class="sim-dividend-split-bar">
-                <div class="split-worker" style="width:85%;" title="85% Worker Living Wage: ₹${workerEarning}">85% Worker Share (₹${workerEarning})</div>
-                <div class="split-coop" style="width:15%;" title="15% Cooperative Welfare Reserve: ₹${coopShare}">15% (₹${coopShare})</div>
+                <div class="split-worker" style="width:93%;" title="93% Worker Living Wage: ₹${workerEarning}">93% Worker Share (₹${workerEarning})</div>
+                <div class="split-coop" style="width:7%;" title="7% Cooperative Welfare Reserve: ₹${coopShare}">7% (₹${coopShare})</div>
             </div>
             <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:12.5px;">
                 <span><strong>👷 Worker Living Wage:</strong> <span style="color:#2E7D32; font-weight:700;">₹${workerEarning}</span></span>

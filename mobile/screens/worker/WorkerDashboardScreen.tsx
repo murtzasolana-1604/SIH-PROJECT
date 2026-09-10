@@ -105,7 +105,8 @@ export const WorkerDashboardScreen: React.FC<Props> = ({
 
   const handleAcceptJob = async (bookingId: string) => {
     try {
-      await apiService.updateBookingStatus(bookingId, 'confirmed');
+      const workerId = workerProfile?.id || 1;
+      await apiService.acceptBooking(bookingId, workerId);
       Alert.alert(
         language === 'hi' ? 'कार्य स्वीकृत' : 'Job Accepted',
         language === 'hi' ? 'आपने कार्य स्वीकार कर लिया है।' : 'You have accepted the booking.'
@@ -176,18 +177,18 @@ export const WorkerDashboardScreen: React.FC<Props> = ({
           </View>
         </Card>
 
-        {/* 85/15 Living Wage Quick Summary Card */}
+        {/* 93/7 Living Wage Quick Summary Card */}
         <Card style={styles.earningsCard} onPress={onNavigateToEarnings}>
           <View style={styles.earningsHeader}>
             <View>
               <Text style={styles.earningsSub}>
-                {language === 'hi' ? 'कुल अर्जित (85% जीवन वेतन)' : 'Total Net Payout (85% Living Wage)'}
+                {language === 'hi' ? 'कुल अर्जित (93% जीवन वेतन)' : 'Total Net Payout (93% Living Wage)'}
               </Text>
               <Text style={styles.earningsVal}>₹{(earnings?.livingWageShare ?? 0).toLocaleString()}</Text>
             </View>
             <View style={styles.coopChip}>
               <Text style={styles.coopChipText}>
-                {language === 'hi' ? 'सहकार 15% कोष' : '15% Co-op Fund'}
+                {language === 'hi' ? 'सहकार 7% कोष' : '7% Co-op Fund'}
               </Text>
               <Text style={styles.coopChipVal}>₹{(earnings?.cooperativeFundShare ?? 0).toLocaleString()}</Text>
             </View>
