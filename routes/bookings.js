@@ -39,7 +39,10 @@ async function bookingsRoute(req, res) {
                    w.skill AS worker_skill,
                    w.location AS worker_location,
                    w.latitude AS worker_lat,
-                   w.longitude AS worker_lng
+                   w.longitude AS worker_lng,
+                   w.profile_photo AS worker_photo,
+                   w.verified AS worker_verified,
+                   COALESCE((SELECT ROUND(CAST(AVG(stars) AS numeric), 1) FROM ratings WHERE worker_id = w.id), 4.8) AS worker_avg_rating
             FROM bookings b
             LEFT JOIN workers w ON b.assigned_worker_id = w.id
             WHERE 1=1
@@ -68,6 +71,32 @@ async function bookingsRoute(req, res) {
             workerLocation = { lat: Number(lat), lng: Number(lng), radiusKm: Number(radiusKm) || DEFAULT_WORKER_RADIUS_KM };
         }
 
+        // Authorization context for location privacy
+        const reqWorkerId = Number(assignedWorkerId || workerId || req.headers["x-worker-id"]);
+        const reqCustomerPhone = String(phone || "").trim();
+        const isAdmin = Boolean(req.headers.authorization && req.headers.authorization.includes("Bearer"));
+
+        // Helper to enforce customer privacy
+        function sanitizeBookingPrivacy(b) {
+            const isCustomerOwner = reqCustomerPhone && String(b.customer_phone).trim() === reqCustomerPhone;
+            const isAssignedWorkerActive = reqWorkerId && Number(b.assigned_worker_id) === reqWorkerId && ['Assigned', 'Confirmed', 'In Progress', 'In_Progress'].includes(b.status);
+
+            if (isAdmin || isCustomerOwner || isAssignedWorkerActive) {
+                return b; // Authorized to view customer details & coordinates
+            }
+
+            // Unassigned / public / pending caller: Mask phone and coordinates
+            const rawPh = String(b.customer_phone || "");
+            const masked = rawPh.length >= 10 ? `+91 ${rawPh.slice(0, 2)}******${rawPh.slice(-2)}` : "Masked for Privacy";
+            return {
+                ...b,
+                customer_phone: masked,
+                customer_phone_masked: masked,
+                customer_lat: null,
+                customer_lng: null
+            };
+        }
+
         // Process distance and worker-side customer radius filtering
         if (workerLocation && !isNaN(workerLocation.lat) && !isNaN(workerLocation.lng)) {
             const filteredBookings = [];
@@ -94,21 +123,7 @@ async function bookingsRoute(req, res) {
                     distance_label: distKm !== null ? `${distKm} km away` : null
                 };
 
-                // Privacy protection: Mask customer phone and coordinates if job is pending (not yet assigned to this worker)
-                const isAssignedToThisWorker = assignedWorkerId && String(b.assigned_worker_id) === String(assignedWorkerId);
-                if (b.status === "Pending" && !isAssignedToThisWorker) {
-                    const rawPh = String(b.customer_phone || "");
-                    bWithDist.customer_phone_masked = rawPh.length >= 10 
-                        ? `+91 ${rawPh.slice(0, 2)}******${rawPh.slice(-2)}` 
-                        : "Masked for Privacy";
-                    // Only mask public phone on pending list
-                    bWithDist.customer_phone = bWithDist.customer_phone_masked;
-                    // Protect customer coordinates from unassigned workers
-                    bWithDist.customer_lat = null;
-                    bWithDist.customer_lng = null;
-                }
-
-                filteredBookings.push(bWithDist);
+                filteredBookings.push(sanitizeBookingPrivacy(bWithDist));
             }
             bookings = filteredBookings;
         } else {
@@ -118,11 +133,12 @@ async function bookingsRoute(req, res) {
                 if (b.customer_lat && b.customer_lng && b.worker_lat && b.worker_lng) {
                     distKm = calculateHaversineDistance(b.worker_lat, b.worker_lng, b.customer_lat, b.customer_lng);
                 }
-                return {
+                const bWithDist = {
                     ...b,
                     distance_km: distKm,
                     distance_label: distKm !== null ? `${distKm} km away` : null
                 };
+                return sanitizeBookingPrivacy(bWithDist);
             });
         }
 
@@ -187,7 +203,7 @@ async function acceptBooking(req, res) {
     if (activeBooking) {
         return res.status(400).json({
             success: false,
-            message: "Worker already has an active booking.",
+            message: "Worker already has an active booking. Complete or cancel the current booking before accepting another job.",
             activeBookingId: activeBooking.id,
             activeBookingStatus: activeBooking.status
         });
@@ -215,21 +231,50 @@ async function acceptBooking(req, res) {
         arrivalStr = `${hrs}:${mins} ${ampm} (Estimated arrival)`;
     }
 
-    // Atomic conditional update on pending status
-    await db.prepare(`
+    // Concurrency-safe atomic conditional update on pending status AND worker has no active booking
+    const updateResult = await db.prepare(`
         UPDATE bookings 
         SET assigned_worker_id = ?, 
             status = 'Assigned', 
             dispatched_at = CURRENT_TIMESTAMP,
             expected_arrival = ?
-        WHERE id = ? AND status = 'Pending'
-    `).run(numWorkerId, arrivalStr, bookingId);
+        WHERE id = ? 
+          AND status = 'Pending'
+          AND NOT EXISTS (
+              SELECT 1 FROM bookings b2 
+              WHERE b2.assigned_worker_id = ? 
+                AND b2.status IN ('Assigned', 'Confirmed', 'In Progress', 'In_Progress')
+          )
+    `).run(numWorkerId, arrivalStr, bookingId, numWorkerId);
+
+    if (!updateResult || updateResult.changes === 0) {
+        const concurrentActive = await db.prepare(`
+            SELECT id, status FROM bookings 
+            WHERE assigned_worker_id = ? AND status IN ('Assigned', 'Confirmed', 'In Progress', 'In_Progress')
+            LIMIT 1
+        `).get(numWorkerId);
+
+        if (concurrentActive) {
+            return res.status(400).json({
+                success: false,
+                message: "Worker already has an active booking. Complete or cancel the current booking before accepting another job.",
+                activeBookingId: concurrentActive.id,
+                activeBookingStatus: concurrentActive.status
+            });
+        }
+
+        return res.status(400).json({
+            success: false,
+            message: "Booking is no longer pending or has already been accepted."
+        });
+    }
 
     // Set worker is_available = 0 (Busy)
     await db.prepare("UPDATE workers SET is_available = 0 WHERE id = ?").run(numWorkerId);
 
     const updated = await db.prepare(`
-        SELECT b.*, w.name AS worker_name, w.phone AS worker_phone, w.skill AS worker_skill, w.profile_photo AS worker_photo
+        SELECT b.*, w.name AS worker_name, w.phone AS worker_phone, w.skill AS worker_skill, w.profile_photo AS worker_photo, w.verified AS worker_verified,
+               COALESCE((SELECT ROUND(CAST(AVG(stars) AS numeric), 1) FROM ratings WHERE worker_id = w.id), 4.8) AS worker_avg_rating
         FROM bookings b
         LEFT JOIN workers w ON b.assigned_worker_id = w.id
         WHERE b.id = ?

@@ -24,9 +24,10 @@ async function getStats(req, res) {
         SELECT
             COALESCE(SUM(total_amount), 0) AS total_gmv,
             COALESCE(SUM(cooperative_share), 0) AS total_welfare,
-            COALESCE(SUM(worker_earning), 0) AS total_worker_payout
+            COALESCE(SUM(worker_earning), 0) AS total_worker_payout,
+            COALESCE(SUM(tip_amount), 0) AS total_tips
         FROM invoices
-    `).get()) || { total_gmv: 0, total_welfare: 0, total_worker_payout: 0 };
+    `).get()) || { total_gmv: 0, total_welfare: 0, total_worker_payout: 0, total_tips: 0 };
 
     return res.json({
         success: true,
@@ -43,7 +44,8 @@ async function getStats(req, res) {
             emergencyBookings,
             totalGMV: Math.round(financial.total_gmv * 100) / 100,
             totalWelfareFund: Math.round(financial.total_welfare * 100) / 100,
-            totalWorkerPayout: Math.round(financial.total_worker_payout * 100) / 100
+            totalWorkerPayout: Math.round((financial.total_worker_payout + financial.total_tips) * 100) / 100,
+            totalTips: Math.round(financial.total_tips * 100) / 100
         }
     });
 }

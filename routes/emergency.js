@@ -190,6 +190,8 @@ async function getEmergencyQueue(req, res) {
     }
 
     const now = Date.now();
+    const isAdmin = Boolean(req.headers.authorization && req.headers.authorization.includes("Bearer"));
+
     const queue = rows.map(b => {
         const createdTime = parseSqliteUtc(b.created_at);
         const elapsedMins = Math.max(0, Math.floor((now - createdTime) / 60000));
@@ -197,8 +199,15 @@ async function getEmergencyQueue(req, res) {
         const remainingMins = Math.max(0, targetMins - elapsedMins);
         const slaBreached = elapsedMins > targetMins;
 
+        const rawPh = String(b.customer_phone || "");
+        const maskedPhone = rawPh.length >= 10 ? `+91 ${rawPh.slice(0, 2)}******${rawPh.slice(-2)}` : "Masked for Privacy";
+
         return {
             ...b,
+            customer_phone: isAdmin ? b.customer_phone : maskedPhone,
+            customer_phone_masked: maskedPhone,
+            customer_lat: isAdmin ? b.customer_lat : null,
+            customer_lng: isAdmin ? b.customer_lng : null,
             elapsed_minutes: elapsedMins,
             remaining_minutes: remainingMins,
             sla_breached: slaBreached,

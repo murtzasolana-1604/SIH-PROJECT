@@ -5,6 +5,13 @@ function formatInvoiceRow(inv) {
     const baseFee = isEmergency ? Math.max(0, inv.service_charge - 50) : inv.service_charge;
     const emergencyFee = isEmergency ? 50 : 0;
 
+    const tipAmount = Number(inv.tip_amount) || 0;
+    const serviceCharge = Number(inv.service_charge) || 0;
+    const cooperativeShare = Number(inv.cooperative_share) || 0;
+    const workerServiceEarning = Number(inv.worker_earning) || 0;
+    const workerTotalEarning = Math.round((workerServiceEarning + tipAmount) * 100) / 100;
+    const customerTotal = Number(inv.total_amount) || (serviceCharge + tipAmount);
+
     return {
         id: inv.id,
         invoice_number: `INV-2026-${String(inv.id).padStart(5, '0')}`,
@@ -13,10 +20,16 @@ function formatInvoiceRow(inv) {
         is_emergency: isEmergency,
         base_charge: baseFee,
         emergency_fee: emergencyFee,
-        service_charge: inv.service_charge,
-        cooperative_share: inv.cooperative_share,
-        worker_earning: inv.worker_earning,
-        total_amount: inv.total_amount,
+        service_charge: serviceCharge,
+        service_amount: serviceCharge,
+        tip_amount: tipAmount,
+        worker_tip: tipAmount,
+        cooperative_share: cooperativeShare,
+        worker_earning: workerServiceEarning,
+        worker_service_earning: workerServiceEarning,
+        worker_total_earning: workerTotalEarning,
+        total_amount: customerTotal,
+        customer_total: customerTotal,
         payment_status: inv.payment_status || (inv.payment_id ? "paid" : "unpaid"),
         payment_method: inv.payment_method || inv.payment_method_record || null,
         transaction_id: inv.transaction_id || null,

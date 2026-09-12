@@ -223,8 +223,12 @@ function syncBookingLocation() {
             }
         },
         err => {
+            let msg = "Could not retrieve GPS location: using manual address.";
+            if (err.code === 1) msg = "Location permission denied: please enter address manually.";
+            else if (err.code === 2) msg = "GPS location unavailable: please enter address manually.";
+            else if (err.code === 3) msg = "GPS location request timed out: please enter address manually.";
             if (statusEl) {
-                statusEl.innerHTML = `<small class="hint" style="color:var(--terracotta);">GPS access denied: using manual address.</small>`;
+                statusEl.innerHTML = `<small class="hint" style="color:var(--terracotta);">⚠️ ${msg}</small>`;
             }
         },
         { timeout: 8000, enableHighAccuracy: true }
@@ -563,8 +567,8 @@ async function fetchMyBookings() {
                     ? `<img src="${booking.worker_photo}" alt="${booking.worker_name}" class="avatar-img" onerror="this.parentElement.innerHTML='👷'">`
                     : "👷";
                 const arrivalHtml = booking.expected_arrival
-                    ? `<div class="worker-arrival-eta" style="color:var(--teal-deep); font-weight:700; font-size:13px; margin-top:4px;">🕒 Expected Arrival: ${booking.expected_arrival}</div>`
-                    : "";
+                    ? `<div class="worker-arrival-eta" style="color:var(--teal-deep); font-weight:700; font-size:13px; margin-top:4px;">🕒 Estimated arrival: ${booking.expected_arrival}</div>`
+                    : `<div class="worker-arrival-eta" style="color:var(--teal-deep); font-weight:700; font-size:13px; margin-top:4px;">🕒 Estimated arrival: 30–45 mins</div>`;
 
                 workerBox = `
                     <div class="assigned-worker-card">
@@ -574,8 +578,13 @@ async function fetchMyBookings() {
                                 <strong>Assigned Worker: ${booking.worker_name}</strong>
                                 <button type="button" class="badge-trust-btn" onclick="openCitizenTrustModal(${assignedId})">🎖️ NCCT Verified</button>
                             </div>
-                            <div class="worker-sub">${booking.worker_skill || booking.service} • Verified Member</div>
-                            <div class="worker-phone">📞 <a href="tel:${booking.worker_phone}">${booking.worker_phone}</a></div>
+                            <div class="worker-sub">${booking.worker_skill || booking.service} • ⭐ ${booking.worker_avg_rating ? Number(booking.worker_avg_rating).toFixed(1) : "4.8"} / 5.0 Rating</div>
+                            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:4px 0;">
+                                <div class="worker-phone">📞 <a href="tel:${booking.worker_phone}">${booking.worker_phone}</a></div>
+                                <a href="tel:${booking.worker_phone}" class="secondary btn-sm" style="display:inline-flex; align-items:center; gap:4px; text-decoration:none; padding:4px 10px; font-size:12px; border-radius:6px;">
+                                    📞 Call Worker
+                                </a>
+                            </div>
                             ${arrivalHtml}
                         </div>
                     </div>
@@ -633,21 +642,35 @@ async function fetchMyBookings() {
 
                                 <div class="invoice-breakdown-table">
                                     <div class="inv-row">
-                                        <span>${t('baseServiceDelivery', 'Base Service Delivery:')}</span>
-                                        <span>₹${inv.base_charge}</span>
+                                        <span>${t('baseServiceDelivery', 'Service Amount:')}</span>
+                                        <span>₹${inv.service_charge || inv.base_charge}</span>
                                     </div>
                                     ${inv.is_emergency ? `
                                     <div class="inv-row emergency-row">
                                         <span>${t('emergencySurchargeText', '🚨 Emergency Priority Dispatch Surcharge:')}</span>
                                         <span>+₹${inv.emergency_fee}</span>
                                     </div>` : ""}
+                                    ${Number(inv.tip_amount) > 0 ? `
+                                    <div class="inv-row" style="color:#2E7D32; font-weight:600;">
+                                        <span>💖 Worker Tip (100% to Member):</span>
+                                        <span>+₹${Number(inv.tip_amount)}</span>
+                                    </div>` : ""}
                                     <div class="inv-row divider"></div>
                                     <div class="inv-row highlight">
-                                        <span>${t('workerDirectEarning', '👷 Worker Direct Earning (93%):')}</span>
+                                        <span>${t('workerDirectEarning', '👷 Worker Service Earning (93%):')}</span>
                                         <span class="worker-earning-text">₹${inv.worker_earning}</span>
                                     </div>
+                                    ${Number(inv.tip_amount) > 0 ? `
+                                    <div class="inv-row" style="color:#1B5E20; font-size:12.5px;">
+                                        <span>+ Worker Tip (0% cooperative fee):</span>
+                                        <span>₹${Number(inv.tip_amount)}</span>
+                                    </div>
+                                    <div class="inv-row highlight" style="background:#E8F5E9; border-radius:6px; padding:4px 8px;">
+                                        <strong>👷 Worker Total Take-Home:</strong>
+                                        <strong class="worker-earning-text" style="color:#1B5E20;">₹${(Number(inv.worker_earning) + Number(inv.tip_amount)).toFixed(2)}</strong>
+                                    </div>` : ""}
                                     <div class="inv-row coop-share">
-                                        <span>${t('coopWelfareShareText', '🏛️ Cooperative Welfare & Training Fund (7%):')}</span>
+                                        <span>${t('coopWelfareShareText', '🏛️ Cooperative Welfare & Training Fund (7% on Service):')}</span>
                                         <span class="coop-share-text">₹${inv.cooperative_share}</span>
                                     </div>
                                     <div class="inv-row total-row">
@@ -684,17 +707,35 @@ async function fetchMyBookings() {
                                         <span>₹${inv.base_charge}</span>
                                     </div>
                                     ${inv.is_emergency ? `
+                                        <span>${t('baseServiceDelivery', 'Service Amount:')}</span>
+                                        <span>₹${inv.service_charge || inv.base_charge}</span>
+                                    </div>
+                                    ${inv.is_emergency ? `
                                     <div class="inv-row emergency-row">
                                         <span>${t('emergencySurchargeText', '🚨 Emergency Priority Dispatch Surcharge:')}</span>
                                         <span>+₹${inv.emergency_fee}</span>
                                     </div>` : ""}
+                                    ${Number(inv.tip_amount) > 0 ? `
+                                    <div class="inv-row" style="color:#2E7D32; font-weight:600;">
+                                        <span>💖 Worker Tip (100% to Member):</span>
+                                        <span>+₹${Number(inv.tip_amount)}</span>
+                                    </div>` : ""}
                                     <div class="inv-row divider"></div>
                                     <div class="inv-row highlight">
-                                        <span>${t('workerDirectEarning', '👷 Worker Direct Earning (93%):')}</span>
+                                        <span>${t('workerDirectEarning', '👷 Worker Service Earning (93%):')}</span>
                                         <span class="worker-earning-text">₹${inv.worker_earning}</span>
                                     </div>
+                                    ${Number(inv.tip_amount) > 0 ? `
+                                    <div class="inv-row" style="color:#1B5E20; font-size:12.5px;">
+                                        <span>+ Worker Tip (0% cooperative fee):</span>
+                                        <span>₹${Number(inv.tip_amount)}</span>
+                                    </div>
+                                    <div class="inv-row highlight" style="background:#E8F5E9; border-radius:6px; padding:4px 8px;">
+                                        <strong>👷 Worker Total Take-Home:</strong>
+                                        <strong class="worker-earning-text" style="color:#1B5E20;">₹${(Number(inv.worker_earning) + Number(inv.tip_amount)).toFixed(2)}</strong>
+                                    </div>` : ""}
                                     <div class="inv-row coop-share">
-                                        <span>${t('coopWelfareShareText', '🏛️ Cooperative Welfare & Training Fund (7%):')}</span>
+                                        <span>${t('coopWelfareShareText', '🏛️ Cooperative Welfare & Training Fund (7% on Service):')}</span>
                                         <span class="coop-share-text">₹${inv.cooperative_share}</span>
                                     </div>
                                     <div class="inv-row total-row">
@@ -1464,7 +1505,10 @@ async function fetchWorkerDashboard() {
                                 💬 WhatsApp Confirmation
                             </a>
                         </div>
-                        <div>${actionBtn}</div>
+                        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                            ${actionBtn}
+                            <button type="button" class="btn-cancel" style="font-size:12px; padding:7px 12px;" onclick="cancelWorkerJob(${booking.id})">❌ Cancel Job</button>
+                        </div>
                     </div>
                 `;
             });
@@ -1500,9 +1544,15 @@ async function fetchWorkerDashboard() {
                             </div>
                             <div class="settlement-earning-split">
                                 <div>Your Net Take-Home (93%): <strong class="earning-amt">₹${inv.worker_earning}</strong></div>
+                                ${Number(inv.tip_amount) > 0 ? `<div style="color:#2E7D32; font-weight:700; font-size:12.5px;">+ 100% Tip: ₹${Number(inv.tip_amount)} (Total Take-Home: ₹${(Number(inv.worker_earning) + Number(inv.tip_amount)).toFixed(2)})</div>` : ''}
                                 <div style="font-size:12px; color:var(--muted);">Cooperative Welfare (7%): ₹${inv.cooperative_share} | Total: ₹${inv.total_amount}</div>
                             </div>
-                            ${isPaid ? `<div style="font-size:11.5px; color:var(--teal); margin-top:5px; font-family:var(--font-mono);">Settlement Ref: <code>${inv.transaction_id || 'SETTLED'}</code></div>` : ''}
+                            <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                                <button type="button" class="secondary btn-sm" style="font-size:11.5px; padding:4px 8px;" onclick="openWorkerToCustomerRatingModal(${inv.booking_id}, ${worker.id}, '${inv.customer.name || 'Customer'}')">
+                                    ⭐ Rate Customer Experience
+                                </button>
+                                ${isPaid ? `<span style="font-size:11.5px; color:var(--teal); font-family:var(--font-mono);">Ref: <code>${inv.transaction_id || 'SETTLED'}</code></span>` : ''}
+                            </div>
                         </div>
                     `;
                 });
@@ -1694,10 +1744,13 @@ async function toggleWorkerLiveAvailability(workerId, currentStatus) {
 
 async function acceptJob(bookingId, workerId) {
     try {
+        const inputEta = prompt("Enter Estimated arrival time for customer (e.g. '25 mins' or '10:30 AM'):", "30 mins");
+        const expectedArrival = (inputEta && inputEta.trim()) ? inputEta.trim() : "30 mins";
+
         const res = await fetch(`/api/bookings/${bookingId}/accept`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ workerId })
+            body: JSON.stringify({ workerId, expectedArrival })
         });
         const data = await res.json();
         if (!data.success) {
@@ -1709,6 +1762,26 @@ async function acceptJob(bookingId, workerId) {
         fetchWorkerDashboard();
     } catch (error) {
         console.error(error);
+        alert("Server connection failed.");
+    }
+}
+
+async function cancelWorkerJob(bookingId) {
+    if (!confirm("Are you sure you want to cancel this booking? This will free your schedule to accept other jobs.")) return;
+    try {
+        const res = await fetch(`/api/bookings/${bookingId}/cancel`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" }
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert(data.message || "Job cancelled successfully.");
+            fetchWorkerDashboard();
+        } else {
+            alert(data.message || "Failed to cancel job.");
+        }
+    } catch (err) {
+        console.error(err);
         alert("Server connection failed.");
     }
 }
@@ -1905,9 +1978,14 @@ function renderAdminWorkers(filter) {
         html += `
             <div class="admin-worker-card ${!worker.verified ? 'pending-card' : ''}">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
-                    <div>
-                        <strong style="font-size:16px;">${worker.name}</strong>
-                        <span class="role-badge worker" style="margin-left:6px; font-size:11px;">${worker.skill}</span>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <div class="worker-avatar" style="width:40px; height:40px; border-radius:50%; overflow:hidden; background:var(--sand); display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; border:1px solid var(--line);">
+                            ${worker.profile_photo ? `<img src="${worker.profile_photo}" alt="${worker.name}" style="width:100%; height:100%; object-fit:cover;" onerror="this.parentElement.innerHTML='👷'">` : '👷'}
+                        </div>
+                        <div>
+                            <strong style="font-size:16px;">${worker.name}</strong>
+                            <span class="role-badge worker" style="margin-left:6px; font-size:11px;">${worker.skill}</span>
+                        </div>
                     </div>
                     <div style="display:flex; gap:6px;">
                         ${availBadge}
@@ -2582,8 +2660,12 @@ function syncSOSLocation() {
             }
         },
         err => {
+            let msg = "GPS access denied. Manual address will be used.";
+            if (err.code === 1) msg = "Location permission denied: using manual address.";
+            else if (err.code === 2) msg = "GPS location unavailable: using manual address.";
+            else if (err.code === 3) msg = "GPS location request timed out: using manual address.";
             if (statusEl) {
-                statusEl.innerHTML = `<small style="color:var(--terracotta);">GPS access denied. Manual address will be used.</small>`;
+                statusEl.innerHTML = `<small style="color:var(--terracotta);">⚠️ ${msg}</small>`;
             }
         },
         { timeout: 8000, enableHighAccuracy: true }

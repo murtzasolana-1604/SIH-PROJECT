@@ -969,6 +969,23 @@ async function migratePostgreSQL() {
             console.warn(`[Database Migration Warning] ${m.table}.${m.column}:`, err.message);
         }
     }
+
+    try {
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS tips (
+                id SERIAL PRIMARY KEY,
+                booking_id INTEGER NOT NULL REFERENCES bookings(id),
+                worker_id INTEGER NOT NULL REFERENCES workers(id),
+                customer_phone VARCHAR(20) NOT NULL,
+                tip_amount DOUBLE PRECISION NOT NULL,
+                status VARCHAR(50) DEFAULT 'paid',
+                transaction_id VARCHAR(100),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+    } catch (err) {
+        console.warn("[Database Migration Warning] tips table:", err.message);
+    }
 }
 
 
