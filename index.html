@@ -342,6 +342,16 @@
                         <input type="tel" id="workerOnboardPhoneDisplay" readonly class="locked-input">
                         <small class="hint">Mobile number authenticated via OTP.</small>
                     </div>
+                    <div class="form-group">
+                        <label>Profile Photo (Optional)</label>
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <div class="worker-avatar-container" id="wrkOnboardPhotoPreview">👷</div>
+                            <div>
+                                <input type="file" id="wrkOnboardPhotoInput" accept="image/png,image/jpeg,image/webp" onchange="previewWorkerOnboardPhoto(event)">
+                                <small class="hint" style="display:block; margin-top:4px;">JPG, PNG or WEBP (Max 2.5MB). Displayed on citizen dispatch.</small>
+                            </div>
+                        </div>
+                    </div>
                     <div id="wrkStepError1"></div>
                     <div class="onboarding-actions">
                         <button class="primary" onclick="nextWorkerStep()">Continue to Professional Profile →</button>
@@ -1606,6 +1616,54 @@
         </div>
     </div>
 
+    <!-- ===================== WORKER TO CUSTOMER RATING MODAL (TWO-WAY FEEDBACK) ===================== -->
+    <div id="workerCustomerRatingModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="wcRatingModalTitle" onclick="if(event.target===this) closeWorkerToCustomerRatingModal()">
+        <div class="sos-modal-card" style="max-width: 460px;">
+            <div class="sos-modal-header">
+                <div>
+                    <span class="sos-badge-tag">SIH26089 • TWO-WAY COOPERATIVE FEEDBACK</span>
+                    <h3 id="wcRatingModalTitle" class="sos-modal-title" style="margin-top:4px;">⭐ Rate Customer Experience</h3>
+                </div>
+                <button type="button" class="sos-close-btn" onclick="closeWorkerToCustomerRatingModal()" aria-label="Close">×</button>
+            </div>
+            <p style="font-size:13px; color:var(--muted); margin:6px 0 14px;">
+                Help build our cooperative community trust ledger. Share your feedback for customer <strong id="wcCustomerNameDisplay">Customer</strong>.
+            </p>
+
+            <input type="hidden" id="wcBookingId">
+            <input type="hidden" id="wcWorkerId">
+
+            <label style="font-weight:700; color:var(--teal-deep); font-size:13px; display:block; margin-bottom:6px;">Star Rating:</label>
+            <div class="star-rating-input" id="wcStarsContainer" style="margin-bottom:12px;">
+                <button type="button" class="star-btn active" data-val="1" onclick="selectWorkerCustomerStar(1)">★</button>
+                <button type="button" class="star-btn active" data-val="2" onclick="selectWorkerCustomerStar(2)">★</button>
+                <button type="button" class="star-btn active" data-val="3" onclick="selectWorkerCustomerStar(3)">★</button>
+                <button type="button" class="star-btn active" data-val="4" onclick="selectWorkerCustomerStar(4)">★</button>
+                <button type="button" class="star-btn active" data-val="5" onclick="selectWorkerCustomerStar(5)">★</button>
+            </div>
+            <input type="hidden" id="wcSelectedStars" value="5">
+
+            <label style="font-weight:700; color:var(--teal-deep); font-size:13px; display:block; margin-bottom:6px;">Experience Feedback Badges:</label>
+            <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px;" id="wcTagsContainer">
+                <button type="button" class="two-way-tag-pill active" onclick="toggleTwoWayTag(this)">Respectful behaviour</button>
+                <button type="button" class="two-way-tag-pill active" onclick="toggleTwoWayTag(this)">Good communication</button>
+                <button type="button" class="two-way-tag-pill active" onclick="toggleTwoWayTag(this)">Clear instructions</button>
+                <button type="button" class="two-way-tag-pill" onclick="toggleTwoWayTag(this)">Location/address accuracy</button>
+                <button type="button" class="two-way-tag-pill" onclick="toggleTwoWayTag(this)">Timeliness</button>
+                <button type="button" class="two-way-tag-pill active" onclick="toggleTwoWayTag(this)">Cooperative customer</button>
+            </div>
+
+            <div class="form-group">
+                <label style="font-size:13px;">Optional Note / Comments:</label>
+                <input type="text" id="wcRatingComment" placeholder="e.g. Cordial behaviour, accurate location coordinates provided.">
+            </div>
+
+            <button type="button" class="primary cta-gold" style="width:100%; margin-top:10px;" onclick="submitWorkerCustomerRating()">
+                🤝 Submit Cooperative Rating
+            </button>
+            <div id="wcRatingStatus" style="margin-top:8px; font-size:12.5px;"></div>
+        </div>
+    </div>
 
     <script src="/js/translations.js"></script>
     <script src="/js/voice.js"></script>

@@ -75,6 +75,17 @@ async function addRating(req, res) {
         VALUES (?, ?, ?, ?, ?)
     `).run(bookingId, targetWorkerId, numStars, (comment || "").trim(), tagsStr);
 
+    // Synchronize onto bookings table for unified two-way record
+    try {
+        await db.prepare(`
+            UPDATE bookings 
+            SET customer_rating = ?, customer_feedback = ?, customer_tags = ? 
+            WHERE id = ?
+        `).run(numStars, (comment || "").trim(), tagsStr, bookingId);
+    } catch (e) {
+        console.warn("Sync rating to booking warning:", e.message);
+    }
+
     const created = await db.prepare(`
         SELECT r.*, b.customer_name, b.service, w.name AS worker_name
         FROM ratings r
@@ -87,6 +98,138 @@ async function addRating(req, res) {
         success: true,
         message: "Thank you! Your cooperative feedback has been verified and recorded.",
         rating: formatRatingRow(created)
+    });
+}
+
+// ============================================
+// WORKER RATES CUSTOMER (TWO-WAY FEEDBACK)
+// ============================================
+async function addCustomerRating(req, res) {
+    const { bookingId, workerId, stars, comment, tags } = req.body;
+
+    const numStars = Number(stars);
+    if (!bookingId || isNaN(numStars) || numStars < 1 || numStars > 5) {
+        return res.status(400).json({ success: false, message: "bookingId and a star rating between 1 and 5 are required." });
+    }
+
+    const booking = await db.prepare("SELECT * FROM bookings WHERE id = ?").get(bookingId);
+    if (!booking) {
+        return res.status(404).json({ success: false, message: "Booking not found." });
+    }
+
+    if (booking.status !== "Completed") {
+        return res.status(400).json({ success: false, message: "You can only rate a customer after the job is Completed." });
+    }
+
+    if (workerId && Number(booking.assigned_worker_id) !== Number(workerId)) {
+        return res.status(403).json({ success: false, message: "Only the worker assigned to this booking can rate the customer." });
+    }
+
+    if (booking.worker_rating) {
+        return res.status(409).json({ success: false, message: "Customer has already been rated for this booking." });
+    }
+
+    let tagsStr = "";
+    if (Array.isArray(tags)) {
+        tagsStr = JSON.stringify(tags);
+    } else if (typeof tags === "string") {
+        tagsStr = tags.trim();
+    }
+
+    await db.prepare(`
+        UPDATE bookings
+        SET worker_rating = ?,
+            worker_feedback = ?,
+            worker_tags = ?,
+            worker_rated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+    `).run(numStars, (comment || "").trim(), tagsStr, bookingId);
+
+    const updated = await db.prepare("SELECT * FROM bookings WHERE id = ?").get(bookingId);
+
+    return res.status(201).json({
+        success: true,
+        message: "Thank you! Your feedback for the customer has been recorded.",
+        customerRating: {
+            bookingId: updated.id,
+            customerName: anonymizeName(updated.customer_name),
+            stars: updated.worker_rating,
+            comment: updated.worker_feedback,
+            tags: tagsStr,
+            ratedAt: updated.worker_rated_at
+        }
+    });
+}
+
+// ============================================
+// GET CUSTOMER RATING SUMMARY & STATS
+// ============================================
+async function getCustomerRatingsSummary(req, res) {
+    const phone = req.query.phone || req.query.customerPhone;
+
+    if (!phone) {
+        return res.status(400).json({ success: false, message: "phone parameter is required." });
+    }
+
+    const rows = await db.prepare(`
+        SELECT worker_rating, worker_feedback, worker_tags, worker_rated_at, booking_date, service
+        FROM bookings
+        WHERE customer_phone = ? AND worker_rating IS NOT NULL
+        ORDER BY id DESC
+    `).all(phone);
+
+    const totalBookingsRow = await db.prepare(`
+        SELECT COUNT(*) AS count FROM bookings WHERE customer_phone = ? AND status = 'Completed'
+    `).get(phone);
+
+    const completedBookings = totalBookingsRow ? totalBookingsRow.count : 0;
+
+    if (rows.length === 0) {
+        return res.json({
+            success: true,
+            hasRatings: false,
+            customerPhone: phone,
+            completedBookings,
+            summary: {
+                avgRating: 5.0,
+                ratingCount: 0,
+                completedBookings,
+                recentFeedback: []
+            }
+        });
+    }
+
+    const totalStars = rows.reduce((sum, r) => sum + Number(r.worker_rating), 0);
+    const avgRating = Math.round((totalStars / rows.length) * 10) / 10;
+
+    const recentFeedback = rows.slice(0, 5).map(r => {
+        let parsedTags = [];
+        if (r.worker_tags) {
+            try {
+                parsedTags = r.worker_tags.startsWith("[") ? JSON.parse(r.worker_tags) : r.worker_tags.split(",");
+            } catch (e) {
+                parsedTags = [r.worker_tags];
+            }
+        }
+        return {
+            stars: r.worker_rating,
+            comment: r.worker_feedback || "Cooperative customer",
+            tags: parsedTags,
+            date: r.booking_date
+        };
+    });
+
+    return res.json({
+        success: true,
+        hasRatings: true,
+        customerPhone: phone,
+        summary: {
+            avgRating,
+            ratingCount: rows.length,
+            completedBookings,
+            ratingLabel: `⭐ ${avgRating} • Cooperative Customer`,
+            recentFeedback
+        }
     });
 }
 
@@ -113,12 +256,11 @@ async function getRatings(req, res) {
                 rating: formatRatingRow(rating)
             });
         }
-        return res.json({ success: true, rated: false });
+        return res.json({ success: true, rated: false, message: "No review submitted yet." });
     }
 
     // 2. Specific worker ratings & distribution
     if (workerId) {
-        const id = Number(workerId);
         const rows = await db.prepare(`
             SELECT r.*, b.customer_name, b.service, w.name AS worker_name
             FROM ratings r
@@ -126,15 +268,15 @@ async function getRatings(req, res) {
             LEFT JOIN workers w ON r.worker_id = w.id
             WHERE r.worker_id = ?
             ORDER BY r.id DESC
-        `).all(id);
+        `).all(Number(workerId));
 
         const avgRow = await db.prepare(`
             SELECT AVG(stars) AS avg, COUNT(*) AS count
             FROM ratings
             WHERE worker_id = ?
-        `).get(id);
+        `).get(Number(workerId));
 
-        const breakdown = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+        const breakdown = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
         rows.forEach(r => {
             if (breakdown[r.stars] !== undefined) {
                 breakdown[r.stars]++;
@@ -168,4 +310,9 @@ async function getRatings(req, res) {
 }
 
 
-module.exports = { addRating, getRatings };
+module.exports = { 
+    addRating, 
+    getRatings, 
+    addCustomerRating, 
+    getCustomerRatingsSummary 
+};

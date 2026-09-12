@@ -10,4 +10,6 @@ scratch/
 *.apk
 *.aab
 .expo/
+public/uploads/workers/*
+!public/uploads/workers/.gitkeep
 

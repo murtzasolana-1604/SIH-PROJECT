@@ -94,7 +94,7 @@ async function bookingsRoute(req, res) {
                     distance_label: distKm !== null ? `${distKm} km away` : null
                 };
 
-                // Privacy protection: Mask customer phone if job is pending (not yet assigned to this worker)
+                // Privacy protection: Mask customer phone and coordinates if job is pending (not yet assigned to this worker)
                 const isAssignedToThisWorker = assignedWorkerId && String(b.assigned_worker_id) === String(assignedWorkerId);
                 if (b.status === "Pending" && !isAssignedToThisWorker) {
                     const rawPh = String(b.customer_phone || "");
@@ -103,6 +103,9 @@ async function bookingsRoute(req, res) {
                         : "Masked for Privacy";
                     // Only mask public phone on pending list
                     bWithDist.customer_phone = bWithDist.customer_phone_masked;
+                    // Protect customer coordinates from unassigned workers
+                    bWithDist.customer_lat = null;
+                    bWithDist.customer_lng = null;
                 }
 
                 filteredBookings.push(bWithDist);
@@ -162,12 +165,32 @@ async function bookingsRoute(req, res) {
 // WORKER ACCEPTS A PENDING BOOKING
 // =========================
 async function acceptBooking(req, res) {
-
     const bookingId = Number(req.params.id);
-    const { workerId } = req.body;
+    const { workerId, expectedArrival } = req.body;
 
     if (!workerId) {
         return res.status(400).json({ success: false, message: "workerId is required." });
+    }
+
+    const numWorkerId = Number(workerId);
+
+    // CRITICAL BUSINESS RULE: A worker can have ONLY ONE ACTIVE BOOKING at a time.
+    // Concurrency-safe check across all active booking states
+    const activeBooking = await db.prepare(`
+        SELECT id, service, status, customer_name, booking_date, booking_time 
+        FROM bookings 
+        WHERE assigned_worker_id = ? 
+          AND status IN ('Assigned', 'Confirmed', 'In Progress', 'In_Progress')
+        LIMIT 1
+    `).get(numWorkerId);
+
+    if (activeBooking) {
+        return res.status(400).json({
+            success: false,
+            message: "Worker already has an active booking.",
+            activeBookingId: activeBooking.id,
+            activeBookingStatus: activeBooking.status
+        });
     }
 
     const booking = await db.prepare("SELECT * FROM bookings WHERE id = ?").get(bookingId);
@@ -180,17 +203,63 @@ async function acceptBooking(req, res) {
         return res.status(400).json({ success: false, message: `Booking is already ${booking.status}.` });
     }
 
-    await db.prepare("UPDATE bookings SET assigned_worker_id = ?, status = 'Assigned', dispatched_at = CURRENT_TIMESTAMP WHERE id = ?")
-        .run(workerId, bookingId);
+    // Determine expected arrival
+    let arrivalStr = (expectedArrival || "").trim();
+    if (!arrivalStr) {
+        const targetMins = Number(booking.target_response_mins) || 35;
+        const arrDate = new Date(Date.now() + targetMins * 60 * 1000);
+        let hrs = arrDate.getHours();
+        const mins = String(arrDate.getMinutes()).padStart(2, "0");
+        const ampm = hrs >= 12 ? "PM" : "AM";
+        hrs = hrs % 12 || 12;
+        arrivalStr = `${hrs}:${mins} ${ampm} (Estimated arrival)`;
+    }
+
+    // Atomic conditional update on pending status
+    await db.prepare(`
+        UPDATE bookings 
+        SET assigned_worker_id = ?, 
+            status = 'Assigned', 
+            dispatched_at = CURRENT_TIMESTAMP,
+            expected_arrival = ?
+        WHERE id = ? AND status = 'Pending'
+    `).run(numWorkerId, arrivalStr, bookingId);
+
+    // Set worker is_available = 0 (Busy)
+    await db.prepare("UPDATE workers SET is_available = 0 WHERE id = ?").run(numWorkerId);
 
     const updated = await db.prepare(`
-        SELECT b.*, w.name AS worker_name, w.phone AS worker_phone, w.skill AS worker_skill
+        SELECT b.*, w.name AS worker_name, w.phone AS worker_phone, w.skill AS worker_skill, w.profile_photo AS worker_photo
         FROM bookings b
         LEFT JOIN workers w ON b.assigned_worker_id = w.id
         WHERE b.id = ?
     `).get(bookingId);
 
-    return res.json({ success: true, message: "Job accepted!", booking: updated });
+    // Send or prepare WhatsApp confirmation
+    let whatsappNotification = null;
+    try {
+        const notificationService = require("../services/notificationService");
+        whatsappNotification = await notificationService.sendBookingConfirmation({
+            bookingId: updated.id,
+            service: updated.service,
+            customerName: updated.customer_name,
+            customerPhone: updated.customer_phone,
+            workerName: updated.worker_name,
+            workerPhone: updated.worker_phone,
+            expectedArrival: updated.expected_arrival,
+            address: updated.address
+        });
+    } catch (waErr) {
+        console.warn("[WhatsApp Notification Warning]:", waErr.message);
+    }
+
+    return res.json({ 
+        success: true, 
+        message: "Job accepted!", 
+        booking: updated,
+        expectedArrival: arrivalStr,
+        whatsappNotification 
+    });
 }
 
 // =========================
@@ -211,7 +280,7 @@ async function startBooking(req, res) {
     await db.prepare("UPDATE bookings SET status = 'In Progress' WHERE id = ?").run(bookingId);
 
     const updated = await db.prepare(`
-        SELECT b.*, w.name AS worker_name, w.phone AS worker_phone, w.skill AS worker_skill
+        SELECT b.*, w.name AS worker_name, w.phone AS worker_phone, w.skill AS worker_skill, w.profile_photo AS worker_photo
         FROM bookings b
         LEFT JOIN workers w ON b.assigned_worker_id = w.id
         WHERE b.id = ?
@@ -241,6 +310,21 @@ async function cancelBooking(req, res) {
 
     await db.prepare("UPDATE bookings SET status = 'Cancelled' WHERE id = ?").run(bookingId);
 
+    // Free the worker if one was assigned and has no other active jobs
+    if (booking.assigned_worker_id) {
+        const remainingActive = await db.prepare(`
+            SELECT COUNT(*) AS count 
+            FROM bookings 
+            WHERE assigned_worker_id = ? 
+              AND status IN ('Assigned', 'Confirmed', 'In Progress', 'In_Progress')
+              AND id != ?
+        `).get(booking.assigned_worker_id, bookingId);
+
+        if (!remainingActive || Number(remainingActive.count) === 0) {
+            await db.prepare("UPDATE workers SET is_available = 1 WHERE id = ?").run(booking.assigned_worker_id);
+        }
+    }
+
     const updated = await db.prepare("SELECT * FROM bookings WHERE id = ?").get(bookingId);
 
     return res.json({ success: true, message: "Booking cancelled successfully.", booking: updated });
@@ -250,9 +334,7 @@ async function cancelBooking(req, res) {
 // MARK A BOOKING COMPLETE + AUTO-GENERATE INVOICE
 // =========================
 async function completeBooking(req, res) {
-
     const bookingId = Number(req.params.id);
-
     const booking = await db.prepare("SELECT * FROM bookings WHERE id = ?").get(bookingId);
 
     if (!booking) {
@@ -264,6 +346,21 @@ async function completeBooking(req, res) {
     }
 
     await db.prepare("UPDATE bookings SET status = 'Completed' WHERE id = ?").run(bookingId);
+
+    // Free the worker so they become AVAILABLE again!
+    if (booking.assigned_worker_id) {
+        const remainingActive = await db.prepare(`
+            SELECT COUNT(*) AS count 
+            FROM bookings 
+            WHERE assigned_worker_id = ? 
+              AND status IN ('Assigned', 'Confirmed', 'In Progress', 'In_Progress')
+              AND id != ?
+        `).get(booking.assigned_worker_id, bookingId);
+
+        if (!remainingActive || Number(remainingActive.count) === 0) {
+            await db.prepare("UPDATE workers SET is_available = 1 WHERE id = ?").run(booking.assigned_worker_id);
+        }
+    }
 
     let invoice = await db.prepare("SELECT * FROM invoices WHERE booking_id = ?").get(bookingId);
 
@@ -287,8 +384,8 @@ async function completeBooking(req, res) {
         const workerEarning = pricing.workerEarning;
 
         const result = await db.prepare(`
-            INSERT INTO invoices (booking_id, service_charge, cooperative_share, worker_earning, total_amount)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO invoices (booking_id, service_charge, cooperative_share, worker_earning, tip_amount, total_amount)
+            VALUES (?, ?, ?, ?, 0, ?)
         `).run(bookingId, serviceCharge, cooperativeShare, workerEarning, serviceCharge);
 
         invoice = await db.prepare("SELECT * FROM invoices WHERE id = ?").get(result.lastInsertRowid);
@@ -299,6 +396,94 @@ async function completeBooking(req, res) {
     return res.json({ success: true, message: "Booking marked complete.", booking: updatedBooking, invoice });
 }
 
+// =========================
+// GET CUSTOMER EXACT LOCATION (ASSIGNED WORKER ONLY)
+// =========================
+async function getCustomerLocation(req, res) {
+    const bookingId = Number(req.params.id);
+    const workerId = Number(req.query.workerId || req.headers["x-worker-id"]);
+
+    const booking = await db.prepare("SELECT * FROM bookings WHERE id = ?").get(bookingId);
+
+    if (!booking) {
+        return res.status(404).json({ success: false, message: "Booking not found." });
+    }
+
+    // Privacy security check: Only the worker assigned to this confirmed/in-progress booking can view customer location
+    if (!workerId || Number(booking.assigned_worker_id) !== workerId) {
+        return res.status(403).json({
+            success: false,
+            message: "Access denied. Precise customer coordinates are restricted strictly to the assigned worker."
+        });
+    }
+
+    if (!["Assigned", "Confirmed", "In Progress", "In_Progress"].includes(booking.status)) {
+        return res.status(403).json({
+            success: false,
+            message: `Customer location navigation is only accessible during active service delivery. Current status: ${booking.status}.`
+        });
+    }
+
+    const lat = booking.customer_lat;
+    const lng = booking.customer_lng;
+
+    if (lat === null || lat === undefined || lng === null || lng === undefined || (Number(lat) === 0 && Number(lng) === 0)) {
+        return res.json({
+            success: true,
+            coordinatesAvailable: false,
+            customerName: booking.customer_name,
+            address: booking.address,
+            message: "Customer location coordinates are unavailable for this booking.",
+            googleMapsUrl: null
+        });
+    }
+
+    // Dynamic Google Maps Directions URL
+    const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(lat)},${encodeURIComponent(lng)}`;
+
+    return res.json({
+        success: true,
+        coordinatesAvailable: true,
+        customerName: booking.customer_name,
+        customerPhone: booking.customer_phone,
+        address: booking.address,
+        customerLat: lat,
+        customerLng: lng,
+        googleMapsUrl,
+        expectedArrival: booking.expected_arrival
+    });
+}
+
+// =========================
+// UPDATE EXPECTED ARRIVAL TIME
+// =========================
+async function updateExpectedArrival(req, res) {
+    const bookingId = Number(req.params.id);
+    const { workerId, expectedArrival } = req.body;
+
+    if (!expectedArrival || typeof expectedArrival !== "string") {
+        return res.status(400).json({ success: false, message: "expectedArrival string is required." });
+    }
+
+    const booking = await db.prepare("SELECT * FROM bookings WHERE id = ?").get(bookingId);
+    if (!booking) {
+        return res.status(404).json({ success: false, message: "Booking not found." });
+    }
+
+    if (workerId && Number(booking.assigned_worker_id) !== Number(workerId)) {
+        return res.status(403).json({ success: false, message: "Only the assigned worker can update expected arrival." });
+    }
+
+    await db.prepare("UPDATE bookings SET expected_arrival = ? WHERE id = ?").run(expectedArrival.trim(), bookingId);
+    const updated = await db.prepare("SELECT * FROM bookings WHERE id = ?").get(bookingId);
+
+    return res.json({ 
+        success: true, 
+        message: "Expected arrival updated.", 
+        expectedArrival: updated.expected_arrival, 
+        booking: updated 
+    });
+}
 
 module.exports = {
     bookingsRoute,
@@ -306,6 +491,8 @@ module.exports = {
     startBooking,
     completeBooking,
     cancelBooking,
+    getCustomerLocation,
+    updateExpectedArrival,
     SERVICE_PRICES,
     DEFAULT_PRICE
-};
+};

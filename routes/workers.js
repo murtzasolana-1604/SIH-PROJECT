@@ -1,3 +1,5 @@
+const path = require("path");
+const fs = require("fs");
 const db = require("../database");
 const {
     DEFAULT_CUSTOMER_RADIUS_KM,
@@ -6,6 +8,32 @@ const {
     ALLOWED_RADII_KM,
     calculateHaversineDistance
 } = require("../config/businessRules");
+
+// Helper to safely save uploaded worker photo from base64 data URL
+function saveWorkerProfilePhoto(workerId, base64Data) {
+    if (!base64Data || typeof base64Data !== "string") {
+        throw new Error("Invalid photo data.");
+    }
+    // Already a saved relative path
+    if (base64Data.startsWith("/uploads/")) {
+        return base64Data;
+    }
+    const match = base64Data.match(/^data:image\/(jpeg|jpg|png|webp);base64,([A-Za-z0-9+/=]+)$/);
+    if (!match) {
+        throw new Error("Invalid image format. Allowed formats: JPEG, PNG, WebP.");
+    }
+    const ext = match[1] === "jpeg" ? "jpg" : match[1];
+    const buffer = Buffer.from(match[2], "base64");
+    if (buffer.length > 2.5 * 1024 * 1024) {
+        throw new Error("Image size exceeds 2.5MB limit.");
+    }
+    const uploadsDir = path.join(__dirname, "..", "public", "uploads", "workers");
+    fs.mkdirSync(uploadsDir, { recursive: true });
+    const fileName = `worker-${workerId}-${Date.now()}.${ext}`;
+    const filePath = path.join(uploadsDir, fileName);
+    fs.writeFileSync(filePath, buffer);
+    return `/uploads/workers/${fileName}`;
+}
 
 // Helper to format worker response with privacy protection
 function formatWorkerPublic(w, distanceKm = null) {
@@ -41,7 +69,8 @@ function formatWorkerPublic(w, distanceKm = null) {
         distance_m: distanceKm !== null ? Math.round(distanceKm * 1000) : (w.distance_m !== undefined ? w.distance_m : null),
         distance_label: distanceKm !== null ? `${distanceKm} km away` : null,
         phone_masked: maskedPhone,
-        phone: maskedPhone
+        phone: maskedPhone,
+        profile_photo: w.profile_photo || null
     };
 }
 
@@ -189,7 +218,8 @@ async function workersRoute(req, res) {
             pincode,
             latitude,
             longitude,
-            societyId
+            societyId,
+            profilePhoto
         } = req.body;
 
         if (!name || !phone || !skill) {
@@ -205,6 +235,15 @@ async function workersRoute(req, res) {
         const existingWorker = await db.prepare("SELECT * FROM workers WHERE phone = ?").get(cleanPhone);
 
         if (existingWorker) {
+            let photoPath = existingWorker.profile_photo || null;
+            if (profilePhoto) {
+                try {
+                    photoPath = saveWorkerProfilePhoto(existingWorker.id, profilePhoto);
+                } catch (e) {
+                    console.warn("Worker photo save warning:", e.message);
+                }
+            }
+
             await db.prepare(`
                 UPDATE workers
                 SET name = ?, skill = ?, experience = ?, location = ?, availability = ?,
@@ -216,7 +255,8 @@ async function workersRoute(req, res) {
                     state = COALESCE(?, state),
                     pincode = COALESCE(?, pincode),
                     latitude = COALESCE(?, latitude),
-                    longitude = COALESCE(?, longitude)
+                    longitude = COALESCE(?, longitude),
+                    profile_photo = COALESCE(?, profile_photo)
                 WHERE id = ?
             `).run(
                 name,
@@ -233,6 +273,7 @@ async function workersRoute(req, res) {
                 pincode || null,
                 latitude !== undefined ? latitude : null,
                 longitude !== undefined ? longitude : null,
+                photoPath,
                 existingWorker.id
             );
 
@@ -240,7 +281,7 @@ async function workersRoute(req, res) {
             return res.json({
                 success: true,
                 message: "Worker profile updated successfully!",
-                worker: updated
+                worker: formatWorkerPublic(updated)
             });
         }
 
@@ -273,18 +314,29 @@ async function workersRoute(req, res) {
             resolvedSocietyId
         );
 
+        const newWorkerId = result.lastInsertRowid;
+        if (profilePhoto && newWorkerId) {
+            try {
+                const photoPath = saveWorkerProfilePhoto(newWorkerId, profilePhoto);
+                await db.prepare("UPDATE workers SET profile_photo = ? WHERE id = ?").run(photoPath, newWorkerId);
+            } catch (e) {
+                console.warn("New worker photo save warning:", e.message);
+            }
+        }
+
         const worker = await db.prepare(`
             SELECT w.*, s.name as society_name, s.reg_number as society_reg_number, s.cluster_zone as society_cluster
             FROM workers w
             LEFT JOIN societies s ON w.society_id = s.id
             WHERE w.id = ?
-        `).get(result.lastInsertRowid);
+        `).get(newWorkerId);
 
         return res.status(201).json({
             success: true,
             message: "Worker registered successfully!",
-            worker
+            worker: formatWorkerPublic(worker)
         });
+
     }
 
     return res.status(405).json({ success: false, message: "Method not allowed" });
@@ -318,6 +370,37 @@ async function updateAvailability(req, res) {
 }
 
 // =====================================
+// UPLOAD / UPDATE WORKER PROFILE PHOTO
+// =====================================
+async function uploadPhoto(req, res) {
+    const workerId = Number(req.params.id);
+    const { photoData } = req.body;
+
+    if (!workerId || !photoData) {
+        return res.status(400).json({ success: false, message: "workerId and photoData are required." });
+    }
+
+    const worker = await db.prepare("SELECT * FROM workers WHERE id = ?").get(workerId);
+    if (!worker) {
+        return res.status(404).json({ success: false, message: "Worker not found." });
+    }
+
+    try {
+        const photoPath = saveWorkerProfilePhoto(workerId, photoData);
+        await db.prepare("UPDATE workers SET profile_photo = ? WHERE id = ?").run(photoPath, workerId);
+        const updated = await db.prepare("SELECT * FROM workers WHERE id = ?").get(workerId);
+        return res.json({
+            success: true,
+            message: "Profile photo updated successfully!",
+            profilePhoto: photoPath,
+            worker: formatWorkerPublic(updated)
+        });
+    } catch (err) {
+        return res.status(400).json({ success: false, message: err.message || "Failed to upload photo." });
+    }
+}
+
+// =====================================
 // GET WORKER EARNINGS BREAKDOWN
 // =====================================
 async function getEarnings(req, res) {
@@ -340,37 +423,57 @@ async function getEarnings(req, res) {
     const todayStr = now.toISOString().split("T")[0];
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-    let todayEarnings = 0;
-    let weekEarnings = 0;
-    let totalEarnings = 0;
+    let todayService = 0;
+    let weekService = 0;
+    let totalService = 0;
+    let todayTips = 0;
+    let weekTips = 0;
+    let totalTips = 0;
+    let totalWorkerEarnings = 0;
     let totalCoopShare = 0;
     let totalAmount = 0;
 
     invoices.forEach(inv => {
         const invDate = new Date(inv.created_at || inv.booking_date);
-        const earning = Number(inv.worker_earning) || 0;
+        const serviceEarning = Number(inv.worker_earning) || 0;
+        const tip = Number(inv.tip_amount) || 0;
+        const totalWorker = serviceEarning + tip;
         const coop = Number(inv.cooperative_share) || 0;
         const total = Number(inv.total_amount) || 0;
 
-        totalEarnings += earning;
+        totalService += serviceEarning;
+        totalTips += tip;
+        totalWorkerEarnings += totalWorker;
         totalCoopShare += coop;
         totalAmount += total;
 
         if (inv.booking_date === todayStr || (inv.created_at && String(inv.created_at).startsWith(todayStr))) {
-            todayEarnings += earning;
+            todayService += serviceEarning;
+            todayTips += tip;
         }
 
         if (invDate >= sevenDaysAgo) {
-            weekEarnings += earning;
+            weekService += serviceEarning;
+            weekTips += tip;
         }
     });
 
     return res.json({
         success: true,
         earnings: {
-            today: Math.round(todayEarnings * 100) / 100,
-            week: Math.round(weekEarnings * 100) / 100,
-            total: Math.round(totalEarnings * 100) / 100,
+            today: Math.round((todayService + todayTips) * 100) / 100,
+            week: Math.round((weekService + weekTips) * 100) / 100,
+            total: Math.round(totalWorkerEarnings * 100) / 100,
+            serviceEarnings: {
+                today: Math.round(todayService * 100) / 100,
+                week: Math.round(weekService * 100) / 100,
+                total: Math.round(totalService * 100) / 100
+            },
+            tips: {
+                today: Math.round(todayTips * 100) / 100,
+                week: Math.round(weekTips * 100) / 100,
+                total: Math.round(totalTips * 100) / 100
+            },
             cooperativeShare: Math.round(totalCoopShare * 100) / 100,
             grossTotal: Math.round(totalAmount * 100) / 100,
             completedJobsCount: invoices.length,
@@ -538,5 +641,6 @@ workersRoute.getEarnings = getEarnings;
 workersRoute.getWorkerBadge = getWorkerBadge;
 workersRoute.verifyWorkerByHash = verifyWorkerByHash;
 workersRoute.getNearbyWorkers = workersRoute;
+workersRoute.uploadPhoto = uploadPhoto;
 
 module.exports = workersRoute;

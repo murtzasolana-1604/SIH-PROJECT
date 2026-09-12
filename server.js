@@ -19,13 +19,16 @@ const societiesRoute = require("./routes/societies");
 const analyticsRoute = require("./routes/analytics");
 const welfareRoute = require("./routes/welfare");
 const simulatorRoute = require("./routes/simulator");
+const locationRoute = require("./routes/location");
+const tipsRoute = require("./routes/tips");
 const businessRules = require("./config/businessRules");
 const db = require("./database");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 // Enable CORS for all local development and PWA clients
 app.use((req, res, next) => {
@@ -64,6 +67,9 @@ app.get("/api/config/business-rules", (req, res) => {
     });
 });
 
+// Reverse Geocoding & Geospatial Address Proxy
+app.use("/api/location", locationRoute);
+
 // Services
 app.use("/api/services", servicesRoute);
 
@@ -71,11 +77,13 @@ app.use("/api/services", servicesRoute);
 app.get("/api/customer/profile", customerRoute.getProfile);
 app.post("/api/customer/profile", customerRoute.saveProfile);
 app.post("/api/customer/location", customerRoute.updateLocation);
+app.get("/api/customer/ratings", ratingsRoute.getCustomerRatingsSummary);
 
 // Workers
 app.get("/api/workers", workersRoute);
 app.get("/api/workers/nearby", workersRoute.getNearbyWorkers);
 app.post("/api/workers", workersRoute);
+app.post("/api/workers/:id/photo", workersRoute.uploadPhoto);
 app.post("/api/workers/:id/availability", workersRoute.updateAvailability);
 app.get("/api/workers/:id/earnings", workersRoute.getEarnings);
 app.get("/api/workers/:id/badge", workersRoute.getWorkerBadge);
@@ -84,10 +92,13 @@ app.get("/api/verify/worker/:hash", workersRoute.verifyWorkerByHash);
 // Bookings
 app.get("/api/bookings", bookings.bookingsRoute);
 app.post("/api/bookings", bookings.bookingsRoute);
+app.get("/api/bookings/:id/customer-location", bookings.getCustomerLocation);
+app.patch("/api/bookings/:id/arrival", bookings.updateExpectedArrival);
 app.post("/api/bookings/:id/accept", bookings.acceptBooking);
 app.post("/api/bookings/:id/start", bookings.startBooking);
 app.post("/api/bookings/:id/complete", bookings.completeBooking);
 app.post("/api/bookings/:id/cancel", bookings.cancelBooking);
+app.post("/api/bookings/:id/tip", tipsRoute.addTip);
 app.post("/api/bookings/:id/rate", (req, res) => {
     req.body = req.body || {};
     req.body.bookingId = req.body.bookingId || Number(req.params.id);
@@ -95,6 +106,9 @@ app.post("/api/bookings/:id/rate", (req, res) => {
     req.body.comment = req.body.comment || req.body.review;
     return ratingsRoute.addRating(req, res);
 });
+
+// Tips (100% to worker, 0% cooperative fee)
+app.use("/api/tips", tipsRoute.router);
 
 // Emergency Rapid Dispatch (Phase 11)
 app.post("/api/emergency/sos", emergencyRoute.triggerEmergencySOS);
@@ -125,6 +139,7 @@ app.get("/api/admin/match/:bookingId", adminAuth.requireAdminAuth, admin.matchWo
 // Ratings
 app.get("/api/ratings", ratingsRoute.getRatings);
 app.post("/api/ratings", ratingsRoute.addRating);
+app.post("/api/ratings/customer", ratingsRoute.addCustomerRating);
 
 // Invoices
 app.get("/api/invoices", invoicesRoute.getInvoice);

@@ -77,7 +77,17 @@ async function refreshCustomerLocation() {
                 const data = await res.json();
                 if (data.success) {
                     const locEl = document.getElementById("customerWelcomeLoc");
-                    if (locEl) locEl.textContent = `GPS: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+                    try {
+                        const revRes = await fetch(`/api/location/reverse-geocode?lat=${lat}&lng=${lng}`);
+                        const revData = await revRes.json();
+                        if (revData.success && revData.address) {
+                            if (locEl) locEl.textContent = revData.address;
+                        } else {
+                            if (locEl) locEl.textContent = `GPS: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+                        }
+                    } catch (e) {
+                        if (locEl) locEl.textContent = `GPS: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+                    }
                     if (btn) btn.textContent = "✓ Location Updated";
                     setTimeout(() => { if (btn) btn.textContent = "📍 Update Location"; }, 3000);
                 }
@@ -179,14 +189,35 @@ function syncBookingLocation() {
         if (statusEl) statusEl.innerHTML = `<small class="hint warning">Geolocation not supported.</small>`;
         return;
     }
-    if (statusEl) statusEl.innerHTML = `<small class="hint">📍 Syncing current GPS coordinates...</small>`;
+    if (statusEl) statusEl.innerHTML = `<small class="hint">📍 Acquiring GPS & resolving postal address...</small>`;
 
     navigator.geolocation.getCurrentPosition(
-        position => {
+        async position => {
             const lat = position.coords.latitude;
             const lng = position.coords.longitude;
-            document.getElementById("customerLat").value = lat;
-            document.getElementById("customerLng").value = lng;
+            const latInput = document.getElementById("customerLat");
+            const lngInput = document.getElementById("customerLng");
+            if (latInput) latInput.value = lat;
+            if (lngInput) lngInput.value = lng;
+            localStorage.setItem("sahkaar_customer_lat", lat);
+            localStorage.setItem("sahkaar_customer_lng", lng);
+
+            // Reverse geocode proxy
+            try {
+                const revRes = await fetch(`/api/location/reverse-geocode?lat=${lat}&lng=${lng}`);
+                const revData = await revRes.json();
+                if (revData.success && revData.address) {
+                    const addrInput = document.getElementById("customerAddress");
+                    if (addrInput) addrInput.value = revData.address;
+                    if (statusEl) {
+                        statusEl.innerHTML = `<small class="hint" style="color:var(--teal); font-weight:600;">✓ Address Auto-Locked from GPS: <em>${revData.address}</em> (You may still edit details)</small>`;
+                    }
+                    return;
+                }
+            } catch (revErr) {
+                console.warn("[Reverse Geocode]", revErr);
+            }
+
             if (statusEl) {
                 statusEl.innerHTML = `<small class="hint" style="color:var(--teal); font-weight:600;">✓ GPS Synced: ${lat.toFixed(4)}, ${lng.toFixed(4)}</small>`;
             }
@@ -528,9 +559,16 @@ async function fetchMyBookings() {
             let workerBox = "";
             if (booking.worker_name) {
                 const assignedId = booking.assigned_worker_id || 6;
+                const photoHtml = booking.worker_photo
+                    ? `<img src="${booking.worker_photo}" alt="${booking.worker_name}" class="avatar-img" onerror="this.parentElement.innerHTML='👷'">`
+                    : "👷";
+                const arrivalHtml = booking.expected_arrival
+                    ? `<div class="worker-arrival-eta" style="color:var(--teal-deep); font-weight:700; font-size:13px; margin-top:4px;">🕒 Expected Arrival: ${booking.expected_arrival}</div>`
+                    : "";
+
                 workerBox = `
                     <div class="assigned-worker-card">
-                        <div class="worker-avatar">👷</div>
+                        <div class="worker-avatar">${photoHtml}</div>
                         <div class="worker-details">
                             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
                                 <strong>Assigned Worker: ${booking.worker_name}</strong>
@@ -538,6 +576,7 @@ async function fetchMyBookings() {
                             </div>
                             <div class="worker-sub">${booking.worker_skill || booking.service} • Verified Member</div>
                             <div class="worker-phone">📞 <a href="tel:${booking.worker_phone}">${booking.worker_phone}</a></div>
+                            ${arrivalHtml}
                         </div>
                     </div>
                 `;
@@ -717,6 +756,41 @@ async function fetchMyBookings() {
                             </div>
                         `;
                     }
+
+                    // Cooperative Tipping Card (100% to worker, 0% cooperative fee)
+                    const tipVal = Number(inv.tip_amount) || 0;
+                    html += `
+                        <div class="tip-container-card" id="tippingCard-${booking.id}">
+                            ${tipVal > 0 ? `
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <span style="font-size:22px;">💖</span>
+                                    <div>
+                                        <strong style="color:#1B5E20; font-size:14px;">₹${tipVal} Tip Paid to ${booking.worker_name || 'Worker'}</strong>
+                                        <div style="font-size:12px; color:#2E7D32;">100% transferred directly to worker • 0% cooperative commission deducted</div>
+                                    </div>
+                                </div>
+                            ` : `
+                                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+                                    <strong style="color:#B78103; font-size:14px;">💖 Show Appreciation with a Tip for ${booking.worker_name || 'Your Worker'}</strong>
+                                    <span class="badge" style="background:#E8F5E9; color:#2E7D32; font-size:11px; font-weight:700;">100% Direct to Worker</span>
+                                </div>
+                                <p style="font-size:12px; color:var(--muted); margin:4px 0 8px;">
+                                    Cooperative guarantee: Sahkaar Connect charges <strong>0% fee</strong> on tips. 100% goes directly to the member.
+                                </p>
+                                <div class="tip-presets-row">
+                                    <button type="button" class="tip-preset-btn" id="tip-btn-${booking.id}-20" onclick="selectTipPreset(${booking.id}, 20)">₹20</button>
+                                    <button type="button" class="tip-preset-btn" id="tip-btn-${booking.id}-50" onclick="selectTipPreset(${booking.id}, 50)">₹50</button>
+                                    <button type="button" class="tip-preset-btn active" id="tip-btn-${booking.id}-100" onclick="selectTipPreset(${booking.id}, 100)">₹100</button>
+                                    <button type="button" class="tip-preset-btn" id="tip-btn-${booking.id}-200" onclick="selectTipPreset(${booking.id}, 200)">₹200</button>
+                                    <input type="number" id="customTipInput-${booking.id}" class="tip-custom-input" placeholder="Custom ₹" min="1" oninput="clearTipPresets(${booking.id})">
+                                    <button type="button" class="primary cta-gold btn-sm" onclick="submitBookingTip(${booking.id}, '${booking.customer_phone}')">
+                                        Send Tip →
+                                    </button>
+                                </div>
+                                <div id="tipStatus-${booking.id}" style="font-size:12px; margin-top:4px;"></div>
+                            `}
+                        </div>
+                    `;
                 }
 
                 // Check rating status
@@ -1207,11 +1281,20 @@ async function fetchWorkerDashboard() {
 
         let html = `
             <div class="worker-profile">
-                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
-                    <div>
-                        <strong style="font-size:19px;">${worker.name}</strong><br>
-                        <span class="role-badge worker" style="margin-top:4px;">${worker.skill}</span>
-                        <div style="margin-top:6px;">${verifiedBadge}</div>
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; flex-wrap:wrap; gap:12px;">
+                    <div style="display:flex; align-items:center; gap:14px;">
+                        <div class="worker-avatar-container worker-avatar-lg">
+                            ${worker.profile_photo ? `<img src="${worker.profile_photo}" alt="${worker.name}" class="avatar-img" onerror="this.parentElement.innerHTML='👷'">` : '👷'}
+                        </div>
+                        <div>
+                            <strong style="font-size:19px;">${worker.name}</strong><br>
+                            <span class="role-badge worker" style="margin-top:4px;">${worker.skill}</span>
+                            <div style="margin-top:6px; display:flex; align-items:center; gap:8px;">
+                                ${verifiedBadge}
+                                <input type="file" id="workerPhotoFileInput-${worker.id}" accept="image/jpeg,image/png,image/webp" style="display:none;" onchange="uploadWorkerProfilePhoto(event, ${worker.id})">
+                                <button type="button" class="btn-text-sm" onclick="document.getElementById('workerPhotoFileInput-${worker.id}').click()">📷 Update Photo</button>
+                            </div>
+                        </div>
                     </div>
                     <div style="text-align:right;">
                         ${availBtn}
@@ -1291,23 +1374,23 @@ async function fetchWorkerDashboard() {
                 </div>
                 <div class="earnings-grid">
                     <div class="earnings-stat-card">
-                        <span class="stat-label">Today's Earnings</span>
-                        <span class="stat-val">₹${earnings.today}</span>
+                        <span class="stat-label">Service Earnings (93%)</span>
+                        <span class="stat-val">₹${(earnings.serviceEarnings && earnings.serviceEarnings.total) !== undefined ? earnings.serviceEarnings.total : earnings.total}</span>
                     </div>
-                    <div class="earnings-stat-card">
-                        <span class="stat-label">This Week</span>
-                        <span class="stat-val">₹${earnings.week}</span>
+                    <div class="earnings-stat-card" style="background:#FFFDE7; border:1.5px solid #FBC02D;">
+                        <span class="stat-label" style="color:#F57F17;">Worker Tips (100%)</span>
+                        <span class="stat-val" style="color:#F57F17;">₹${(earnings.tips && earnings.tips.total) !== undefined ? earnings.tips.total : 0}</span>
                     </div>
                     <div class="earnings-stat-card">
                         <span class="stat-label">Coop Share (7%)</span>
                         <span class="stat-val coop">₹${earnings.cooperativeShare}</span>
                     </div>
                     <div class="earnings-stat-card highlight">
-                        <span class="stat-label">Net Take-Home</span>
+                        <span class="stat-label">Total Take-Home</span>
                         <span class="stat-val">₹${earnings.total}</span>
                     </div>
                 </div>
-                <small class="hint">Transparent cooperative ledger: zero private middleman commission — 93% directly to you, 7% to NCCT welfare fund.</small>
+                <small class="hint">Transparent cooperative ledger: zero private middleman commission — 93% service + 100% tips directly to you, 7% to NCCT welfare fund.</small>
             </div>
 
             <!-- Cooperative Fair Wage Advantage Card (Phase 15) -->
@@ -1353,17 +1436,35 @@ async function fetchWorkerDashboard() {
                     ? `<button class="cta-gold" onclick="startWorkerJob(${booking.id})">⚡ Start Job (In Progress)</button>`
                     : `<button class="secondary" onclick="markComplete(${booking.id})">✅ Mark Complete & Generate Invoice</button>`;
 
+                const waMessage = `Hello ${booking.customer_name}, this is ${worker.name}, your assigned cooperative tradesperson for ${booking.service} (Booking #${booking.id}). Estimated Arrival: ${booking.expected_arrival || '30 mins'}.`;
+                const waUrl = `https://wa.me/91${booking.customer_phone}?text=${encodeURIComponent(waMessage)}`;
+
                 html += `
-                    <div class="booking-item">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <div class="booking-item" style="border-left: 4px solid var(--teal-deep);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                             <div>${emergencyTag}<strong>Booking #${booking.id}</strong></div>
                             ${statusBadge}
                         </div>
-                        <strong>Service:</strong> ${booking.service}<br>
-                        <strong>Customer:</strong> ${booking.customer_name} (📞 <a href="tel:${booking.customer_phone}">${booking.customer_phone}</a>)<br>
-                        <strong>Address:</strong> ${booking.address}<br>
-                        <strong>Date:</strong> ${booking.booking_date} ${booking.booking_time}<br>
-                        <div style="margin-top:10px;">${actionBtn}</div>
+                        <div style="font-size:13.5px; line-height:1.7; margin-bottom:10px;">
+                            <strong>Service:</strong> ${booking.service}<br>
+                            <strong>Customer:</strong> ${booking.customer_name} (📞 <a href="tel:${booking.customer_phone}">${booking.customer_phone}</a>)<br>
+                            <strong>Service Address:</strong> ${booking.address}<br>
+                            <strong>Scheduled:</strong> ${booking.booking_date} at ${booking.booking_time}<br>
+                            <strong>Expected Arrival:</strong> <span style="color:var(--teal-deep); font-weight:700;">${booking.expected_arrival || '30–45 mins'}</span>
+                            <button type="button" class="btn-text-sm" style="margin-left:6px;" onclick="promptUpdateArrival(${booking.id}, ${worker.id})">✏️ Update ETA</button>
+                        </div>
+                        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+                            <button type="button" class="btn-directions" onclick="openCustomerDirections(${booking.id}, ${worker.id})">
+                                🗺️ Get Customer Directions
+                            </button>
+                            <a href="tel:${booking.customer_phone}" class="secondary btn-sm" style="display:inline-flex; align-items:center; gap:4px; text-decoration:none; padding:7px 12px; border-radius:8px;">
+                                📞 Call Customer
+                            </a>
+                            <a href="${waUrl}" target="_blank" class="btn-whatsapp-action">
+                                💬 WhatsApp Confirmation
+                            </a>
+                        </div>
+                        <div>${actionBtn}</div>
                     </div>
                 `;
             });
@@ -1418,6 +1519,16 @@ async function fetchWorkerDashboard() {
 
         html += `<h3 style="margin:22px 0 12px;">Incoming Available Jobs (${unpassedJobs.length})</h3>`;
 
+        const hasActiveJob = activeBookings.length > 0;
+        if (hasActiveJob) {
+            html += `
+                <div class="busy-alert-banner" style="background:#FFF3E0; border:1.5px solid #FF9800; color:#E65100; padding:12px 14px; border-radius:10px; margin-bottom:14px; font-size:13px; line-height:1.6;">
+                    🔒 <strong>Active Booking In Progress (Job #${activeBookings[0].id} - ${activeBookings[0].service}):</strong><br>
+                    Under cooperative fairness & quality rules, members can serve <strong>one active booking</strong> at a time. Complete your current job before accepting another dispatch request.
+                </div>
+            `;
+        }
+
         if (!isAvail) {
             html += `<div class="busy-alert-banner">⏸️ You are currently marked as <strong>BUSY / ON LEAVE</strong>. Switch your status above to <strong>AVAILABLE</strong> to accept new jobs.</div>`;
         }
@@ -1435,6 +1546,10 @@ async function fetchWorkerDashboard() {
             unpassedJobs.forEach(booking => {
                 const isEmerg = booking.is_emergency;
                 const cardClass = isEmerg ? "booking-item emergency-job-card" : "booking-item";
+                const canAccept = isAvail && !hasActiveJob;
+                const acceptAttr = !canAccept
+                    ? `disabled style="opacity:0.45; cursor:not-allowed;" title="${hasActiveJob ? 'Worker already has an active booking.' : 'Worker is currently busy.'}"`
+                    : "";
 
                 html += `
                     <div class="${cardClass}" id="avail-job-${booking.id}">
@@ -1461,7 +1576,7 @@ async function fetchWorkerDashboard() {
                             </div>
                         ` : ''}
                         <div class="job-actions-row" style="margin-top:12px; display:flex; gap:10px;">
-                            <button class="${isEmerg ? 'cta-gold emergency-accept-btn' : 'primary'}" ${!isAvail ? "disabled style='opacity:0.5; cursor:not-allowed;'" : ""} onclick="acceptJob(${booking.id}, ${worker.id})">
+                            <button class="${isEmerg ? 'cta-gold emergency-accept-btn' : 'primary'}" ${acceptAttr} onclick="acceptJob(${booking.id}, ${worker.id})">
                                 ${isEmerg ? '🚨 Accept Emergency Call' : 'Accept Job'}
                             </button>
                             <button class="btn-pass" onclick="passAvailableJob(${booking.id})">Pass / Decline</button>
@@ -1585,7 +1700,12 @@ async function acceptJob(bookingId, workerId) {
             body: JSON.stringify({ workerId })
         });
         const data = await res.json();
-        alert(data.message);
+        if (!data.success) {
+            alert(data.message || "Failed to accept booking.");
+            fetchWorkerDashboard();
+            return;
+        }
+        alert(data.message || "Job accepted!");
         fetchWorkerDashboard();
     } catch (error) {
         console.error(error);
@@ -1618,8 +1738,15 @@ async function markComplete(bookingId) {
             headers: { "Content-Type": "application/json" }
         });
         const data = await res.json();
-        alert(data.message);
-        fetchWorkerDashboard();
+        if (data.success) {
+            alert(data.message || "Booking marked complete!");
+            if (data.booking) {
+                openWorkerToCustomerRatingModal(bookingId, data.booking.assigned_worker_id, data.booking.customer_name);
+            }
+            fetchWorkerDashboard();
+        } else {
+            alert(data.message || "Failed to mark complete.");
+        }
     } catch (error) {
         console.error(error);
         alert("Server connection failed.");
@@ -2421,10 +2548,10 @@ function syncSOSLocation() {
         if (statusEl) statusEl.innerHTML = `<small style="color:var(--terracotta);">Geolocation not supported.</small>`;
         return;
     }
-    if (statusEl) statusEl.innerHTML = `<small style="color:var(--gold-deep);">📍 Acquiring high-accuracy GPS coordinates...</small>`;
+    if (statusEl) statusEl.innerHTML = `<small style="color:var(--gold-deep);">📍 Acquiring high-accuracy GPS & resolving address...</small>`;
 
     navigator.geolocation.getCurrentPosition(
-        position => {
+        async position => {
             const lat = position.coords.latitude;
             const lng = position.coords.longitude;
             const latInput = document.getElementById("sosLat");
@@ -2433,6 +2560,23 @@ function syncSOSLocation() {
             if (lngInput) lngInput.value = lng;
             localStorage.setItem("sahkaar_customer_lat", lat);
             localStorage.setItem("sahkaar_customer_lng", lng);
+
+            // Reverse geocode proxy
+            try {
+                const revRes = await fetch(`/api/location/reverse-geocode?lat=${lat}&lng=${lng}`);
+                const revData = await revRes.json();
+                if (revData.success && revData.address) {
+                    const addrInput = document.getElementById("sosAddress");
+                    if (addrInput) addrInput.value = revData.address;
+                    if (statusEl) {
+                        statusEl.innerHTML = `<small style="color:var(--teal); font-weight:700;">✓ Address Auto-Locked from GPS: <em>${revData.address}</em></small>`;
+                    }
+                    return;
+                }
+            } catch (revErr) {
+                console.warn("[Reverse Geocode SOS]", revErr);
+            }
+
             if (statusEl) {
                 statusEl.innerHTML = `<small style="color:var(--teal); font-weight:700;">✓ High-Accuracy GPS Locked: ${lat.toFixed(4)}, ${lng.toFixed(4)}</small>`;
             }
@@ -4169,10 +4313,14 @@ async function fetchNearbyWorkers() {
                 ? `📍 ${w.distance_km} km away`
                 : "📍 In Service Zone";
 
+            const photoHtml = w.profile_photo
+                ? `<img src="${w.profile_photo}" alt="${w.name}" class="avatar-img" onerror="this.parentElement.innerHTML='👷'">`
+                : "👷";
+
             card.innerHTML = `
                 <div>
                     <div class="nw-header">
-                        <div class="nw-avatar">👷</div>
+                        <div class="nw-avatar">${photoHtml}</div>
                         <div style="flex:1;">
                             <div class="nw-name">${w.name}</div>
                             <div class="nw-skill">${w.skill} • ${w.experience || '1+ yrs exp'}</div>
@@ -4219,3 +4367,233 @@ if (document.readyState === "loading") {
 } else {
     loadPublicLandingServices();
 }
+
+// ============================================================
+// SIH 2026 EVALUATION UPGRADE HELPERS
+// (Directions, Arrival, Photo Upload, Tipping, Two-Way Feedback)
+// ============================================================
+
+async function openCustomerDirections(bookingId, workerId) {
+    try {
+        const res = await fetch(`/api/bookings/${bookingId}/customer-location?workerId=${workerId}`);
+        const data = await res.json();
+        if (!data.success) {
+            alert(data.message || "Access denied to customer coordinates.");
+            return;
+        }
+        if (data.googleMapsUrl) {
+            window.open(data.googleMapsUrl, "_blank");
+        } else {
+            alert(`Customer GPS coordinates are unavailable for this booking.\nCustomer Address: ${data.address || "N/A"}`);
+        }
+    } catch (err) {
+        console.error("Failed to fetch customer directions:", err);
+        alert("Server connection failed.");
+    }
+}
+
+async function promptUpdateArrival(bookingId, workerId) {
+    const current = prompt("Enter updated expected arrival time (e.g. '4:15 PM' or 'In 20 mins'):");
+    if (!current || !current.trim()) return;
+
+    try {
+        const res = await fetch(`/api/bookings/${bookingId}/arrival`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ workerId, expectedArrival: current.trim() })
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert("Expected arrival time updated!");
+            fetchWorkerDashboard();
+        } else {
+            alert(data.message || "Failed to update arrival time.");
+        }
+    } catch (err) {
+        console.error("Failed to update arrival:", err);
+        alert("Server connection failed.");
+    }
+}
+
+async function uploadWorkerProfilePhoto(event, workerId) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+
+    if (file.size > 2.5 * 1024 * 1024) {
+        alert("Profile photo must be under 2.5 MB.");
+        event.target.value = "";
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async function (e) {
+        try {
+            const photoData = e.target.result;
+            const res = await fetch(`/api/workers/${workerId}/photo`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ photoData })
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert("Profile photo uploaded and saved successfully!");
+                fetchWorkerDashboard();
+            } else {
+                alert(data.message || "Photo upload failed.");
+            }
+        } catch (err) {
+            console.error("Photo upload error:", err);
+            alert("Server connection failed.");
+        }
+    };
+    reader.readAsDataURL(file);
+}
+
+// Tipping presets & submission
+window.selectedTipPresets = window.selectedTipPresets || {};
+
+function selectTipPreset(bookingId, amount) {
+    window.selectedTipPresets[bookingId] = amount;
+    [20, 50, 100, 200].forEach(p => {
+        const btn = document.getElementById(`tip-btn-${bookingId}-${p}`);
+        if (btn) btn.classList.toggle("active", p === amount);
+    });
+    const customInp = document.getElementById(`customTipInput-${bookingId}`);
+    if (customInp) customInp.value = "";
+}
+
+function clearTipPresets(bookingId) {
+    delete window.selectedTipPresets[bookingId];
+    [20, 50, 100, 200].forEach(p => {
+        const btn = document.getElementById(`tip-btn-${bookingId}-${p}`);
+        if (btn) btn.classList.remove("active");
+    });
+}
+
+async function submitBookingTip(bookingId, customerPhone) {
+    const customInp = document.getElementById(`customTipInput-${bookingId}`);
+    let amount = customInp && customInp.value ? parseFloat(customInp.value) : (window.selectedTipPresets[bookingId] || 100);
+
+    if (isNaN(amount) || amount <= 0) {
+        alert("Please select or enter a valid positive tip amount.");
+        return;
+    }
+
+    const statusEl = document.getElementById(`tipStatus-${bookingId}`);
+    if (statusEl) statusEl.innerHTML = `<span style="color:var(--gold-deep);">Sending ₹${amount} tip directly to worker...</span>`;
+
+    try {
+        const res = await fetch(`/api/bookings/${bookingId}/tip`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ tipAmount: amount, customerPhone })
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert(data.message);
+            const tipCard = document.getElementById(`tippingCard-${bookingId}`);
+            if (tipCard) {
+                tipCard.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="font-size:22px;">💖</span>
+                        <div>
+                            <strong style="color:#1B5E20; font-size:14px;">₹${amount} Tip Sent to Worker</strong>
+                            <div style="font-size:12px; color:#2E7D32;">100% transferred directly to worker • 0% cooperative fee deducted</div>
+                        </div>
+                    </div>
+                `;
+            }
+            fetchMyBookings();
+        } else {
+            alert(data.message || "Failed to record tip.");
+            if (statusEl) statusEl.innerHTML = `<span style="color:var(--terracotta);">${data.message}</span>`;
+        }
+    } catch (err) {
+        console.error("Tip submission failed:", err);
+        alert("Server connection failed.");
+    }
+}
+
+// Two-way feedback: Worker to customer rating modal
+function openWorkerToCustomerRatingModal(bookingId, workerId, customerName) {
+    const modal = document.getElementById("workerCustomerRatingModal");
+    if (!modal) return;
+
+    document.getElementById("wcBookingId").value = bookingId;
+    document.getElementById("wcWorkerId").value = workerId;
+    document.getElementById("wcCustomerNameDisplay").textContent = customerName || "Customer";
+    document.getElementById("wcSelectedStars").value = 5;
+    selectWorkerCustomerStar(5);
+    const commentEl = document.getElementById("wcRatingComment");
+    if (commentEl) commentEl.value = "";
+    const statusEl = document.getElementById("wcRatingStatus");
+    if (statusEl) statusEl.innerHTML = "";
+
+    modal.classList.remove("hidden");
+}
+
+function closeWorkerToCustomerRatingModal() {
+    const modal = document.getElementById("workerCustomerRatingModal");
+    if (modal) modal.classList.add("hidden");
+}
+
+function selectWorkerCustomerStar(stars) {
+    document.getElementById("wcSelectedStars").value = stars;
+    const container = document.getElementById("wcStarsContainer");
+    if (!container) return;
+    const btns = container.querySelectorAll(".star-btn");
+    btns.forEach(btn => {
+        const val = parseInt(btn.getAttribute("data-val"), 10);
+        btn.classList.toggle("active", val <= stars);
+    });
+}
+
+function toggleTwoWayTag(btn) {
+    btn.classList.toggle("active");
+}
+
+async function submitWorkerCustomerRating() {
+    const bookingId = Number(document.getElementById("wcBookingId").value);
+    const workerId = Number(document.getElementById("wcWorkerId").value);
+    const stars = Number(document.getElementById("wcSelectedStars").value) || 5;
+    const comment = (document.getElementById("wcRatingComment").value || "").trim();
+    const statusEl = document.getElementById("wcRatingStatus");
+
+    const tags = [];
+    const container = document.getElementById("wcTagsContainer");
+    if (container) {
+        container.querySelectorAll(".two-way-tag-pill.active").forEach(p => {
+            tags.push(p.textContent.trim());
+        });
+    }
+
+    if (!bookingId) {
+        alert("Invalid booking ID.");
+        return;
+    }
+
+    if (statusEl) statusEl.innerHTML = `<span style="color:var(--teal);">Submitting feedback...</span>`;
+
+    try {
+        const res = await fetch("/api/ratings/customer", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ bookingId, workerId, stars, tags, comment })
+        });
+        const data = await res.json();
+        if (data.success) {
+            if (statusEl) statusEl.innerHTML = `<span style="color:#2E7D32; font-weight:700;">✓ Feedback recorded! Thank you for strengthening the cooperative network.</span>`;
+            setTimeout(() => {
+                closeWorkerToCustomerRatingModal();
+                fetchWorkerDashboard();
+            }, 1200);
+        } else {
+            alert(data.message || "Failed to submit rating.");
+            if (statusEl) statusEl.innerHTML = `<span style="color:var(--terracotta);">${data.message}</span>`;
+        }
+    } catch (err) {
+        console.error("Worker customer rating failed:", err);
+        alert("Server connection failed.");
+    }
+}
+

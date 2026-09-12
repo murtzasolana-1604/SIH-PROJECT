@@ -110,17 +110,28 @@ function captureCustomerLocation() {
     if (btn) btn.textContent = "📍 Detecting coordinates...";
 
     navigator.geolocation.getCurrentPosition(
-        position => {
+        async position => {
             const lat = position.coords.latitude;
             const lng = position.coords.longitude;
             customerOnboardingState.lat = lat;
             customerOnboardingState.lng = lng;
 
+            let addrSnippet = "";
+            try {
+                const revRes = await fetch(`/api/location/reverse-geocode?lat=${lat}&lng=${lng}`);
+                const revData = await revRes.json();
+                if (revData.success && revData.address) {
+                    addrSnippet = `<br><span style="font-size:12px; color:var(--teal-deep);">📍 Auto-Locked: ${revData.address}</span>`;
+                }
+            } catch (e) {
+                // optional fallback
+            }
+
             if (statusEl) {
                 statusEl.innerHTML = `
                     <div class="geo-status success">
                         <strong>✓ Location Captured!</strong><br>
-                        Latitude: ${lat.toFixed(5)}, Longitude: ${lng.toFixed(5)}
+                        Latitude: ${lat.toFixed(5)}, Longitude: ${lng.toFixed(5)}${addrSnippet}
                     </div>
                 `;
             }
@@ -411,7 +422,8 @@ async function submitWorkerOnboardingProfile() {
                 pincode: workerOnboardingState.pincode,
                 latitude: workerOnboardingState.lat,
                 longitude: workerOnboardingState.lng,
-                availability: workerOnboardingState.availability.join(", ")
+                availability: workerOnboardingState.availability.join(", "),
+                profilePhoto: workerOnboardingState.profilePhoto || null
             })
         });
         const data = await res.json();
@@ -450,3 +462,23 @@ function finishWorkerOnboarding() {
     const lookupEl = document.getElementById("workerLookupPhone");
     if (lookupEl && phone) lookupEl.value = phone;
 }
+
+function previewWorkerOnboardPhoto(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    if (file.size > 2.5 * 1024 * 1024) {
+        alert("Image file must be under 2.5 MB.");
+        event.target.value = "";
+        return;
+    }
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        workerOnboardingState.profilePhoto = e.target.result;
+        const preview = document.getElementById("wrkOnboardPhotoPreview");
+        if (preview) {
+            preview.innerHTML = `<img src="${e.target.result}" class="avatar-img" alt="Preview">`;
+        }
+    };
+    reader.readAsDataURL(file);
+}
+

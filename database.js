@@ -15,6 +15,14 @@
 
 const crypto = require("crypto");
 const path = require("path");
+const fs = require("fs");
+
+// Ensure uploads directory exists
+try {
+    fs.mkdirSync(path.join(__dirname, "public", "uploads", "workers"), { recursive: true });
+} catch (e) {
+    // directory already exists or ignorable
+}
 
 const isPg = Boolean(process.env.DATABASE_URL && process.env.DATABASE_URL.trim().length > 0);
 
@@ -249,6 +257,7 @@ function initSQLite() {
             kyc_doc_number TEXT DEFAULT 'XXXX-XXXX-9876',
             badge_status TEXT DEFAULT 'Active',
             society_id INTEGER,
+            profile_photo TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
 
@@ -268,6 +277,14 @@ function initSQLite() {
             emergency_type TEXT,
             dispatched_at DATETIME,
             target_response_mins INTEGER DEFAULT 30,
+            expected_arrival TEXT,
+            customer_rating INTEGER,
+            customer_feedback TEXT,
+            customer_tags TEXT,
+            worker_rating INTEGER,
+            worker_feedback TEXT,
+            worker_tags TEXT,
+            worker_rated_at DATETIME,
             society_id INTEGER,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
@@ -298,10 +315,22 @@ function initSQLite() {
             service_charge REAL NOT NULL,
             cooperative_share REAL NOT NULL,
             worker_earning REAL NOT NULL,
+            tip_amount REAL DEFAULT 0,
             total_amount REAL NOT NULL,
             payment_status TEXT DEFAULT 'unpaid',
             payment_method TEXT,
             paid_at DATETIME,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS tips (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            booking_id INTEGER NOT NULL UNIQUE,
+            worker_id INTEGER NOT NULL,
+            customer_phone TEXT,
+            tip_amount REAL NOT NULL,
+            status TEXT DEFAULT 'paid',
+            transaction_id TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
 
@@ -485,7 +514,35 @@ function initSQLite() {
         );
     }
 
+    migrateSQLite();
     console.log("[Database] SQLite tables and seeds verified.");
+}
+
+function migrateSQLite() {
+    const migrations = [
+        { table: "workers", column: "profile_photo", type: "TEXT" },
+        { table: "bookings", column: "expected_arrival", type: "TEXT" },
+        { table: "bookings", column: "customer_rating", type: "INTEGER" },
+        { table: "bookings", column: "customer_feedback", type: "TEXT" },
+        { table: "bookings", column: "customer_tags", type: "TEXT" },
+        { table: "bookings", column: "worker_rating", type: "INTEGER" },
+        { table: "bookings", column: "worker_feedback", type: "TEXT" },
+        { table: "bookings", column: "worker_tags", type: "TEXT" },
+        { table: "bookings", column: "worker_rated_at", type: "DATETIME" },
+        { table: "invoices", column: "tip_amount", type: "REAL DEFAULT 0" }
+    ];
+
+    for (const m of migrations) {
+        try {
+            const cols = sqliteDb.prepare(`PRAGMA table_info(${m.table})`).all();
+            if (!cols.some(c => c.name === m.column)) {
+                sqliteDb.exec(`ALTER TABLE ${m.table} ADD COLUMN ${m.column} ${m.type}`);
+                console.log(`[Database Migration] Added ${m.table}.${m.column} to SQLite.`);
+            }
+        } catch (err) {
+            console.warn(`[Database Migration Warning] ${m.table}.${m.column}:`, err.message);
+        }
+    }
 }
 
 // ============================================================
@@ -539,6 +596,7 @@ async function initPostgreSQL() {
             kyc_doc_number TEXT DEFAULT 'XXXX-XXXX-9876',
             badge_status TEXT DEFAULT 'Active',
             society_id INTEGER,
+            profile_photo TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
 
@@ -558,6 +616,14 @@ async function initPostgreSQL() {
             emergency_type TEXT,
             dispatched_at TIMESTAMP,
             target_response_mins INTEGER DEFAULT 30,
+            expected_arrival TEXT,
+            customer_rating INTEGER,
+            customer_feedback TEXT,
+            customer_tags TEXT,
+            worker_rating INTEGER,
+            worker_feedback TEXT,
+            worker_tags TEXT,
+            worker_rated_at TIMESTAMP,
             society_id INTEGER,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
@@ -588,10 +654,22 @@ async function initPostgreSQL() {
             service_charge DOUBLE PRECISION NOT NULL,
             cooperative_share DOUBLE PRECISION NOT NULL,
             worker_earning DOUBLE PRECISION NOT NULL,
+            tip_amount DOUBLE PRECISION DEFAULT 0,
             total_amount DOUBLE PRECISION NOT NULL,
             payment_status TEXT DEFAULT 'unpaid',
             payment_method TEXT,
             paid_at TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS tips (
+            id SERIAL PRIMARY KEY,
+            booking_id INTEGER NOT NULL UNIQUE,
+            worker_id INTEGER NOT NULL,
+            customer_phone TEXT,
+            tip_amount DOUBLE PRECISION NOT NULL,
+            status TEXT DEFAULT 'paid',
+            transaction_id TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
 
@@ -866,8 +944,33 @@ async function initPostgreSQL() {
         console.log("[Database] Seeded PostgreSQL verified demo workers and welfare records.");
     }
 
+    await migratePostgreSQL();
     console.log("[Database] PostgreSQL schema and seeds verified.");
 }
+
+async function migratePostgreSQL() {
+    const migrations = [
+        { table: "workers", column: "profile_photo", type: "TEXT" },
+        { table: "bookings", column: "expected_arrival", type: "TEXT" },
+        { table: "bookings", column: "customer_rating", type: "INTEGER" },
+        { table: "bookings", column: "customer_feedback", type: "TEXT" },
+        { table: "bookings", column: "customer_tags", type: "TEXT" },
+        { table: "bookings", column: "worker_rating", type: "INTEGER" },
+        { table: "bookings", column: "worker_feedback", type: "TEXT" },
+        { table: "bookings", column: "worker_tags", type: "TEXT" },
+        { table: "bookings", column: "worker_rated_at", type: "TIMESTAMP" },
+        { table: "invoices", column: "tip_amount", type: "DOUBLE PRECISION DEFAULT 0" }
+    ];
+
+    for (const m of migrations) {
+        try {
+            await pool.query(`ALTER TABLE ${m.table} ADD COLUMN IF NOT EXISTS ${m.column} ${m.type}`);
+        } catch (err) {
+            console.warn(`[Database Migration Warning] ${m.table}.${m.column}:`, err.message);
+        }
+    }
+}
+
 
 // Auto-run SQLite init synchronously on load if in SQLite mode
 if (!isPg) {
