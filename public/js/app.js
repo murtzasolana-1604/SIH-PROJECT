@@ -704,10 +704,6 @@ async function fetchMyBookings() {
                                 <div class="invoice-breakdown-table">
                                     <div class="inv-row">
                                         <span>${t('baseServiceDelivery', 'Base Service Delivery:')}</span>
-                                        <span>₹${inv.base_charge}</span>
-                                    </div>
-                                    ${inv.is_emergency ? `
-                                        <span>${t('baseServiceDelivery', 'Service Amount:')}</span>
                                         <span>₹${inv.service_charge || inv.base_charge}</span>
                                     </div>
                                     ${inv.is_emergency ? `
